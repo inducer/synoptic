@@ -1,0 +1,28 @@
+#navpane {
+  background-color: #ccf;
+  position: absolute;
+  top:0px;
+  left:0px;
+  width:200px;
+  margin:5px;
+}
+
+#mainpane {
+  position: absolute;
+  top:0px;
+  left:205px;
+  margin:5px;
+}
+
+#items {
+  padding:5px;
+  background-color:#eef;
+}
+
+.editbuttons {
+  vertical-align:top;
+}
+
+.errors {
+  text-color:red;
+}

@@ -1,0 +1,28 @@
+#! /usr/bin/env python2.5
+
+def main():
+    from optparse import OptionParser
+
+    description = "An AJAXy personal wiki"
+    parser = OptionParser(description=description)
+    parser.add_option(
+            "-p", "--port", default=7331, type="int",
+            help="Listen port", metavar="PORT")
+
+    options, args = parser.parse_args()
+
+    from zapp import Application
+    app = Application()
+
+    from zapp import DBSessionInjector
+    app = DBSessionInjector(app, "sqlite:///%s" % args[0])
+
+    from paste.exceptions.errormiddleware import ErrorMiddleware
+    app = ErrorMiddleware(app, debug=True)
+
+    from paste.httpserver import serve
+    serve(app, port=options.port)
+
+if __name__ == "__main__":
+    main()
+
