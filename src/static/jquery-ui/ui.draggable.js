@@ -6,10 +6,10 @@
 			
 			return this.each(function() {
 				if (typeof options == "string") {
-					var drag = $.data(this, "draggable");
-					if(drag) drag[options].apply(drag, args);
+					var drag = $.data(this, "ui-draggable");
+					drag[options].apply(drag, args);
 
-				} else if(!$.data(this, "draggable"))
+				} else if(!$.data(this, "ui-draggable"))
 					new $.ui.draggable(this, options);
 			});
 		}
@@ -21,7 +21,7 @@
 		
 		this.element = $(element);
 		
-		$.data(element, "draggable", this);
+		$.data(element, "ui-draggable", this);
 		this.element.addClass("ui-draggable");
 		
 		//Prepare the passed options
@@ -44,7 +44,7 @@
 			executor: this,
 			delay: o.delay,
 			distance: o.distance || 0,
-			dragPrevention: o.cancel ? o.cancel.toLowerCase().split(',') : ['input','textarea','button','select','option'],
+			dragPrevention: o.prevention ? o.prevention.toLowerCase().split(',') : ['input','textarea','button','select','option'],
 			start: this.start,
 			stop: this.stop,
 			drag: this.drag,
@@ -54,10 +54,6 @@
 		//Position the node
 		if(o.helper == 'original' && (this.element.css('position') == 'static' || this.element.css('position') == ''))
 			this.element.css('position', 'relative');
-			
-		//Prepare cursorAt
-		if(o.cursorAt && o.cursorAt.constructor == Array)
-			o.cursorAt = { left: o.cursorAt[0], top: o.cursorAt[1] };
 		
 	};
 	
@@ -69,8 +65,7 @@
 				position: this.position,
 				absolutePosition: this.positionAbs,
 				instance: this,
-				options: this.options,
-				element: this.element				
+				options: this.options					
 			};
 		},
 		propagate: function(n,e) {
@@ -78,11 +73,10 @@
 			return this.element.triggerHandler(n == "drag" ? n : "drag"+n, [e, this.ui()], this.options[n]);
 		},
 		destroy: function() {
-			if(!$.data(this.element[0], 'draggable')) return;
-			this.options.handle.removeMouseInteraction();
+			this.handle.removeMouseInteraction();
 			this.element
 				.removeClass("ui-draggable ui-draggable-disabled")
-				.removeData("draggable")
+				.removeData("ui-draggable")
 				.unbind(".draggable");
 		},
 		enable: function() {
@@ -92,18 +86,6 @@
 		disable: function() {
 			this.element.addClass("ui-draggable-disabled");
 			this.disabled = true;
-		},
-		setContrains: function(minLeft,maxLeft,minTop,maxTop) {
-			this.minLeft = minLeft; this.maxLeft = maxLeft;
-			this.minTop = minTop; this.maxTop = maxTop;
-			this.constrainsSet = true;
-		},
-		checkConstrains: function() {
-			if(!this.constrainsSet) return;
-			if(this.position.left < this.minLeft) this.position.left = this.minLeft;
-			if(this.position.left > this.maxLeft - this.helperProportions.width) this.position.left = this.maxLeft - this.helperProportions.width;
-			if(this.position.top < this.minTop) this.position.top = this.minTop;
-			if(this.position.top > this.maxTop - this.helperProportions.height) this.position.top = this.maxTop - this.helperProportions.height;
 		},
 		recallOffset: function(e) {
 
@@ -161,12 +143,6 @@
 			//Generate a flexible offset that will later be subtracted from e.pageX/Y
 			this.offset = {left: e.pageX - this.originalPosition.left, top: e.pageY - this.originalPosition.top };
 			
-			//Substract margins
-			if(this.element[0] != this.helper[0]) {
-				this.offset.left += parseInt(this.element.css('marginLeft'),10) || 0;
-				this.offset.top += parseInt(this.element.css('marginTop'),10) || 0;
-			}
-			
 			//Call plugins and callbacks
 			this.propagate("start", e);
 
@@ -213,10 +189,8 @@
 			this.position = { top: e.pageY - this.offset.top, left: e.pageX - this.offset.left };
 			this.positionAbs = { left: e.pageX - this.clickOffset.left, top: e.pageY - this.clickOffset.top };
 
-			//Call plugins and callbacks
-			this.checkConstrains();			
+			//Call plugins and callbacks			
 			this.position = this.propagate("drag", e) || this.position;
-			this.checkConstrains();
 			
 			this.helper.css({ left: this.position.left+'px', top: this.position.top+'px' }); // Stick the helper to the cursor
 			if($.ui.ddmanager) $.ui.ddmanager.drag(this, e);

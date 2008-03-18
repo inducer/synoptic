@@ -302,6 +302,7 @@ class Application(ApplicationBase):
             with open(full_path, "rb") as inf:
                 data = inf.read()
         except IOError:
+            print "NOT FOUND:", filename
             from paste.httpexceptions import HTTPNotFound
             raise HTTPNotFound()
 

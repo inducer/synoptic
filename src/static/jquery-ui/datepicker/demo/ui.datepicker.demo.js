@@ -6,8 +6,7 @@ $(document).ready(function () {
 	$.datepicker.setDefaults($.datepicker.regional['']);
 	// replace script tags with HTML code
 	$(".demojs").each(function () {
-		$(this).before( '<pre style="padding-top:0 !important"><code class="javascript">' +
-			$(this).html().replace(/</g, '&lt;') + "</code></pre>" );
+		$(this).before( '<pre style="padding-top:0 !important"><code class="javascript">' + $(this).html() + "</code></pre>" );
 		eval( $(this).html() );
 	});
 	// Localization
@@ -17,11 +16,11 @@ $(document).ready(function () {
 		$('.languageSelect').change(localise);
 	}
 	// Stylesheets
-	$('#altStyle').datepicker({buttonImage: 'img/calendar2.gif',
+	$('#altStyle').attachDatepicker({buttonImage: 'img/calendar2.gif',
 		prevText: '<img src="img/prev.gif" style="vertical-align: middle;"/> Prev',
 		nextText: 'Next <img src="img/next.gif" style="vertical-align: middle;"/>'});
 	$('#button3').click(function() { 
-		$(this).datepicker('dialog', $('#altDialog').val(),
+		$.datepicker.dialogDatepicker($('#altDialog').val(),
 		setAltDateFromDialog, {prompt: 'Choose a date', speed: '',
 		prevText: '<img src="img/prev.gif" style="vertical-align: middle;"/> Prev',
 		nextText: 'Next <img src="img/next.gif" style="vertical-align: middle;"/>'});
@@ -31,13 +30,13 @@ $(document).ready(function () {
 // Load and apply a localisation package for the date picker
 function localise() {
 	var input = $('input', this.parentNode.parentNode);
-	var date = $(input).datepicker('getDate');
+	var date = $(input).getDatepickerDate();
 	var language = $(this).val();
 	$.localise('i18n/ui.datepicker', {language: language});
-	$(input).datepicker('change', $.datepicker.regional[language]);
+	$(input).changeDatepicker($.datepicker.regional[language]);
 	$.datepicker.setDefaults($.datepicker.regional['']); // Reset for general usage
 	if (date) {
-		$(input).datepicker('setDate', date);
+		$(input).setDatepickerDate(date);
 		input.val($.datepicker.formatDate(
 			$.datepicker.regional[language].dateFormat, date));
 	}
@@ -45,7 +44,7 @@ function localise() {
 
 // Demonstrate a callback from inline configuration
 function showDay(input) {
-	var date = $(input).datepicker('getDate');
+	var date = $(input).getDatepickerDate();
 	$('#inlineDay').html(date ? $.datepicker.formatDate('DD', date) : 'blank');
 }
 
