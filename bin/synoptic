@@ -11,10 +11,10 @@ def main():
 
     options, args = parser.parse_args()
 
-    from zapp import Application
+    from synoptic import Application
     app = Application()
 
-    from zapp import DBSessionInjector
+    from synoptic import DBSessionInjector
     app = DBSessionInjector(app, "sqlite:///%s" % args[0])
 
     from paste.exceptions.errormiddleware import ErrorMiddleware

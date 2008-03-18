@@ -16,13 +16,36 @@
 
 #items {
   padding:5px;
-  background-color:#eef;
+  margin-top:5px;
 }
 
 .editbuttons {
   vertical-align:top;
 }
 
-.errors {
-  text-color:red;
+.error {
+  font-weight:bold;
+  color:red;
+}
+
+.ac_results {
+  background-color:#eef;
+}
+
+.ac_results ul{
+  list-style-type:none;
+  padding:5px;
+  margin:0;
+  border:0;
+  border-style:solid;
+  border-color:#000;
+  border-left-width:1px;
+  border-bottom-width:1px;
+  border-right-width:1px;
+  font-family:sans-serif;
+}
+
+.ac_results ul li.ac_over{
+  background-color:#00e;
+  color:#fff;
 }

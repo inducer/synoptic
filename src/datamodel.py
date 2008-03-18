@@ -18,14 +18,13 @@ class DataModel(object):
         self.itemversions = Table('itemversions', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('item_id', Integer, ForeignKey('items.id')),
-                Column('timestamp', Float),
-                Column('title', UnicodeText()),
+                Column('timestamp', Float, index=True),
                 Column('contents', UnicodeText())
                 )
 
         self.itemversions_tags = Table('items_tags', self.metadata,
-                Column('itemversion_id', Integer, ForeignKey('itemversions.id')),
-                Column('tag_id', Integer, ForeignKey('tags.id')),
+                Column('itemversion_id', Integer, ForeignKey('itemversions.id'), index=True),
+                Column('tag_id', Integer, ForeignKey('tags.id'), index=True),
                 ) 
 
         from sqlalchemy.orm import mapper, relation
@@ -47,6 +46,12 @@ class Tag(object):
     def __repr__(self):
         return "<Tag '%s'>" % self.name
 
+    def __hash__(self):
+        return 0xaffe ^ hash(self.name)
+
+    def __eq__(self, other):
+        return self.name == other.name
+
 
 
 
@@ -57,27 +62,24 @@ class Item(object):
 
 
 class ItemVersion(object):
-    def __init__(self, item, timestamp, tags, title, contents):
+    def __init__(self, item, timestamp, tags, contents):
         self.item = item
         self.timestamp = timestamp
         self.tags = tags
-        self.title = title
         self.contents = contents
 
     def as_json(self):
-        return {"id": itv.item.id, 
-                "tags": u",".join(tag.name for tag in itv.tags),
-                "title": itv.title,
-                "contents": itv.contents,
-                "contents_html": itv.contents,
+        return {"id": self.item.id, 
+                "tags": u",".join(tag.name for tag in self.tags),
+                "contents": self.contents,
                 }
 
-    def copy(self, id=None, title=None, contents=None, timestamp=None):
+    def copy(self, item=None, timestamp=None, tags=None, contents=None):
         return Item(
-                id=id or self.id,
-                title=title or self.title,
-                contents=contents or self.contents,
+                item=item or self.item,
                 timestamp=timestamp or self.timestamp,
+                tags=tags or self.tags,
+                contents=contents or self.contents,
                 )
 
 

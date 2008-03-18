@@ -16,8 +16,13 @@ def page(context):
          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
     <head>
       <title>%(title)s</title>
-      <script type="text/javascript" src="/static/jquery/jquery.js"></script>
+      <script type="text/javascript" src="/static/jquery.js"></script>
+      <script type="text/javascript" src="/static/jquery.timers.js"></script>
+      <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
+      <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
+      <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
       <script type="text/javascript" src="/static/inheritance.js"></script>
+      <script type="text/javascript" src="/static/json2.js"></script>
       <script type="text/javascript" src="/static/main.js"></script>
       <link rel="stylesheet" type="text/css" href="/static/style.css">
     </head>

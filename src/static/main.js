@@ -1,3 +1,11 @@
+function busy(what)
+{
+  return '<img src="/static/busy.gif" alt="Busy" /> '+what;
+}
+
+
+
+
 // String extension  -----------------------------------------------------------
 String.method("allreplace", function(from, to)
 {
@@ -26,27 +34,29 @@ function str(val)
 
 
 // ItemManager  --------------------------------------------------------------------
-function ItemManager()
+function ItemManager(mgr, arg)
 {
-  this.id = null;
-}
-
-function ItemManager(arg)
-{
+  this.manager = mgr;
+  
   if (typeof(arg) == "number")
   {
     this.id = id;
-    self.load_from_server();
+    this.load_from_server();
   }
+  else if (arg == null)
+    this.id = null;
   else
-  {
-    this.id = arg.id;
-    this.tags = arg.tags;
-    this.title = arg.title;
-    this.contents = arg.contents;
-    this.contents_html = arg.contents_html;
-  }
+    this.set_from_obj(arg);
 }
+
+ItemManager.method("set_from_obj", function(arg)
+{
+  this.id = arg.id;
+  this.tags = arg.tags;
+  this.title = arg.title;
+  this.contents = arg.contents;
+  this.contents_html = arg.contents_html;
+});
 
 ItemManager.method("append_item_div", function(where)
 {
@@ -74,15 +84,13 @@ ItemManager.method("fill_item_div", function()
     this.div.html(
       (
       '<div class="editcontrols">'+
-      '<input type="button" id="edit_[id]" value="Edit">'+
-      '<input type="button" id="delete_[id]" value="Delete">'+
+      '<input type="button" id="edit_[id]" value="Edit"> '+
+      '<input type="button" id="delete_[id]" value="Delete"> '+
       'Tags: [tags]'+
       '</div>'+
-      '<div>[title]</div>'+
       '<div>[contents]</div>'
       ).allreplace('[id]', this.id)
       .allreplace('[tags]', this.tags)
-      .allreplace('[title]', this.title)
       .allreplace('[contents]', this.contents_html)
       );
     $('#edit_'+this.id).click(function(){ self.begin_edit() });
@@ -94,6 +102,7 @@ ItemManager.method("begin_edit", function()
 {
   this.div.html(
     (
+    '<div id="edit_div_[id]">'+
     '<table>'+
     '<tr><td>'+
     '<input type="button"  id="edit_ok_[id]"  value="OK"  accesskey="o">&nbsp;'+
@@ -104,32 +113,44 @@ ItemManager.method("begin_edit", function()
     '<textarea id="editor_[id]" cols="80" rows="10"></textarea>'+
     '</td></tr>'+
     '</tr></table>'+
+    '</div>'+
     '<div  id="edit_errors_[id]"  class="errors"></div>'
     ).allreplace("[id]",  this.id)
     );
-  $("#edit_tags_"+this.id).val(this.tags);
+
+  // default to current search tags
+  if (this.id == null)
+    $("#edit_tags_"+this.id).val($("#search").val());
+  else
+    $("#edit_tags_"+this.id).val(this.tags);
+
   $("#editor_"+this.id).val(this.contents);
   $("#editor_"+this.id).focus();
 
   var self = this;
   $("#edit_ok_"+this.id).click(function(){
+    $("edit_div_"+self.id).html(busy('Saving...'));
     $.ajax({
-      type: "POST",
-      url: "/item/store?_=1", // the _=1 switches on simple error reporting in paste
-      data: {
+      type: 'POST',
+      dataType: 'json',
+      url: '/item/store',
+      data: {json: JSON.stringify({
         id: self.id,
         tags: $("#edit_tags_"+self.id).val(),
-        title: "",
-        dataType: "json",
         contents: $("#editor_"+self.id).val()
-      },
+      })},
       error: function(req, stat, err) {
+        self.begin_edit();
         $("#edit_errors_"+self.id).html(req.responseText);
       },
-      success: function(data, msg) {
+      success: function(data, msg) 
+      {
+        var prev_id = self.id;
         $("#edit_errors_"+self.id).html('');
-        this.id = data.msg;
-        self.load_from_server();
+        self.id = data.id;
+        self.load_from_server(function(){self.fill_item_div(); });
+        if (prev_id == null)
+          self.manager.empty_was_filled();
       }
     });
   });
@@ -139,21 +160,41 @@ ItemManager.method("begin_edit", function()
   });
 });
 
+ItemManager.method("do_delete", function()
+{
+  var self = this;
+  self.manager.note_delete(self);
+  self.div.remove();
+
+  $.ajax({
+    type: 'POST',
+    dataType: 'json',
+    url: '/item/store',
+    data: {json: JSON.stringify({
+      id: self.id,
+      tags: "",
+      contents: null
+    })},
+  });
+});
+
 ItemManager.method("load_from_server", function(when_done) 
 {
   var self = this;
-  $.getJSON("/item/get_multi_by_tags", 
-    {query: query, _:1}, 
-    function(list, status)
+  $.ajax({
+    url: "/item/get_by_id", 
+    data: {id: self.id},
+    dataType:"json",
+    success: function(obj, status)
     {
-      for (var i = 0; i < list.length; ++i)
-      {
-        var newobj = new ItemManager(list[i]);
-        self.items.push(newobj);
-      }
-      self.update();
+      self.set_from_obj(obj);
       if (when_done != undefined)
         when_done();
+    },
+    error: function(req, stat, err)
+    {
+      self.div.html('<div class="error">An error occurred.</div>');
+    }
     });
 });
 
@@ -163,9 +204,26 @@ ItemManager.method("load_from_server", function(when_done)
 // ItemCollectionManager ----------------------------------------------------------------
 function ItemCollectionManager()
 {
-  this.div = $("#items");
-  this.items = [];
-  this.empty_item = new ItemManager(null);
+  var self = this;
+  self.div = $("#items");
+  self.items = [];
+  self.empty_item = new ItemManager(self);
+
+  $("#search").change(function()
+    {
+      self.fill_from_query($("#search").val());
+    });
+  $("#search").focus(function()
+    {
+      self.div.everyTime("250ms", "search_changewatch",
+        function() { self.fill_from_query($("#search").val()); });
+    });
+  $("#search").blur(function()
+    {
+      self.div.stopTime("search_changewatch");
+    });
+  $("#search").autocomplete("/tags/get",
+      { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
 }
 
 ItemCollectionManager.method("update", function(query)
@@ -176,23 +234,45 @@ ItemCollectionManager.method("update", function(query)
   this.empty_item.append_item_div(this.div);
 });
 
+ItemCollectionManager.method("empty_was_filled", function()
+{
+  this.items.push(this.empty_item);
+  this.empty_item = new ItemManager(this);
+  this.empty_item.append_item_div(this.div);
+});
+
+ItemCollectionManager.method("note_delete", function(item)
+{
+  this.items.splice(this.items.indexOf(item), 1);
+});
+
 ItemCollectionManager.method("fill_from_query", function(query)
 {
-  this.div.html('<img src="/static/busy.gif" alt="Busy" /> Loading...');
+  if (query == this.last_query)
+    return;
 
+  this.div.html(busy('Loading...'));
+
+  this.last_query = query;
   this.items = [];
 
   var self = this;
-  $.getJSON("/item/get_multi_by_tags", 
-    {query: query, _:1}, 
-    function(list, status)
+  $.ajax({
+    data: {query: query},
+    url: '/item/get_multi_by_tags',
+    dataType:"json",
+    success: function(list, status)
     {
       for (var i = 0; i < list.length; ++i)
       {
-        var newobj = new ItemManager(list[i]);
-        self.items.push(newobj);
+        self.items.push(new ItemManager(self, list[i]));
       }
       self.update();
+    },
+    error: function(req, stat, err)
+    {
+      self.div.html('<div class="error">An error occurred.</div>');
+    }
     });
 })
 
