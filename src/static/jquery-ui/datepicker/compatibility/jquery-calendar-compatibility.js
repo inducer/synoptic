@@ -1,4 +1,4 @@
-/* jQuery UI Date Picker v3.3 - compatibility with jQuery Calendar v2.7
+/* jQuery UI Date Picker v3.4 - compatibility with jQuery Calendar v2.7
    Written by Marc Grabanski (m@marcgrabanski.com) and Keith Wood (kbwood@iprimus.com.au).
 
    Copyright (c) 2007 Marc Grabanski (http://marcgrabanski.com/code/jquery-calendar)
@@ -38,7 +38,7 @@ $.extend(PopUpCal.prototype, {
 	                   object - jQuery collection of input fields
 	   @return void */
 	enableFor: function(inputs) {
-		(inputs.jquery ? inputs : $(inputs)).enableDatepicker();
+		(inputs.jquery ? inputs : $(inputs)).datepicker('enable');
 	},
 
 	/* Disable the input field(s) from entry.
@@ -47,7 +47,7 @@ $.extend(PopUpCal.prototype, {
 	                   object - jQuery collection of input fields
 	   @return void */
 	disableFor: function(inputs) {
-		(inputs.jquery ? inputs : $(inputs)).disableDatepicker();
+		(inputs.jquery ? inputs : $(inputs)).datepicker('disable');
 	},
 
 	/* Update the settings for a calendar attached to an input field or division.
@@ -56,7 +56,7 @@ $.extend(PopUpCal.prototype, {
 	   @param  settings  object - the new settings to update
 	   @return void */
 	reconfigureFor: function(control, settings) {
-		$(control).changeDatepicker(convertSettings(settings));
+		$(control).datepicker('change', convertSettings(settings));
 	},
 
 	/* Set the date for a calendar attached to an input field or division.
@@ -65,7 +65,7 @@ $.extend(PopUpCal.prototype, {
 	   @param  date     Date - the new date
 	   @return void */
 	setDateFor: function(control, date) {
-		$(control).setDatepickerDate(date);
+		$(control).datepickerDate('setDate', date);
 	},
 
 	/* Retrieve the date for a calendar attached to an input field or division.
@@ -73,7 +73,7 @@ $.extend(PopUpCal.prototype, {
 	                    string - the ID or other jQuery selector of the input field
 	   @return Date - the current date */
 	getDateFor: function(control) {
-		return $(control).getDatepickerDate();
+		return $(control).datepicker('getDate');
 	},
 
 	/* Pop-up the calendar for a given input field.
@@ -81,7 +81,7 @@ $.extend(PopUpCal.prototype, {
 	                   string - the ID or other jQuery selector of the input field
 	   @return void */
 	showFor: function(target) {
-		$.datepicker.showFor(target);
+		$(target).datepicker('show');
 	},
 
 	/* Hide the calendar from view.
@@ -140,10 +140,10 @@ $.fn.calendar = function(settings) {
 			}
 		}
 	});
-	return this.attachDatepicker(convertSettings(settings));
+	return this.datepicker(convertSettings(settings));
 };
 
-$.fn.datepicker = $.fn.calendar;
+//$.fn.datepicker = $.fn.calendar;
 
 /* Initialise the calendar. */
 $(document).ready(function() {

@@ -18,70 +18,78 @@
         var method = typeof arguments[0] == 'string' && arguments[0];
         var args = method && Array.prototype.slice.call(arguments, 1) || arguments;
 
-        return this.each(function() {
-            if (method) {
-                var tabs = $.data(this, 'ui-tabs');
-                tabs[method].apply(tabs, args);
-            } else
-                new $.ui.tabs(this, args[0] || {});
-        });
+        return method == 'length' ?
+            $.data(this[0], 'tabs').$tabs.length :
+            this.each(function() {
+                if (method) {
+                    var tabs = $.data(this, 'tabs');
+                    if (tabs) tabs[method].apply(tabs, args);
+                } else
+                    new $.ui.tabs(this, args[0] || {});
+            });
     };
 
     // tabs class
     $.ui.tabs = function(el, options) {
         var self = this;
-
+        
+        this.options = $.extend({}, $.ui.tabs.defaults, options);
         this.element = el;
 
-        this.options = $.extend({
+        // doesn't extend with null
+        if (options.selected === null)
+            this.options.selected = null;
 
-            // basic setup
-            selected: 0,
-            unselect: options.selected === null,
-            event: 'click',
-            disabled: [],
-            cookie: null, // pass options object as expected by cookie plugin: { expires: 7, path: '/', domain: 'jquery.com', secure: true }
-            // TODO bookmarkable: $.ajaxHistory ? true : false,
+        this.options.event += '.tabs'; // namespace event
 
-            // Ajax
-            spinner: 'Loading&#8230;',
-            cache: false,
-            idPrefix: 'ui-tabs-',
-            ajaxOptions: {},
-
-            // animations
-            fx: null, /* e.g. { height: 'toggle', opacity: 'toggle', duration: 200 } */
-
-            // templates
-            tabTemplate: '<li><a href="#{href}"><span>#{label}</span></a></li>',
-            panelTemplate: '<div></div>',
-
-            // CSS classes
-            navClass: 'ui-tabs-nav',
-            selectedClass: 'ui-tabs-selected',
-            unselectClass: 'ui-tabs-unselect',
-            disabledClass: 'ui-tabs-disabled',
-            panelClass: 'ui-tabs-panel',
-            hideClass: 'ui-tabs-hide',
-            loadingClass: 'ui-tabs-loading'
-
-        }, options);
-
-        this.options.event += '.ui-tabs'; // namespace event
-        this.options.cookie = $.cookie && $.cookie.constructor == Function && this.options.cookie;
-
-        $(el).bind('setData.ui-tabs', function(event, key, value) {
-            self.options[key] = value;
-            this.tabify();
-        }).bind('getData.ui-tabs', function(event, key) {
+        $(el).bind('setData.tabs', function(event, key, value) {
+            if ((/^selected/).test(key))
+                self.select(value);
+            else {
+                self.options[key] = value;
+                self.tabify();
+            }
+        }).bind('getData.tabs', function(event, key) {
             return self.options[key];
         });
 
         // save instance for later
-        $.data(el, 'ui-tabs', this);
+        $.data(el, 'tabs', this);
 
         // create tabs
         this.tabify(true);
+    };
+    
+    $.ui.tabs.defaults = {
+        // basic setup
+        selected: 0,
+        unselect: false,
+        event: 'click',
+        disabled: [],
+        cookie: null, // e.g. { expires: 7, path: '/', domain: 'jquery.com', secure: true }
+        // TODO history: false,
+
+        // Ajax
+        spinner: 'Loading&#8230;',
+        cache: false,
+        idPrefix: 'ui-tabs-',
+        ajaxOptions: {},
+
+        // animations
+        fx: null, // e.g. { height: 'toggle', opacity: 'toggle', duration: 200 }
+
+        // templates
+        tabTemplate: '<li><a href="#{href}"><span>#{label}</span></a></li>',
+        panelTemplate: '<div></div>',
+
+        // CSS classes
+        navClass: 'ui-tabs-nav',
+        selectedClass: 'ui-tabs-selected',
+        unselectClass: 'ui-tabs-unselect',
+        disabledClass: 'ui-tabs-disabled',
+        panelClass: 'ui-tabs-panel',
+        hideClass: 'ui-tabs-hide',
+        loadingClass: 'ui-tabs-loading'
     };
 
     // instance methods
@@ -112,15 +120,15 @@
                     self.$panels = self.$panels.add(a.hash);
                 // remote tab
                 else if ($(a).attr('href') != '#') { // prevent loading the page itself if href is just "#"
-                    $.data(a, 'href.ui-tabs', a.href); // required for restore on destroy
-                    $.data(a, 'load.ui-tabs', a.href); // mutable
+                    $.data(a, 'href.tabs', a.href); // required for restore on destroy
+                    $.data(a, 'load.tabs', a.href); // mutable
                     var id = self.tabId(a);
                     a.href = '#' + id;
                     var $panel = $('#' + id);
                     if (!$panel.length) {
                         $panel = $(o.panelTemplate).attr('id', id).addClass(o.panelClass)
                             .insertAfter( self.$panels[i - 1] || self.element );
-                        $panel.data('destroy.ui-tabs', true);
+                        $panel.data('destroy.tabs', true);
                     }
                     self.$panels = self.$panels.add( $panel );
                 }
@@ -137,10 +145,6 @@
                     var $this = $(this);
                     $this.hasClass(o.panelClass) || $this.addClass(o.panelClass);
                 });
-
-                // disabled tabs
-                for (var i = 0, index; index = o.disabled[i]; i++)
-                    this.disable(index);
 
                 // Try to retrieve selected tab:
                 // 1. from fragment identifier in url if present
@@ -175,38 +179,49 @@
                         return false; // break
                     }
                 });
-                var n = this.$lis.length;
-                while (this.$lis.eq(o.selected).hasClass(o.disabledClass) && n) {
-                    o.selected = ++o.selected < this.$lis.length ? o.selected : 0;
-                    n--;
-                }
-                if (!n) // all tabs disabled, set option unselect to true
-                    o.unselect = true;
 
                 // highlight selected tab
                 this.$panels.addClass(o.hideClass);
                 this.$lis.removeClass(o.selectedClass);
-                if (!o.unselect) {
+                if (o.selected !== null) {
                     this.$panels.eq(o.selected).show().removeClass(o.hideClass); // use show and remove class to show in any case no matter how it has been hidden before
                     this.$lis.eq(o.selected).addClass(o.selectedClass);
                 }
 
                 // load if remote tab
-                var href = !o.unselect && $.data(this.$tabs[o.selected], 'load.ui-tabs');
+                var href = o.selected !== null && $.data(this.$tabs[o.selected], 'load.tabs');
                 if (href)
-                    this.load(o.selected, href);
+                    this.load(o.selected);
 
-                // disable click if event is configured to something else
-                if (!(/^click/).test(o.event))
-                    this.$tabs.bind('click', function(e) { e.preventDefault(); });
+                // Take disabling tabs via class attribute from HTML
+                // into account and update option properly...
+                o.disabled = $.unique(o.disabled.concat(
+                    $.map(this.$lis.filter('.' + o.disabledClass),
+                        function(n, i) { return self.$lis.index(n); } )
+                )).sort();
+                
+                // clean up to avoid memory leaks in certain versions of IE 6
+                $(window).bind('unload', function() {
+                    self.$tabs.unbind('.tabs');
+                    self.$lis = self.$tabs = self.$panels = null;
+                });
 
             }
 
+            // disable tabs
+            for (var i = 0, li; li = this.$lis[i]; i++)
+                $(li)[$.inArray(i, o.disabled) != -1 && !$(li).hasClass(o.selectedClass) ? 'addClass' : 'removeClass'](o.disabledClass);
+
+            // reset cache if switching from cached to not cached
+            if (o.cache === false)
+                this.$tabs.removeData('cache.tabs');
+            
+            // set up animations
             var hideFx, showFx, baseFx = { 'min-width': 0, duration: 1 }, baseDuration = 'normal';
             if (o.fx && o.fx.constructor == Array)
-                hideFx = o.fx[0] || baseFx, showFx = o.fx[1] || baseFx;
+                hideFx = o.fx[0] || baseFx, showFx = o.fx[1] || baseFx;
             else
-                hideFx = showFx = o.fx || baseFx;
+                hideFx = showFx = o.fx || baseFx;
 
             // reset some styles to maintain print style sheets etc.
             var resetCSS = { display: '', overflow: '', height: '' };
@@ -236,7 +251,7 @@
                         $show[0].style.filter = '';
 
                     // callback
-                    $(self.element).triggerHandler("show.ui-tabs", [self.ui(clicked, $show[0])]);
+                    $(self.element).triggerHandler('tabsshow', [self.ui(clicked, $show[0])], o.show);
 
                 });
             }
@@ -252,17 +267,22 @@
             }
 
             // attach tab event handler, unbind to avoid duplicates from former tabifying...
-            this.$tabs.unbind(o.event).bind(o.event, function() {
+            this.$tabs.unbind('.tabs').bind(o.event, function() {
 
                 //var trueClick = e.clientX; // add to history only if true click occured, not a triggered click
                 var $li = $(this).parents('li:eq(0)'),
                     $hide = self.$panels.filter(':visible'),
                     $show = $(this.hash);
 
-                // If tab is already selected and not unselectable or tab disabled or click callback returns false stop here.
-                // Check if click handler returns false last so that it is not executed for a disabled tab!
-                if (($li.hasClass(o.selectedClass) && !o.unselect) || $li.hasClass(o.disabledClass)
-                    || $(self.element).triggerHandler("select.ui-tabs", [self.ui(this, $show[0])]) === false) {
+                // If tab is already selected and not unselectable or tab disabled or 
+                // or is already loading or click callback returns false stop here.
+                // Check if click handler returns false last so that it is not executed
+                // for a disabled or loading tab!
+                if (($li.hasClass(o.selectedClass) && !o.unselect)
+                    || $li.hasClass(o.disabledClass) 
+                    || $(this).hasClass(o.loadingClass)
+                    || $(self.element).triggerHandler('tabsselect', [self.ui(this, $show[0])], o.select) === false
+                    ) {
                     this.blur();
                     return false;
                 }
@@ -309,9 +329,15 @@
                     }*/
 
                     var a = this;
-                    self.load(self.$tabs.index(this), function() {
-                        switchTab(a, $li, $hide, $show);
-                    });
+                    self.load(self.$tabs.index(this), $hide.length ? 
+                        function() {
+                            switchTab(a, $li, $hide, $show);
+                        } :
+                        function() {
+                            $li.addClass(o.selectedClass);
+                            showTab(a, $show);
+                        }
+                    );
 
                     // Set scrollbar to saved position - need to use timeout with 0 to prevent browser scroll to target of hash
                     /*var scrollX = window.pageXOffset || document.documentElement && document.documentElement.scrollLeft || document.body.scrollLeft || 0;
@@ -335,71 +361,79 @@
 
             });
 
+            // disable click if event is configured to something else
+            if (!(/^click/).test(o.event))
+                this.$tabs.bind('click.tabs', function() { return false; });
+
         },
         add: function(url, label, index) {
-            if (url && label) {
-                index = index || this.$tabs.length; // append by default
+            if (index == undefined) 
+                index = this.$tabs.length; // append by default
 
-                var o = this.options;
-                var $li = $(o.tabTemplate.replace(/#\{href\}/, url).replace(/#\{label\}/, label));
-                $li.data('destroy.ui-tabs', true);
+            var o = this.options;
+            var $li = $(o.tabTemplate.replace(/#\{href\}/, url).replace(/#\{label\}/, label));
+            $li.data('destroy.tabs', true);
 
-                var id = url.indexOf('#') == 0 ? url.replace('#', '') : this.tabId( $('a:first-child', $li)[0] );
+            var id = url.indexOf('#') == 0 ? url.replace('#', '') : this.tabId( $('a:first-child', $li)[0] );
 
-                // try to find an existing element before creating a new one
-                var $panel = $('#' + id);
-                if (!$panel.length) {
-                    $panel = $(o.panelTemplate).attr('id', id)
-                        .addClass(o.panelClass).addClass(o.hideClass);
-                    $panel.data('destroy.ui-tabs', true);
-                }
-                if (index >= this.$lis.length) {
-                    $li.appendTo(this.element);
-                    $panel.appendTo(this.element.parentNode);
-                } else {
-                    $li.insertBefore(this.$lis[index]);
-                    $panel.insertBefore(this.$panels[index]);
-                }
+            // try to find an existing element before creating a new one
+            var $panel = $('#' + id);
+            if (!$panel.length) {
+                $panel = $(o.panelTemplate).attr('id', id)
+                    .addClass(o.panelClass).addClass(o.hideClass);
+                $panel.data('destroy.tabs', true);
+            }
+            if (index >= this.$lis.length) {
+                $li.appendTo(this.element);
+                $panel.appendTo(this.element.parentNode);
+            } else {
+                $li.insertBefore(this.$lis[index]);
+                $panel.insertBefore(this.$panels[index]);
+            }
+            
+            o.disabled = $.map(o.disabled,
+                function(n, i) { return n >= index ? ++n : n });
+                
+            this.tabify();
 
-                this.tabify();
+            if (this.$tabs.length == 1) {
+                 $li.addClass(o.selectedClass);
+                 $panel.removeClass(o.hideClass);
+                 var href = $.data(this.$tabs[0], 'load.tabs');
+                 if (href)
+                     this.load(index, href);
+            }
 
-                if (this.$tabs.length == 1) {
-                     $li.addClass(o.selectedClass);
-                     $panel.removeClass(o.hideClass);
-                     var href = $.data(this.$tabs[0], 'load.ui-tabs');
-                     if (href)
-                         this.load(index, href);
-                }
-
-                // callback
-                $(this.element).triggerHandler("add.ui-tabs",
-                    [this.ui(this.$tabs[index], this.$panels[index])]
-                );
-
-            } else
-                throw 'jQuery UI Tabs: Not enough arguments to add tab.';
+            // callback
+            $(this.element).triggerHandler('tabsadd',
+                [this.ui(this.$tabs[index], this.$panels[index])], o.add
+            );
         },
         remove: function(index) {
-            if (index && index.constructor == Number) {
-                var o = this.options, $li = this.$lis.eq(index).remove(),
-                    $panel = this.$panels.eq(index).remove();
+            var o = this.options, $li = this.$lis.eq(index).remove(),
+                $panel = this.$panels.eq(index).remove();
 
-                // If selected tab was removed focus tab to the right or
-                // tab to the left if last tab was removed.
-                if ($li.hasClass(o.selectedClass) && this.$tabs.length > 1)
-                    this.click(index + (index < this.$tabs.length ? 1 : -1));
-                this.tabify();
+            // If selected tab was removed focus tab to the right or
+            // in case the last tab was removed the tab to the left.
+            if ($li.hasClass(o.selectedClass) && this.$tabs.length > 1)
+                this.select(index + (index + 1 < this.$tabs.length ? 1 : -1));
 
-                // callback
-                $(this.element).triggerHandler("remove.ui-tabs",
-                    [this.ui($li.find('a')[0], $panel[0])]
-                );
+            o.disabled = $.map($.grep(o.disabled, function(n, i) { return n != index; }),
+                function(n, i) { return n >= index ? --n : n });
 
-            }
+            this.tabify();
+
+            // callback
+            $(this.element).triggerHandler('tabsremove',
+                [this.ui($li.find('a')[0], $panel[0])], o.remove
+            );
         },
         enable: function(index) {
-            var self = this, o = this.options, $li = this.$lis.eq(index);
-            $li.removeClass(o.disabledClass);
+            var o = this.options;
+            if ($.inArray(index, o.disabled) == -1)
+                return;
+                
+            var $li = this.$lis.eq(index).removeClass(o.disabledClass);
             if ($.browser.safari) { // fix disappearing tab (that used opacity indicating disabling) after enabling in Safari 2...
                 $li.css('display', 'inline-block');
                 setTimeout(function() {
@@ -407,27 +441,27 @@
                 }, 0);
             }
 
-            o.disabled = $.map(this.$lis.filter('.' + o.disabledClass),
-                function(n, i) { return self.$lis.index(n); } );
+            o.disabled = $.grep(o.disabled, function(n, i) { return n != index; });
 
             // callback
-            $(this.element).triggerHandler("enable.ui-tabs",
-                [this.ui(this.$tabs[index], this.$panels[index])]
+            $(this.element).triggerHandler('tabsenable',
+                [this.ui(this.$tabs[index], this.$panels[index])], o.enable
             );
 
         },
         disable: function(index) {
             var self = this, o = this.options;
-            this.$lis.eq(index).addClass(o.disabledClass);
+            if (index != o.selected) { // cannot disable already selected tab
+                this.$lis.eq(index).addClass(o.disabledClass);
 
-            o.disabled = $.map(this.$lis.filter('.' + o.disabledClass),
-                function(n, i) { return self.$lis.index(n); } );
+                o.disabled.push(index);
+                o.disabled.sort();
 
-            // callback
-            $(this.element).triggerHandler("disable.ui-tabs",
-                [this.ui(this.$tabs[index], this.$panels[index])]
-            );
-
+                // callback
+                $(this.element).triggerHandler('tabsdisable',
+                    [this.ui(this.$tabs[index], this.$panels[index])], o.disable
+                );
+            }
         },
         select: function(index) {
             if (typeof index == 'string')
@@ -435,27 +469,30 @@
             this.$tabs.eq(index).trigger(this.options.event);
         },
         load: function(index, callback) { // callback is for internal usage only
-            var self = this, o = this.options,
-                $a = this.$tabs.eq(index), a = $a[0];
+            
+            var self = this, o = this.options, $a = this.$tabs.eq(index), a = $a[0],
+                    bypassCache = callback == undefined || callback === false, url = $a.data('load.tabs');
 
-            var url = $a.data('load.ui-tabs');
-
-            // no remote - just finish with callback
-            if (!url) {
-                typeof callback == 'function' && callback();
+            callback = callback || function() {};
+            
+            // no remote or from cache - just finish with callback
+            if (!url || ($.data(a, 'cache.tabs') && !bypassCache)) {
+                callback();
                 return;
             }
 
             // load remote from here on
             if (o.spinner) {
-                var $span = $('span', a), label = $span.html();
-                $span.html('<em>' + o.spinner + '</em>');
+                var $span = $('span', a);
+                $span.data('label.tabs', $span.html()).html('<em>' + o.spinner + '</em>');
             }
             var finish = function() {
                 self.$tabs.filter('.' + o.loadingClass).each(function() {
                     $(this).removeClass(o.loadingClass);
-                    if (o.spinner)
-                        $('span', this).html(label);
+                    if (o.spinner) {
+                        var $span = $('span', this);
+                        $span.html($span.data('label.tabs')).removeData('label.tabs');
+                    }
                 });
                 self.xhr = null;
             };
@@ -464,16 +501,17 @@
                 success: function(r, s) {
                     $(a.hash).html(r);
                     finish();
+                    
                     // This callback is required because the switch has to take
                     // place after loading has completed.
-                    typeof callback == 'function' && callback();
+                    callback();
 
                     if (o.cache)
-                        $.removeData(a, 'load.ui-tabs'); // if loaded once do not load them again
+                        $.data(a, 'cache.tabs', true); // if loaded once do not load them again
 
                     // callback
-                    $(self.element).triggerHandler("load.ui-tabs",
-                        [self.ui(self.$tabs[index], self.$panels[index])]
+                    $(self.element).triggerHandler('tabsload',
+                        [self.ui(self.$tabs[index], self.$panels[index])], o.load
                     );
 
                     o.ajaxOptions.success && o.ajaxOptions.success(r, s);
@@ -491,21 +529,23 @@
 
         },
         url: function(index, url) {
-            this.$tabs.eq(index).data('load.ui-tabs', url);
+            this.$tabs.eq(index).removeData('cache.tabs').data('load.tabs', url);
         },
         destroy: function() {
             var o = this.options;
-            $(this.element).unbind('.ui-tabs')
-                .removeClass(o.navClass).removeData('ui-tabs');
+            $(this.element).unbind('.tabs')
+                .removeClass(o.navClass).removeData('tabs');
             this.$tabs.each(function() {
-                var href = $.data(this, 'href.ui-tabs');
+                var href = $.data(this, 'href.tabs');
                 if (href)
                     this.href = href;
-                $(this).unbind('.ui-tabs')
-                    .removeData('href.ui-tabs').removeData('load.ui-tabs');
+                var $this = $(this).unbind('.tabs');
+                $.each(['href', 'load', 'cache'], function(i, prefix) {
+                      $this.removeData(prefix + '.tabs');
+                });
             });
             this.$lis.add(this.$panels).each(function() {
-                if ($.data(this, 'destroy.ui-tabs'))
+                if ($.data(this, 'destroy.tabs'))
                     $(this).remove();
                 else
                     $(this).removeClass([o.selectedClass, o.unselectClass,

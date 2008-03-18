@@ -42,9 +42,10 @@ def navpane(context):
       <div id="innernavpane">
         <div id="history_nav">
           <div style="white-space:nowrap;">
-            <input type="text" id="edit_date" size="11"/>
+            <label for="search" accesskey="t">Time: </label>
+            <input type="text" id="edit_date" size="10"/>
             <span id="history_time"></span>
-            <img src="/static/go-last.png" id="btn_go_last" class="imagebutton"/>
+            <img src="/static/go-last.png" id="btn_go_present" class="imagebutton"/>
           </div>
           <div id="slider_container">
             <div id="history_slider" class="ui-slider-1" style="margin:10px;">
@@ -54,7 +55,7 @@ def navpane(context):
         </div>
         <ul id="taglist">
         </ul>
-        <div id="errorlog" class="error">
+        <div id="messagearea">
         </div>
       </div>
     </div>

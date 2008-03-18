@@ -4,7 +4,7 @@ jQuery(function($){
 	$.datepicker.regional['de'] = {clearText: 'löschen', clearStatus: 'aktuelles Datum löschen',
 		closeText: 'schließen', closeStatus: 'ohne Änderungen schließen',
 		prevText: '&#x3c;zurück', prevStatus: 'letzten Monat zeigen',
-		nextText: 'Vor&#x3e', nextStatus: 'nächsten Monat zeigen',
+		nextText: 'Vor&#x3e;', nextStatus: 'nächsten Monat zeigen',
 		currentText: 'heute', currentStatus: '',
 		monthNames: ['Januar','Februar','März','April','Mai','Juni',
 		'Juli','August','September','Oktober','November','Dezember'],

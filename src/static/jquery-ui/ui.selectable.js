@@ -5,12 +5,14 @@
 
 	$.fn.extend({
 		selectable: function(options) {
+			var args = Array.prototype.slice.call(arguments, 1); 
+			
 			return this.each(function() {
 				if (typeof options == "string") {
-					var select = $.data(this, "ui-selectable");
-					select[options].apply(select, args);
+					var select = $.data(this, "selectable");
+					if (select) select[options].apply(select, args);
 
-				} else if(!$.data(this, "ui-selectable"))
+				} else if(!$.data(this, "selectable"))
 					new $.ui.selectable(this, options);
 			});
 		}
@@ -21,7 +23,7 @@
 		
 		this.element = $(element);
 		
-		$.data(this.element, "ui-selectable", this);
+		$.data(element, "selectable", this); 
 		this.element.addClass("ui-selectable");
 		
 		this.options = $.extend({
@@ -46,7 +48,7 @@
 			selectees.each(function() {
 				var $this = $(this);
 				var pos = $this.offset();
-				$.data(this, "ui-selectee", {
+				$.data(this, "selectable-item", {
 					element: this,
 					$element: $this,
 					left: pos.left,
@@ -90,9 +92,9 @@
 		destroy: function() {
 			this.element
 				.removeClass("ui-selectable ui-selectable-disabled")
-				.removeData("ui-selectable")
-				.unbind(".selectable");
-			this.removeMouseInteraction();
+				.removeData("selectable")
+				.unbind(".selectable")
+				.removeMouseInteraction();
 		},
 		enable: function() {
 			this.element.removeClass("ui-selectable-disabled");
@@ -135,7 +137,7 @@
 			}
 
 			this.selectees.filter('.ui-selected').each(function() {
-				var selectee = $.data(this, "ui-selectee");
+				var selectee = $.data(this, "selectable-item");
 				selectee.startselected = true;
 				if (!ev.ctrlKey) {
 					selectee.$element.removeClass('ui-selected');
@@ -165,7 +167,7 @@
 			this.helper.css({left: x1, top: y1, width: x2-x1, height: y2-y1});
 
 			this.selectees.each(function() {
-				var selectee = $.data(this, "ui-selectee");
+				var selectee = $.data(this, "selectable-item");
 				//prevent helper from being selected if appendTo: selectable
 				if (selectee.element == element)
 					return;
@@ -243,7 +245,7 @@
 			var options = this.options;
 
 			$('.ui-unselecting', this.element).each(function() {
-				var selectee = $.data(this, "ui-selectee");
+				var selectee = $.data(this, "selectable-item");
 				selectee.$element.removeClass('ui-unselecting');
 				selectee.unselecting = false;
 				selectee.startselected = false;
@@ -254,7 +256,7 @@
 				}], options.unselected);
 			});
 			$('.ui-selecting', this.element).each(function() {
-				var selectee = $.data(this, "ui-selectee");
+				var selectee = $.data(this, "selectable-item");
 				selectee.$element.removeClass('ui-selecting').addClass('ui-selected');
 				selectee.selecting = false;
 				selectee.selected = true;

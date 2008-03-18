@@ -1,4 +1,4 @@
-/* jQuery UI Date Picker v3.3 compatibility with jQuery UI Date Picker v3.2.
+/* jQuery UI Date Picker v3.4 compatibility with jQuery UI Date Picker v3.2.
    Written by Marc Grabanski (m@marcgrabanski.com) and Keith Wood (kbwood@virginbroadband.com.au).
 
    Copyright (c) 2007 Marc Grabanski (http://marcgrabanski.com/code/ui-datepicker)
@@ -8,42 +8,40 @@
 
 (function($) { // hide the namespace
 
-/* Attach the date picker to a jQuery selection.
-   @param  settings  object - the new settings to use for this date picker instance (anonymous)
-   @return jQuery object - for chaining further calls */
-$.fn.datepicker = function(settings) {
-	return this.attachDatepicker(settings);
-};
-
 $(document).ready(function() {
 	// Add the old functions back again
 	$.extend($.datepicker, {
 		enableFor: function(control) {
-			(control.jquery ? control : $(control)).enableDatepicker();
+			$(control).datepicker('enable');
 			return this;
 		},
 	
 		disableFor: function(control) {
-			(control.jquery ? control : $(control)).disableDatepicker();
+			$(control).datepicker('disable');
 			return this;
 		},
 	
 		isDisabled: function(control) {
-			return (control.jquery ? control : $(control)).isDisabledDatepicker();
+			return $(control).datepicker('isDisabled');
 		},
 
 		reconfigureFor: function(control, settings) {
-			(control.jquery ? control : $(control)).changeDatepicker(settings);
+			$(control).datepicker('change', settings);
+			return this;
+		},
+		
+		showFor: function(control) {
+			$(control).datepicker('show');
 			return this;
 		},
 
 		setDateFor: function(control, date, endDate) {
-			(control.jquery ? control : $(control)).setDatepickerDate(date, endDate);
+			$(control).datepicker('setDate', date, endDate);
 			return this;
 		},
 
 		getDateFor: function(control) {
-			return (control.jquery ? control : $(control)).getDatepickerDate();
+			return $(control).datepicker('getDate');
 		}
 	});
 });

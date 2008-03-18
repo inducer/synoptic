@@ -79,6 +79,7 @@
 		start: function(e,ui) {
 
 			var o = ui.options;
+			var self = ui.instance;
 			if((o.containment.left != undefined || o.containment.constructor == Array) && !o._containment) return;
 			if(!o._containment) o._containment = o.containment;
 
@@ -102,26 +103,14 @@
 					co.top+(ce.offsetHeight || ce.scrollHeight)
 				];
 			}
-
-		},
-		drag: function(e,ui) {
-
-			var o = ui.options;
-			var h = ui.helper;
-			var c = o.containment;
-			var self = ui.instance;
 			
-			if(c.constructor == Array) {
-				if((ui.absolutePosition.left < c[0])) self.position.left = c[0] - (self.offset.left - self.clickOffset.left);
-				if((ui.absolutePosition.top < c[1])) self.position.top = c[1] - (self.offset.top - self.clickOffset.top);
-				if(ui.absolutePosition.left - c[2] + self.helperProportions.width >= 0) self.position.left = c[2] - (self.offset.left - self.clickOffset.left) - self.helperProportions.width;
-				if(ui.absolutePosition.top - c[3] + self.helperProportions.height >= 0) self.position.top = c[3] - (self.offset.top - self.clickOffset.top) - self.helperProportions.height;
-			} else {
-				if((ui.position.left < c.left)) self.position.left = c.left;
-				if((ui.position.top < c.top)) self.position.top = c.top;
-				if(ui.position.left - self.offsetParent.innerWidth() + self.helperProportions.width + c.right + (parseInt(self.offsetParent.css("borderLeftWidth"), 10) || 0) + (parseInt(self.offsetParent.css("borderRightWidth"), 10) || 0) >= 0) self.position.left = self.offsetParent.innerWidth() - self.helperProportions.width - c.right - (parseInt(self.offsetParent.css("borderLeftWidth"), 10) || 0) - (parseInt(self.offsetParent.css("borderRightWidth"), 10) || 0);
-				if(ui.position.top - self.offsetParent.innerHeight() + self.helperProportions.height + c.bottom + (parseInt(self.offsetParent.css("borderTopWidth"), 10) || 0) + (parseInt(self.offsetParent.css("borderBottomWidth"), 10) || 0) >= 0) self.position.top = self.offsetParent.innerHeight() - self.helperProportions.height - c.bottom - (parseInt(self.offsetParent.css("borderTopWidth"), 10) || 0) - (parseInt(self.offsetParent.css("borderBottomWidth"), 10) || 0);
-			}
+			var c = o.containment;
+			ui.instance.setContrains(
+				c[0] - (self.offset.left - self.clickOffset.left), //min left
+				c[2] - (self.offset.left - self.clickOffset.left), //max left
+				c[1] - (self.offset.top - self.clickOffset.top), //min top
+				c[3] - (self.offset.top - self.clickOffset.top) //max top
+			);
 
 		}
 	});
@@ -129,8 +118,12 @@
 	$.ui.plugin.add("draggable", "grid", {
 		drag: function(e,ui) {
 			var o = ui.options;
-			ui.instance.position.left = ui.instance.originalPosition.left + Math.round((e.pageX - ui.instance._pageX) / o.grid[0]) * o.grid[0];
-			ui.instance.position.top = ui.instance.originalPosition.top + Math.round((e.pageY - ui.instance._pageY) / o.grid[1]) * o.grid[1];
+			var newLeft = ui.instance.originalPosition.left + Math.round((e.pageX - ui.instance._pageX) / o.grid[0]) * o.grid[0];
+			var newTop = ui.instance.originalPosition.top + Math.round((e.pageY - ui.instance._pageY) / o.grid[1]) * o.grid[1];
+			
+			ui.instance.position.left = newLeft;
+			ui.instance.position.top = newTop;
+
 		}
 	});
 

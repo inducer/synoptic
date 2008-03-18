@@ -4,3 +4,4 @@ build
 *.db
 dist
 *egg-info
+.svn

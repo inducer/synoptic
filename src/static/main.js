@@ -1,3 +1,5 @@
+var msgnum = 0;
+
 function busy(what)
 {
   return '<img src="/static/busy.gif" alt="Busy" /> '+what;
@@ -6,9 +8,23 @@ function busy(what)
 
 
 
+function set_message(what, timeout)
+{
+  ++msgnum;
+  $("#messagearea").append(
+      ('<div id="msg_[id]" class="message">'+what+'</div>').allreplace("[id]", msgnum));
+  var my_msg = $("#msg_"+msgnum);
+
+  if (timeout  == undefined)
+    timeout = "10s";
+
+  $("#messagearea").oneTime(timeout, function()
+      { my_msg.remove(); })
+}
+
 function report_error(what)
 {
-  $("#errorlog").html(what);
+  set_message(what);
 }
 
 
@@ -113,8 +129,8 @@ ItemManager.method("fill_item_div", function()
       this.div.html(
         (
         '<div class="editcontrols">'+
-        '<input type="button" id="btn_make_current_[id]" value="Revert"> '+
-        '<input type="button" id="copy_to_present_[id]" value="Copy to Present"> '+
+        '<input type="button" id="btn_revert_[id]" value="Revert"> '+
+        '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"> '+
         'Tags: [tags]'+
         '</div>'+
         '<div>[contents]</div>'
@@ -122,6 +138,36 @@ ItemManager.method("fill_item_div", function()
         .allreplace('[tags]', this.tags)
         .allreplace('[contents]', this.contents_html)
         );
+      $('#btn_revert_'+this.id).click(function()
+        { 
+          $.ajax({
+            type: 'POST',
+            dataType: 'json',
+            url: '/item/store',
+            data: {json: JSON.stringify({
+              id: self.id,
+              tags: self.tags,
+              contents: self.contents
+            })},
+            error: function(req, stat, err) { report_error("Revert failed."); },
+            success: function(data, msg) { set_message("Revert successful."); }
+          });
+        });
+      $('#btn_copy_to_present_'+this.id).click(function()
+        { 
+          $.ajax({
+            type: 'POST',
+            dataType: 'json',
+            url: '/item/store',
+            data: {json: JSON.stringify({
+              id: null,
+              tags: self.tags,
+              contents: self.contents
+            })},
+            error: function(req, stat, err) { report_error("Copy failed."); },
+            success: function(data, msg) { set_message("Copy successful."); }
+          });
+        });
     }
   }
 });
@@ -270,6 +316,18 @@ function ItemCollectionManager()
 
   // setup history slider
   $("#history_slider").slider({
+      slide: function(e, ui)
+        {
+          if (self.tsrange == null)
+            return;
+
+          if (ui.value == 100)
+            self.show_time(null);
+          else
+            var new_time = self.tsrange.min 
+              + ui.value/100.*(self.tsrange.max-self.tsrange.min);
+            self.show_time(new_time);
+        },
       change: function(e, ui)
         {
           if (self.tsrange == null)
@@ -287,7 +345,36 @@ function ItemCollectionManager()
 
   // setup history datepicker
   $("#edit_date").datepicker();
+
+  $("#btn_go_present").click(function()
+    { self.set_time(null, "button"); });
+
+  $("#edit_date").val('');
+  $("#history_time").html('present');
 }
+
+ItemCollectionManager.method("show_time", function(new_time)
+{
+  if (this.tsrange == undefined)
+  {
+    report_error("Cannot set date until timestamp range has been received.");
+    return;
+  }
+
+  var dt = null;
+  if (new_time != null)
+  {
+    dt = new Date(new_time*1000);
+    $("#history_time").html(dt.getHours()+":"+dt.getMinutes()+":"+dt.getSeconds());
+  }
+  else
+    $("#history_time").html('present');
+
+  if (dt != null)
+    $("#edit_date").val((dt.getMonth()+1)+"/"+dt.getDate()+"/"+dt.getFullYear());
+  else
+    $("#edit_date").val('');
+});
 
 ItemCollectionManager.method("set_time", function(new_time, origin)
 {
@@ -299,23 +386,8 @@ ItemCollectionManager.method("set_time", function(new_time, origin)
 
   this.view_time = new_time;
   this.update();
+  this.show_time(new_time);
 
-  var dt = null;
-  if (new_time != null)
-  {
-    dt = new Date(new_time*1000);
-    $("#history_time").html(dt.getHours()+":"+dt.getMinutes()+":"+dt.getSeconds());
-  }
-  else
-    $("#history_time").html('');
-
-  if (origin != "picker")
-  {
-    if (dt != null)
-      $("#edit_date").setDatepickerDate(dt);
-    else
-      $("#edit_date").val("");
-  }
   if (origin != "slider")
   {
     var new_percentage = (new_time-this.tsrange.min)
@@ -396,6 +468,8 @@ ItemCollectionManager.method("fill", function(query, timestamp)
 // functions  ------------------------------------------------------------------
 $(document).ready(function()
 {
+  set_message("Welcome to Synoptic.");
+
   document.item_manager = new ItemCollectionManager();
   document.item_manager.update();
 });

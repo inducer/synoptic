@@ -1,5 +1,5 @@
 /*
- * jQuery UI Accordion 1.5
+ * jQuery UI Accordion
  * 
  * Copyright (c) 2007 Jörn Zaefferer
  *
@@ -9,7 +9,7 @@
  *   http://www.opensource.org/licenses/mit-license.php
  *   http://www.gnu.org/licenses/gpl.html
  *
- * Revision: $Id: jquery.accordion.js 4529 2008-01-24 18:41:30Z joern.zaefferer $
+ * Revision: $Id: ui.accordion.js 5048 2008-03-17 09:23:12Z joern.zaefferer $
  *
  */
 
@@ -24,11 +24,12 @@ $.fn.extend({
 
 		return this.each(function() {
 			if (typeof options == "string") {
-				var accordion = $.data(this, "ui-accordion");
-				accordion[options].apply(accordion, args);
+				var accordion = $.data(this, "accordion");
+				if (accordion)
+					accordion[options].apply(accordion, args);
 			// INIT with optional options
 			} else if (!$(this).is(".ui-accordion"))
-				$.data(this, "ui-accordion", new $.ui.accordion(this, options));
+				$.data(this, "accordion", new $.ui.accordion(this, options));
 		});
 	},
 	// deprecated, use accordion("activate", index) instead
@@ -70,7 +71,7 @@ $.ui.accordion = function(container, options) {
 		options.headers.next().each(function() {
 			maxPadding = Math.max(maxPadding, $(this).innerHeight() - $(this).height());
 		}).height(maxHeight - maxPadding);
-	} else if ( options.autoheight ) {
+	} else if ( options.autoHeight ) {
 		var maxHeight = 0;
 		options.headers.next().each(function() {
 			maxHeight = Math.max(maxHeight, $(this).outerHeight());
@@ -84,7 +85,7 @@ $.ui.accordion = function(container, options) {
 	options.active.parent().andSelf().addClass(options.selectedClass);
 	
 	if (options.event)
-		$(container).bind((options.event || "") + ".ui-accordion", clickHandler);
+		$(container).bind((options.event) + ".accordion", clickHandler);
 };
 
 $.ui.accordion.prototype = {
@@ -103,11 +104,11 @@ $.ui.accordion.prototype = {
 	},
 	destroy: function() {
 		this.options.headers.next().css("display", "");
-		if ( this.options.fillSpace || this.options.autoheight ) {
+		if ( this.options.fillSpace || this.options.autoHeight ) {
 			this.options.headers.next().css("height", "");
 		}
-		$.removeData(this.element, "ui-accordion");
-		$(this.element).removeClass("ui-accordion").unbind(".ui-accordion");
+		$.removeData(this.element, "accordion");
+		$(this.element).removeClass("ui-accordion").unbind(".accordion");
 	}
 };
 
@@ -119,9 +120,9 @@ function scopeCallback(callback, scope) {
 
 function completed(cancel) {
 	// if removed while animated data can be empty
-	if (!$.data(this, "ui-accordion"))
+	if (!$.data(this, "accordion"))
 		return;
-	var instance = $.data(this, "ui-accordion");
+	var instance = $.data(this, "accordion");
 	var options = instance.options;
 	options.running = cancel ? 0 : --options.running;
 	if ( options.running )
@@ -132,11 +133,11 @@ function completed(cancel) {
 			overflow: ""
 		});
 	}
-	$(this).triggerHandler("change.ui-accordion", [options.data], options.change);
+	$(this).triggerHandler("accordionchange", [options.data], options.change);
 }
 
 function toggle(toShow, toHide, data, clickedActive, down) {
-	var options = $.data(this, "ui-accordion").options;
+	var options = $.data(this, "accordion").options;
 	options.toShow = toShow;
 	options.toHide = toHide;
 	options.data = data;
@@ -152,7 +153,7 @@ function toggle(toShow, toHide, data, clickedActive, down) {
 				toHide: toHide,
 				complete: complete,
 				down: down,
-				autoheight: options.autoheight
+				autoHeight: options.autoHeight
 			});
 		} else {
 			$.ui.accordion.animations[options.animated]({
@@ -160,7 +161,7 @@ function toggle(toShow, toHide, data, clickedActive, down) {
 				toHide: toHide,
 				complete: complete,
 				down: down,
-				autoheight: options.autoheight
+				autoHeight: options.autoHeight
 			});
 		}
 	} else {
@@ -175,7 +176,7 @@ function toggle(toShow, toHide, data, clickedActive, down) {
 }
 
 function clickHandler(event) {
-	var options = $.data(this, "ui-accordion").options;
+	var options = $.data(this, "accordion").options;
 	if (options.disabled)
 		return false;
 	
@@ -255,7 +256,7 @@ $.extend($.ui.accordion, {
 		animated: 'slide',
 		event: "click",
 		header: "a",
-		autoheight: true,
+		autoHeight: true,
 		running: 0,
 		navigationFilter: function() {
 			return this.href.toLowerCase() == location.href.toLowerCase();
@@ -286,7 +287,7 @@ $.extend($.ui.accordion, {
 				duration: options.duration,
 				easing: options.easing,
 				complete: function() {
-					if ( !options.autoheight ) {
+					if ( !options.autoHeight ) {
 						options.toShow.css("height", "auto");
 					}
 					options.complete();

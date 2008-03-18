@@ -7,33 +7,48 @@
  *
  * http://docs.jquery.com/UI/TabsExtensions
  */
- 
+
 (function($) {
-    
+
     /*
      * Rotate
      */
     $.extend($.ui.tabs.prototype, {
         rotation: null,
-        rotate: function(ms) {
-            var self = this;
+        rotate: function(ms, continuing) {
+            
+            continuing = continuing || false;
+            
+            var self = this, t = this.options.selected;
+            
+            function start() {
+                self.rotation = setInterval(function() {
+                    t = ++t < self.$tabs.length ? t : 0;
+                    self.select(t);
+                }, ms);    
+            }
+            
             function stop(e) {
-                if (e.clientX) { // only in case of a true click
+                if (!e || e.clientX) { // only in case of a true click
                     clearInterval(self.rotation);
                 }
             }
+            
             // start interval
             if (ms) {
-                var t = this.options.selected;
-                this.rotation = setInterval(function() {
-                    t = ++t < self.$tabs.length ? t : 0;
-                    self.click(t);
-                }, ms);
-                this.$tabs.bind(this.options.event, stop);
+                start();
+                if (!continuing)
+                    this.$tabs.bind(this.options.event, stop);
+                else
+                    this.$tabs.bind(this.options.event, function() {
+                        stop();
+                        t = self.options.selected;
+                        start();
+                    });
             }
             // stop interval
             else {
-                clearInterval(this.rotation);
+                stop();
                 this.$tabs.unbind(this.options.event, stop);
             }
         }

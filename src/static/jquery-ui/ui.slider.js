@@ -1,292 +1,323 @@
 (function($) {
 
-	//Web Forms 2.0
-	if(window['webforms']) {
-		$(document).ready(function() {
+	$.fn.extend({
+		slider: function(options) {
+			var args = Array.prototype.slice.call(arguments, 1);
 			
-			$("input").each(function() {
-				if(this.getAttribute("type") == "range") {
-					var cur = $(this);
-					var slider = $("<div class='ui-slider'></div>").css({ width: cur.innerWidth()+"px", height: cur.innerHeight()+"px" }).insertAfter(cur);
-					var handle = $("<div class='ui-slider-handle'></div>").appendTo(slider);
+			if ( options == "value" )
+				return $.data(this[0], "slider").value(arguments[1]);
+			
+			return this.each(function() {
+				if (typeof options == "string") {
+					var slider = $.data(this, "slider");
+					if (slider) slider[options].apply(slider, args);
 
-
-					slider.css({
-						"position": cur.css("position") == "absolute" ? "absolute" : "relative",
-						"left": cur.css("left"),
-						"right": cur.css("right"),
-						"zIndex": cur.css("zIndex"),
-						"float": cur.css("float"),
-						"clear": cur.css("clear")
-					});
-					cur.css({ position: "absolute", opacity: 0, top: "-1000px", left: "-1000px" });
-					
-					slider.slider({
-						maxValue: cur.attr("max"),
-						minValue: cur.attr("min"),
-						startValue: this.getAttribute("value"),
-						stepping: cur.attr("step"),
-						change: function(e, ui) { cur[0].value = ui.value; cur[0].setAttribute("value", ui.value); }
-					});
-					
-					slider = slider.sliderInstance();
-					
-					cur.bind("keydown", function(e) {
-						var o = slider.interaction.options;
-						switch(e.keyCode) {
-							case 37:
-								slider.moveTo(slider.interaction.curValue+o.minValue-(o.stepping || 1));
-								break;
-							case 39:
-								slider.moveTo(slider.interaction.curValue+o.minValue+(o.stepping || 1));
-								break;	
-						}
-						if(e.keyCode != 9) return false;
-					});
-					
-				};	
+				} else if(!$.data(this, "slider"))
+					new $.ui.slider(this, options);
 			});
-				
-		});
-	}
+		}
+	});
+	
+	$.ui.slider = function(element, options) {
 
-	//Make nodes selectable by expression
-	$.extend($.expr[':'], { slider: "(' '+a.className+' ').indexOf(' ui-slider ') != -1" });
-	
-	$.fn.slider = function(o) {
-		return this.each(function() {
-			new $.ui.slider(this, o);
-		});
-	}
-	
-	//Macros for external methods that support chaining
-	var methods = "destroy,enable,disable,moveTo".split(",");
-	for(var i=0;i<methods.length;i++) {
-		var cur = methods[i], f;
-		eval('f = function() { var a = arguments; return this.each(function() { if(jQuery(this).is(".ui-slider")) jQuery.data(this, "ui-slider")["'+cur+'"](a); }); }');
-		$.fn["slider"+cur.substr(0,1).toUpperCase()+cur.substr(1)] = f;
-	};
-	
-	//get instance method
-	$.fn.sliderInstance = function() {
-		if($(this[0]).is(".ui-slider")) return $.data(this[0], "ui-slider");
-		return false;
-	};
-	
-	$.ui.slider = function(el, o) {
-		
-		var options = {};
-		o = o || {};
-		$.extend(options, o);
-		$.extend(options, {
-			axis: o.axis || (el.offsetWidth < el.offsetHeight ? 'vertical' : 'horizontal'),
-			maxValue: parseInt(o.maxValue) || 100,
-			minValue: parseInt(o.minValue) || 0,
-			startValue: parseInt(o.startValue) || 0,
-			_start: function(h, p, c, t, e) {
-				self.start.apply(t, [self, e]); // Trigger the start callback				
-			},
-			_beforeStop: function(h, p, c, t, e) {
-				self.stop.apply(t, [self, e]); // Trigger the start callback
-			},
-			_drag: function(h, p, c, t, e) {
-				self.drag.apply(t, [self, e]); // Trigger the start callback
-			},
-			startCondition: function() {
-				return !self.disabled;
-			}			
-		});
-
+		//Initialize needed constants
 		var self = this;
-		var o = options;
-		$.data(el, "ui-slider", this);
-		o.stepping = parseInt(o.stepping) || (o.steps ? o.maxValue/o.steps : 0);
-		o.realValue = (o.maxValue - o.minValue);
+		this.element = $(element);
+		$.data(element, "slider", this);
+		this.element.addClass("ui-slider");
+		
+		//Prepare the passed options
+		this.options = $.extend({}, $.ui.slider.defaults, options);
+		var o = this.options;
+		$.extend(o, {
+			axis: o.axis || (element.offsetWidth < element.offsetHeight ? 'vertical' : 'horizontal'),
+			maxValue: !isNaN(parseInt(o.maxValue,10)) ? parseInt(o.maxValue, 10) :  100,
+			minValue: parseInt(o.minValue,10) || 0
+		});
+		
+		//Prepare the real maxValue
+		o.realMaxValue = o.maxValue - o.minValue;
+		
+		//Calculate stepping based on steps
+		o.stepping = parseInt(o.stepping, 10) || (o.steps ? o.realMaxValue/o.steps : 0);
+		
+		$(element).bind("setData.slider", function(event, key, value){
+			self.options[key] = value;
+		}).bind("getData.slider", function(event, key){
+			return self.options[key];
+		});
 
-
-		this.handle = options.handle ? $(options.handle, el) : $('.ui-slider-handle', el);
-		if(this.handle.length == 1) {
-			this.interaction = new $.ui.mouseInteraction(this.handle[0], options);
-			this.multipleHandles = false;
-		} else {
-			this.interactions = [];
-			this.handle.each(function() {
-				self.interactions.push(new $.ui.mouseInteraction(this, options));
+		//Initialize mouse and key events for interaction
+		this.handle = $(o.handle, element);
+		if (!this.handle.length) {
+			self.handle = self.generated = $(o.handles || [0]).map(function() {
+				var handle = $("<div/>").addClass("ui-slider-handle").appendTo(element);
+				if (this.id)
+					handle.attr("id", this.id);
+				return handle[0];
 			});
-			this.multipleHandles = true;
 		}
+		$(this.handle)
+			.mouseInteraction({
+				executor: this,
+				delay: o.delay,
+				distance: o.distance || 0,
+				dragPrevention: o.prevention ? o.prevention.toLowerCase().split(',') : ['input','textarea','button','select','option'],
+				start: this.start,
+				stop: this.stop,
+				drag: this.drag,
+				condition: function(e, handle) {
+					if(!this.disabled) {
+						if(this.currentHandle) this.blur(this.currentHandle);
+						this.focus(handle,1);
+						return !this.disabled;
+					}
+				}
+			})
+			.wrap('<a href="javascript:void(0)"></a>')
+			.parent()
+				.bind('focus', function(e) { self.focus(this.firstChild); })
+				.bind('blur', function(e) { self.blur(this.firstChild); })
+				.bind('keydown', function(e) {
+					if(/(37|39)/.test(e.keyCode)) {
+						self.moveTo((e.keyCode == 37 ? '-' : '+') + '=' + self.oneStep(),this.firstChild);
+					}
+				})
+		;
 		
-		this.element = el;
-		$(this.element).addClass("ui-slider");
+		//Position the node
+		if(o.helper == 'original' && (this.element.css('position') == 'static' || this.element.css('position') == '')) this.element.css('position', 'relative');
 		
-		
+		//Prepare dynamic properties for later use
 		if(o.axis == 'horizontal') {
-			this.parentSize = $(this.element).outerWidth() - this.handle.outerWidth();
-			this.prop = 'left';
+			this.size = this.element.outerWidth();
+			this.properties = ['left', 'width'];
+		} else {
+			this.size = this.element.outerHeight();
+			this.properties = ['top', 'height'];
 		}
 		
-		if(o.axis == 'vertical') {
-			this.parentSize = $(this.element).outerHeight() - this.handle.outerHeight();
-			this.prop = 'top';
-		}
+		//Bind the click to the slider itself
+		this.element.bind('click.slider', function(e) { self.click.apply(self, [e]); });
 		
-		if(!this.multipleHandles) {
-			$(el).bind('click', function(e) { self.click.apply(self, [e]); });
-			if(!isNaN(o.startValue)) this.moveTo(o.startValue,options.realValue, null, false);
-		}
+		//Move the first handle to the startValue
+		$.each(o.handles || [], function(index, handle) {
+			self.moveTo(handle.start, index, true);
+		});
+		if (!isNaN(o.startValue))
+			this.moveTo(o.startValue, 0, true);
 		
-	}
+		//If we only have one handle, set the previous handle to this one to allow clicking before selecting the handle
+		if(this.handle.length == 1) this.previousHandle = this.handle;
+		
+		
+		if(this.handle.length == 2 && o.range) this.createRange();
+	
+	};
 	
 	$.extend($.ui.slider.prototype, {
-		currentTarget: null,
-		lastTarget: null,
+		plugins: {},
+		createRange: function() {
+			this.rangeElement = $('<div></div>')
+				.addClass('ui-slider-range')
+				.css({ position: 'absolute' })
+				.appendTo(this.element);
+			this.updateRange();
+		},
+		updateRange: function() {
+				this.rangeElement.css(this.properties[0], parseInt($(this.handle[0]).css(this.properties[0]),10) + this.handleSize(0)/2);
+				this.rangeElement.css(this.properties[1], parseInt($(this.handle[1]).css(this.properties[0]),10) - parseInt($(this.handle[0]).css(this.properties[0]),10));
+		},
+		getRange: function() {
+			return this.rangeElement ? this.convertValue(parseInt(this.rangeElement.css(this.properties[1]),10)) : null;
+		},
+		ui: function(e) {
+			return {
+				instance: this,
+				options: this.options,
+				handle: this.currentHandle,
+				value: this.value(),
+				range: this.getRange()
+			};
+		},
+		propagate: function(n,e) {
+			$.ui.plugin.call(this, n, [e, this.ui()]);
+			this.element.triggerHandler(n == "slide" ? n : "slide"+n, [e, this.ui()], this.options[n]);
+		},
 		destroy: function() {
-			$(this.element).removeClass("ui-slider").removeClass("ui-slider-disabled");
-			this.interaction.destroy();
+			this.element
+				.removeClass("ui-slider ui-slider-disabled")
+				.removeData("slider")
+				.unbind(".slider");
+			this.handle.removeMouseInteraction();
+			this.generated && this.generated.remove();
 		},
 		enable: function() {
-			$(this.element).removeClass("ui-slider-disabled");
+			this.element.removeClass("ui-slider-disabled");
 			this.disabled = false;
 		},
 		disable: function() {
-			$(this.element).addClass("ui-slider-disabled");
+			this.element.addClass("ui-slider-disabled");
 			this.disabled = true;
 		},
-		nonvalidRange: function(self) {
-
-			for(var i=0;i<this.interactions.length;i++) {
-				if(self == this.interactions[i]) {
-					if(this.interactions[i-1]) {
-						if(this.interactions[i-1].curValue > this.interactions[i].curValue) return this.interactions[i-1].curValue;
-					}
-					
-					if(this.interactions[i+1]) {
-						if(this.interactions[i+1].curValue < this.interactions[i].curValue) return this.interactions[i+1].curValue;
-					}
-				}
-			}
-			
-			return false;
-			
+		focus: function(handle,hard) {
+			this.currentHandle = $(handle).addClass('ui-slider-handle-active');
+			if(hard) this.currentHandle.parent()[0].focus();
 		},
-		prepareCallbackObj: function(self,m) {
-			
-			var cur = this;
-			var func = function() {
-				var retVal = [];
-				for(var i=0;i<cur.interactions.length;i++) {
-					retVal.push((cur.interactions[i].curValue || 0)+self.options.minValue);
-				}
-				return retVal;
-			};
-			
-			return {
-				handle: self.helper,
-				pixel: m,
-				value: self.curValue+self.options.minValue,
-				values: this.multipleHandles ? func() : self.curValue+self.options.minValue,
-				slider: self	
-			}			
+		blur: function(handle) {
+			$(handle).removeClass('ui-slider-handle-active');
+			if(this.currentHandle && this.currentHandle[0] == handle) { this.previousHandle = this.currentHandle; this.currentHandle = null; };
+		},
+		value: function(handle) {
+			if(this.handle.length == 1) this.currentHandle = this.handle;
+			var value = ((parseInt($(handle != undefined ? this.handle[handle] || handle : this.currentHandle).css(this.properties[0]),10) / (this.size - this.handleSize())) * this.options.realMaxValue) + this.options.minValue;
+			var o = this.options;
+			if (o.stepping) {
+			    value = Math.round(value / o.stepping) * o.stepping;
+			}
+			return value;
+		},
+		convertValue: function(value) {
+			return this.options.minValue + (value / (this.size - this.handleSize())) * this.options.realMaxValue;
+		},
+		translateValue: function(value) {
+			return ((value - this.options.minValue) / this.options.realMaxValue) * (this.size - this.handleSize());
+		},
+		handleSize: function(handle) {
+			return $(handle != undefined ? this.handle[handle] : this.currentHandle)['outer'+this.properties[1].substr(0,1).toUpperCase()+this.properties[1].substr(1)]();	
 		},
 		click: function(e) {
-			var o = this.interaction.options;
+		
+			// This method is only used if:
+			// - The user didn't click a handle
+			// - The Slider is not disabled
+			// - There is a current, or previous selected handle (otherwise we wouldn't know which one to move)
 			var pointer = [e.pageX,e.pageY];
-			var offset = $(this.interaction.element).offsetParent().offset({ border: false });
-			if(this.interaction.element == e.target || this.disabled) return;
+			var clickedHandle = false; this.handle.each(function() { if(this == e.target) clickedHandle = true;  });
+			if(clickedHandle || this.disabled || !(this.currentHandle || this.previousHandle)) return;
+
+			//If a previous handle was focussed, focus it again
+			if(this.previousHandle) this.focus(this.previousHandle, 1);
 			
-			this.interaction.pickValue = this.interaction.curValue;
-			this.drag.apply(this.interaction, [this, e, [pointer[0]-offset.left-this.handle[0].offsetWidth/2,pointer[1]-offset.top-this.handle[0].offsetHeight/2]]);
-			
-			if(this.interaction.pickValue != this.interaction.curValue)
-				$(this.element).triggerHandler("slidechange", [e, this.prepareCallbackObj(this.interaction)], o.change);
-				
+			//Move focussed handle to the clicked position
+			this.offset = this.element.offset();
+			this.moveTo(this.convertValue(e[this.properties[0] == 'top' ? 'pageY' : 'pageX'] - this.offset[this.properties[0]] - this.handleSize()/2));
 		},
-		start: function(that, e) {
+		start: function(e, handle) {
 			
 			var o = this.options;
-			$(that.element).triggerHandler("slidestart", [e, that.prepareCallbackObj(this)], o.start);
-			this.pickValue = this.curValue;
 			
+			this.offset = this.element.offset();
+			this.handleOffset = this.currentHandle.offset();
+			this.clickOffset = { top: e.pageY - this.handleOffset.top, left: e.pageX - this.handleOffset.left };
+			this.firstValue = this.value();
+			
+			this.propagate('start', e);
 			return false;
 						
 		},
-		stop: function(that, e) {			
-			
-			var o = this.options;
-			$(that.element).triggerHandler("slidestop", [e, that.prepareCallbackObj(this)], o.stop);
-			if(this.pickValue != this.curValue) $(that.element).triggerHandler("slidechange", [e, that.prepareCallbackObj(this)], o.change);
-
+		stop: function(e) {
+			this.propagate('stop', e);
+			if (this.firstValue != this.value())
+				this.propagate('change', e);
 			return false;
-			
 		},
-		drag: function(that, e, pos) {
-
+		
+		oneStep: function() {
+			return this.options.stepping ? this.options.stepping : (this.options.realMaxValue / this.size) * 5;
+		},
+		
+		translateRange: function(value) {
+			if (this.rangeElement) {
+				if (this.currentHandle[0] == this.handle[0] && value >= this.translateValue(this.value(1)))
+					value = this.translateValue(this.value(1) - this.oneStep());
+				if (this.currentHandle[0] == this.handle[1] && value <= this.translateValue(this.value(0)))
+					value = this.translateValue(this.value(0) + this.oneStep());
+			}
+			if (this.options.handles) {
+				var handle = this.options.handles[this.handleIndex()];
+				if (value < this.translateValue(handle.min)) {
+					value = this.translateValue(handle.min);
+				} else if (value > this.translateValue(handle.max)) {
+					value = this.translateValue(handle.max);
+				}
+			}
+			return value;
+		},
+		
+		handleIndex: function() {
+			return this.handle.index(this.currentHandle[0])
+		},
+		
+		translateLimits: function(value) {
+			if (value >= this.size - this.handleSize())
+				value = this.size - this.handleSize();
+			if (value <= 0)
+				value = 0;
+			return value;
+		},
+		
+		drag: function(e, handle) {
 			var o = this.options;
-			this.pos = pos || [this.pos[0]-this.element.offsetWidth/2, this.pos[1]-this.element.offsetHeight/2];
-			
-			if(o.axis == 'horizontal') var m = this.pos[0];
-			if(o.axis == 'vertical')   var m = this.pos[1];
-			
-			
-			var p = that.parentSize;
-			var prop = that.prop;
+			var position = { top: e.pageY - this.offset.top - this.clickOffset.top, left: e.pageX - this.offset.left - this.clickOffset.left};
 
-			if(m < 0) m = 0;
-			if(m > p) m = p;
-
-			this.curValue = (Math.round((m/p)*o.realValue));
-			if(o.stepping) {
-				this.curValue = Math.round(this.curValue/o.stepping)*o.stepping;
-				m = ((this.curValue)/o.realValue) * p;
+			var modifier = position[this.properties[0]];
+			
+			modifier = this.translateLimits(modifier);
+			
+			if (o.stepping) {
+				var value = this.convertValue(modifier);
+				value = Math.round(value / o.stepping) * o.stepping;
+				modifier = this.translateValue(value);	
 			}
 			
-			if(that.interactions) {
-				nonvalidRange = that.nonvalidRange(this);
-				if(nonvalidRange) {
-					this.curValue = nonvalidRange;
-					m = ((this.curValue)/o.realValue) * p;
+			modifier = this.translateRange(modifier);
+			
+			this.currentHandle.css(this.properties[0], modifier);
+			if (this.rangeElement)
+				this.updateRange();
+			this.propagate('slide', e);
+			return false;
+		},
+		
+		moveTo: function(value, handle, noPropagation) {
+			var o = this.options;
+			if (handle == undefined && !this.currentHandle && this.handle.length != 1)
+				return false; //If no handle has been passed, no current handle is available and we have multiple handles, return false
+			if (handle == undefined && !this.currentHandle)
+				handle = 0; //If only one handle is available, use it
+			if (handle != undefined)
+				this.currentHandle = this.previousHandle = $(this.handle[handle] || handle);
+	
+			if(value.constructor == String) {
+				if (/^\-\=/.test(value) ) {
+					value = this.value() - parseInt(value.replace('-=', ''), 10);
+				} else if (/^\+\=/.test(value) ) {
+					value = this.value() + parseInt(value.replace('+=', ''), 10);
 				}
 			}
 			
-			$(this.element).css(prop, m+'px');
-			$(that.element).triggerHandler("slide", [e, that.prepareCallbackObj(this,m)], o.slide);
-			return false;
+			if(o.stepping)
+				value = Math.round(value / o.stepping) * o.stepping;
+			value = this.translateValue(value);
+			value = this.translateLimits(value);
+			value = this.translateRange(value);
 			
-		},
-		moveTo: function(value,scale,changeslide,p) {	// renamed from goto to moveTo as goto is reserved javascript word
+			this.currentHandle.css(this.properties[0], value);
+			if (this.rangeElement)
+				this.updateRange();
 			
-			if(this.multipleHandles) return false; //TODO: Multiple handle moveTo function
-			
-			var o = this.interaction.options;
-			var offset = $(this.interaction.element).offsetParent().offset({ border: false });
-			this.interaction.pickValue = this.interaction.curValue;
-			value = value-o.minValue;
-			
-			var modifier = scale || o.realValue;
-			
-			if(!p) var p = this.parentSize;
-			var prop = this.prop;
-			
-			var m = Math.round(((value)/modifier) * p);
-
-			if(m < 0) m = 0;
-			if(m > p) m = p;
-			
-			this.interaction.curValue = (Math.round((m/p)*o.realValue));
-			if(o.stepping) {
-				this.interaction.curValue = Math.round(this.interaction.curValue/o.stepping)*o.stepping;
-				m = ((this.interaction.curValue)/o.realValue) * p;
+			if (!noPropagation) {
+				this.propagate('start', null);
+				this.propagate('stop', null);
+				this.propagate('change', null);
+				this.propagate("slide", null);
 			}
-
-			$(this.interaction.element).css(prop, m+'px');
-			
-			if(!changeslide && this.interaction.pickValue != this.interaction.curValue && !p)
-				$(this.element).triggerHandler("slidechange", [null, this.prepareCallbackObj(this.interaction)], o.change);
-			
-			if(changeslide)
-				$(this.element).triggerHandler("slide", [null, this.prepareCallbackObj(this.interaction)], o.slide);
-
 		}
 	});
+	
+	$.ui.slider.defaults = {
+		handle: ".ui-slider-handle"
+	};
 
 })(jQuery);
