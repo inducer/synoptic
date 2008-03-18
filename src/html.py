@@ -19,7 +19,7 @@ def page(context):
       <script type="text/javascript" src="/static/jquery.js"></script>
       <script type="text/javascript" src="/static/jquery.timers.js"></script>
       <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
-      <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/jquery.dimensions.js"></script>
       <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
       <script type="text/javascript" src="/static/inheritance.js"></script>
       <script type="text/javascript" src="/static/json2.js"></script>
