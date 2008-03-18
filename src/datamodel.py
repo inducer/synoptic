@@ -70,7 +70,7 @@ class ItemVersion(object):
 
     def as_json(self):
         return {"id": self.item.id, 
-                "tags": u",".join(tag.name for tag in self.tags),
+                "tags": u", ".join(tag.name for tag in self.tags),
                 "contents": self.contents,
                 }
 

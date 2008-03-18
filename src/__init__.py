@@ -108,12 +108,12 @@ class Application(ApplicationBase):
         ApplicationBase.__init__(self,
                 [
                     (r'^/$', self.index),
+                    (r'^/timestamp/get_range$', self.get_tsrange),
                     (r'^/item/get_by_id$', self.get_item_by_id),
                     (r'^/item/get_multi_by_tags$', self.get_multiple_items_by_tags),
                     (r'^/item/store$', self.store_item),
                     (r'^/tags/get$', self.get_tags),
-                    (r'^/static/([-_a-zA-Z0-9.]+)$', self.serve_static),
-                    (r'^/static/(jquery/[-_a-zA-Z0-9.]+)$', self.serve_static),
+                    (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ])
 
         WSGIRequest.defaults["charset"] = "utf-8"
@@ -121,8 +121,8 @@ class Application(ApplicationBase):
     # tools -------------------------------------------------------------------
     def item_to_json(self, item):
         result = item.as_json()
-        from creoleparser import text2html
-        result["contents_html"] = text2html(result["contents"])
+        from synoptic.wikimarkup import parse
+        result["contents_html"] = parse(result["contents"])
         result["title"] = None
         return result
 
@@ -136,7 +136,7 @@ class Application(ApplicationBase):
                     func.max(model.itemversions.c.timestamp)])
                 
         if max_timestamp is not None:
-            result.where(model.itemversions.c.timestamp <= max_timestamp)
+            result = result.where(model.itemversions.c.timestamp <= max_timestamp)
 
         result = result.group_by(model.itemversions.c.item_id)
         return result.alias("current_versions")
@@ -146,6 +146,22 @@ class Application(ApplicationBase):
         from synoptic.html import mainpage, Context
         ctx = Context()
         return request.respond(mainpage(ctx))
+
+    def get_tsrange(self, request):
+        from time import time
+
+        now = time()
+
+        from simplejson import dumps
+        return request.respond(
+                dumps({
+                    "min": request.dbsession.query(ItemVersion)
+                    .min(ItemVersion.timestamp),
+                    "max": max(now, request.dbsession.query(ItemVersion)
+                    .max(ItemVersion.timestamp)),
+                    "now": time(),
+                    }),
+                mimetype="text/plain")
 
     def get_tags(self, request):
         from sqlalchemy.sql import select, and_, or_, not_, func
@@ -272,11 +288,17 @@ class Application(ApplicationBase):
         return request.respond(dumps({"id": item.id}))
 
     def serve_static(self, request, filename):
-        from os.path import splitext, join
+        from os.path import splitext, join, normpath
 
         import synoptic
+        root_path = join(synoptic.__path__[0], "static")
+
         try:
-            full_path = join(synoptic.__path__[0], "static", filename)
+            full_path = normpath(join(root_path, filename))
+            if not full_path.startswith(root_path):
+                from paste.httpexceptions import HTTPForbidden
+                raise HTTPForbidden()
+
             with open(full_path, "rb") as inf:
                 data = inf.read()
         except IOError:

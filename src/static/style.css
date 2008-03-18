@@ -1,21 +1,23 @@
+#innernavpane {
+  padding:5px;
+}
+
 #navpane {
-  background-color: #ccf;
-  position: absolute;
-  top:0px;
-  left:0px;
-  width:200px;
-  margin:5px;
+  background-color: #ddf;
+  width:250px;
+  float:left;
+}
+
+#innermainpane {
+  padding-left:10px;
 }
 
 #mainpane {
-  position: absolute;
-  top:0px;
-  left:205px;
-  margin:5px;
+  /* width:75%; */
+  float:left;
 }
 
 #items {
-  padding:5px;
   margin-top:5px;
 }
 
@@ -48,4 +50,53 @@
 .ac_results ul li.ac_over{
   background-color:#00e;
   color:#fff;
+}
+
+.imagebutton
+{
+  padding:2px;
+  position:relative;
+  top:0.7em;
+  border-width:1px;
+  border-style:solid;
+  border-color:white;
+}
+
+.imagebutton:hover
+{
+  border-style:outset;
+  border-bottom-color:#bbb;
+  border-right-color:#bbb;
+  border-top-color:#ddd;
+  border-left-color:#ddd;
+}
+.imagebutton:active
+{
+  border-style:inset;
+  border-top-color:#bbb;
+  border-left-color:#bbb;
+  border-bottom-color:#ddd;
+  border-right-color:#ddd;
+}
+
+.edit_div {
+  background-color:#ddf;
+  border-width:0;
+  border-bottom-width:5px;
+  border-style:solid;
+  border-color:white;
+}
+
+.editcontrols {
+  background-color:#ddf;
+  padding:2px;
+}
+
+#history_nav {
+  padding:10px;
+  background-color:white;
+}
+
+#slider_container {
+  width:220px;
 }

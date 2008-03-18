@@ -19,12 +19,16 @@ def page(context):
       <script type="text/javascript" src="/static/jquery.js"></script>
       <script type="text/javascript" src="/static/jquery.timers.js"></script>
       <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/jquery.dimensions.js"></script>
+      <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
       <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.mouse.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.slider.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/datepicker/core/ui.datepicker.js"></script>
       <script type="text/javascript" src="/static/inheritance.js"></script>
       <script type="text/javascript" src="/static/json2.js"></script>
       <script type="text/javascript" src="/static/main.js"></script>
       <link rel="stylesheet" type="text/css" href="/static/style.css">
+      <link rel="stylesheet" href="/static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
     </head>
       <body>
         %(body)s
@@ -35,18 +39,38 @@ def page(context):
 def navpane(context):
     return """
     <div id="navpane">
-      <ul>
-        %(taglist)s
-      </ul>
+      <div id="innernavpane">
+        <div id="history_nav">
+          <div style="white-space:nowrap;">
+            <input type="text" id="edit_date" size="11"/>
+            <span id="history_time"></span>
+            <img src="/static/go-last.png" id="btn_go_last" class="imagebutton"/>
+          </div>
+          <div id="slider_container">
+            <div id="history_slider" class="ui-slider-1" style="margin:10px;">
+              <div class="ui-slider-handle"></div>
+            </div>
+          </div>
+        </div>
+        <ul id="taglist">
+        </ul>
+        <div id="errorlog" class="error">
+        </div>
+      </div>
     </div>
     """
 
 def mainpane(context):
     return """
     <div id="mainpane">
-      <label for="search" accesskey="s">Search: </label><input type="text" size="50" id="search"/>
-
-      <div id="items>
+      <div id="innermainpane">
+        <div style="white-space:nowrap;">
+          <label for="search" accesskey="s">Search: </label>
+          <input type="text" size="50" id="search"/>
+          <img src="/static/edit-clear.png" alt="Clear search bar" id="btn_search_clear" class="imagebutton"/>
+        </div>
+        <div id="items>
+        </div>
       </div>
     </div>
     """

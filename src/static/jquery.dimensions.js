@@ -2,8 +2,8 @@
  * Dual licensed under the MIT (http://www.opensource.org/licenses/mit-license.php)
  * and GPL (http://www.opensource.org/licenses/gpl-license.php) licenses.
  *
- * $LastChangedDate: 2007-12-20 15:43:48 +0100 (Do, 20 Dez 2007) $
- * $Rev: 4257 $
+ * $LastChangedDate: 2008-02-28 10:49:55 +0000 (Thu, 28 Feb 2008) $
+ * $Rev: 4841 $
  *
  * Version: @VERSION
  *
@@ -26,7 +26,7 @@ $.each( [ 'Height', 'Width' ], function(i, name){
 		var torl = name == 'Height' ? 'Top'    : 'Left',  // top or left
 		    borr = name == 'Height' ? 'Bottom' : 'Right'; // bottom or right
 		
-		return this.is(':visible') ? this[0]['client' + name] : num( this, name.toLowerCase() ) + num(this, 'padding' + torl) + num(this, 'padding' + borr);
+		return this.css('display') != 'none' ? this[0]['client' + name] : num( this, name.toLowerCase() ) + num(this, 'padding' + torl) + num(this, 'padding' + borr);
 	};
 	
 	// outerHeight and outerWidth
@@ -38,7 +38,7 @@ $.each( [ 'Height', 'Width' ], function(i, name){
 		
 		options = $.extend({ margin: false }, options || {});
 		
-		var val = this.is(':visible') ? 
+		var val = this.css('display') != 'none' ? 
 				this[0]['offset' + name] : 
 				num( this, name.toLowerCase() )
 					+ num(this, 'border' + torl + 'Width') + num(this, 'border' + borr + 'Width')

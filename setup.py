@@ -21,7 +21,6 @@ def main():
               "Paste>=1.6",
               "SqlAlchemy>=0.4.4",
               "SimpleJSON>=1.7",
-              "CreoleParser>=0.3.3",
               ],
 
           scripts=["bin/synoptic"],
@@ -33,6 +32,12 @@ def main():
               'static/*.png',
               'static/*.css',
               'static/jquery-ui/*.js',
+              'static/jquery-ui/themes/flora/*.css',
+              'static/jquery-ui/themes/flora/i/*.gif',
+              'static/jquery-ui/themes/flora/i/*.png',
+              'static/jquery-ui/datepicker/core/*.js',
+              'static/jquery-ui/datepicker/core/*.css',
+              'static/jquery-ui/datepicker/img/*.gif',
               ]}
          )
 

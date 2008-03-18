@@ -6,6 +6,14 @@ function busy(what)
 
 
 
+function report_error(what)
+{
+  $("#errorlog").html(what);
+}
+
+
+
+
 // String extension  -----------------------------------------------------------
 String.method("allreplace", function(from, to)
 {
@@ -74,27 +82,47 @@ ItemManager.method("fill_item_div", function()
   {
     this.div.html(
       (
-      '<input type="button" id="new_[id]" value="New" accesskey="N">'
+      '<div class="editcontrols">'+
+      '<input type="button" id="new_[id]" value="New" accesskey="N">'+
+      '</div>'
       ).allreplace('[id]', this.id)
       );
     $('#new_'+this.id).click(function(){ self.begin_edit() });
   }
-  else
+  else 
   {
-    this.div.html(
-      (
-      '<div class="editcontrols">'+
-      '<input type="button" id="edit_[id]" value="Edit"> '+
-      '<input type="button" id="delete_[id]" value="Delete"> '+
-      'Tags: [tags]'+
-      '</div>'+
-      '<div>[contents]</div>'
-      ).allreplace('[id]', this.id)
-      .allreplace('[tags]', this.tags)
-      .allreplace('[contents]', this.contents_html)
-      );
-    $('#edit_'+this.id).click(function(){ self.begin_edit() });
-    $('#delete_'+this.id).click(function(){ self.do_delete() });
+    if (this.manager.view_time == null)
+    {
+      this.div.html(
+        (
+        '<div class="editcontrols">'+
+        '<input type="button" id="edit_[id]" value="Edit"> '+
+        '<input type="button" id="delete_[id]" value="Delete"> '+
+        'Tags: [tags]'+
+        '</div>'+
+        '<div>[contents]</div>'
+        ).allreplace('[id]', this.id)
+        .allreplace('[tags]', this.tags)
+        .allreplace('[contents]', this.contents_html)
+        );
+      $('#edit_'+this.id).click(function(){ self.begin_edit() });
+      $('#delete_'+this.id).click(function(){ self.do_delete() });
+    }
+    else
+    {
+      this.div.html(
+        (
+        '<div class="editcontrols">'+
+        '<input type="button" id="btn_make_current_[id]" value="Revert"> '+
+        '<input type="button" id="copy_to_present_[id]" value="Copy to Present"> '+
+        'Tags: [tags]'+
+        '</div>'+
+        '<div>[contents]</div>'
+        ).allreplace('[id]', this.id)
+        .allreplace('[tags]', this.tags)
+        .allreplace('[contents]', this.contents_html)
+        );
+    }
   }
 });
 
@@ -102,7 +130,7 @@ ItemManager.method("begin_edit", function()
 {
   this.div.html(
     (
-    '<div id="edit_div_[id]">'+
+    '<div id="edit_div_[id]" class="edit_div">'+
     '<table>'+
     '<tr><td>'+
     '<input type="button"  id="edit_ok_[id]"  value="OK"  accesskey="o">&nbsp;'+
@@ -126,6 +154,8 @@ ItemManager.method("begin_edit", function()
 
   $("#editor_"+this.id).val(this.contents);
   $("#editor_"+this.id).focus();
+  $("#edit_tags_"+this.id).autocomplete("/tags/get",
+      { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
 
   var self = this;
   $("#edit_ok_"+this.id).click(function(){
@@ -209,14 +239,15 @@ function ItemCollectionManager()
   self.items = [];
   self.empty_item = new ItemManager(self);
 
+  // set up search field
   $("#search").change(function()
     {
-      self.fill_from_query($("#search").val());
+      self.update();
     });
   $("#search").focus(function()
     {
       self.div.everyTime("250ms", "search_changewatch",
-        function() { self.fill_from_query($("#search").val()); });
+        function() { self.update(); });
     });
   $("#search").blur(function()
     {
@@ -224,14 +255,85 @@ function ItemCollectionManager()
     });
   $("#search").autocomplete("/tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
+  $("#btn_search_clear").click(function()
+    {
+      $("#search").val('');
+      $("#search").change();
+      $("#search").focus();
+    });
+
+  // setup history management
+  self.tsrange = null;
+  $.getJSON("/timestamp/get_range", function (json)
+    { self.tsrange = json; });
+  self.view_time = null;
+
+  // setup history slider
+  $("#history_slider").slider({
+      change: function(e, ui)
+        {
+          if (self.tsrange == null)
+            return;
+
+          if (ui.value == 100)
+            self.set_time(null, "slider");
+          else
+            var new_time = self.tsrange.min 
+              + ui.value/100.*(self.tsrange.max-self.tsrange.min);
+            self.set_time(new_time, "slider");
+        },
+      startValue: 100,
+      });
+
+  // setup history datepicker
+  $("#edit_date").datepicker();
 }
 
-ItemCollectionManager.method("update", function(query)
+ItemCollectionManager.method("set_time", function(new_time, origin)
+{
+  if (this.tsrange == undefined)
+  {
+    report_error("Cannot set date until timestamp range has been received.");
+    return;
+  }
+
+  this.view_time = new_time;
+  this.update();
+
+  var dt = null;
+  if (new_time != null)
+  {
+    dt = new Date(new_time*1000);
+    $("#history_time").html(dt.getHours()+":"+dt.getMinutes()+":"+dt.getSeconds());
+  }
+  else
+    $("#history_time").html('');
+
+  if (origin != "picker")
+  {
+    if (dt != null)
+      $("#edit_date").setDatepickerDate(dt);
+    else
+      $("#edit_date").val("");
+  }
+  if (origin != "slider")
+  {
+    var new_percentage = (new_time-this.tsrange.min)
+      / (this.tsrange.max-this.tsrange.min)* 100.
+    this.set_time(new_time, "slider");
+    $("#history_slider").slider("moveTo", new_percentage.toInt());
+  }
+});
+
+ItemCollectionManager.method("realize_items", function(query)
 {
   this.div.html('')
   for (var i = 0; i<this.items.length; ++i)
     this.items[i].append_item_div(this.div);
-  this.empty_item.append_item_div(this.div);
+
+  // only allow adding if we're in the present
+  if (this.view_time == null)
+    this.empty_item.append_item_div(this.div);
 });
 
 ItemCollectionManager.method("empty_was_filled", function()
@@ -246,19 +348,31 @@ ItemCollectionManager.method("note_delete", function(item)
   this.items.splice(this.items.indexOf(item), 1);
 });
 
-ItemCollectionManager.method("fill_from_query", function(query)
+ItemCollectionManager.method("update", function()
 {
-  if (query == this.last_query)
+  this.fill($("#search").val(), this.view_time);
+})
+
+ItemCollectionManager.method("fill", function(query, timestamp)
+{
+  if (query == this.last_query && timestamp == this.last_timestamp)
     return;
 
   this.div.html(busy('Loading...'));
 
   this.last_query = query;
+  this.last_timestamp = timestamp;
   this.items = [];
 
+  data = { query: query };
+
+  if (!(timestamp == null || timestamp == undefined))
+    data.max_timestamp = timestamp;
+
   var self = this;
+
   $.ajax({
-    data: {query: query},
+    data: data,
     url: '/item/get_multi_by_tags',
     dataType:"json",
     success: function(list, status)
@@ -267,7 +381,7 @@ ItemCollectionManager.method("fill_from_query", function(query)
       {
         self.items.push(new ItemManager(self, list[i]));
       }
-      self.update();
+      self.realize_items();
     },
     error: function(req, stat, err)
     {
@@ -283,5 +397,5 @@ ItemCollectionManager.method("fill_from_query", function(query)
 $(document).ready(function()
 {
   document.item_manager = new ItemCollectionManager();
-  document.item_manager.fill_from_query("");
+  document.item_manager.update();
 });
