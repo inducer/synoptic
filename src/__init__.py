@@ -404,11 +404,11 @@ class Application(ApplicationBase):
                 for row in session.execute(
                 self.get_itemversions_query(session, model, tags))]
 
-        def item_idx(item_id):
-            if item_id == None:
+        def item_idx(sought_item_id):
+            if sought_item_id == None:
                 return len(item_ids)
-            for idx, item in enumerate(item_ids):
-                if item.id == item_id:
+            for idx, item_id in enumerate(item_ids):
+                if item_id == sought_item_id:
                     return idx
             raise ValueError, "invalid item id supplied"
 
@@ -428,8 +428,9 @@ class Application(ApplicationBase):
 
         viewordering = ViewOrdering(ViewOrdering.make_tagset(tags), time())
 
-        for idx, item in enumerate(items):
-            viewordering.entries.append(ViewOrderingEntry(viewordering, item, idx))
+        for idx, item_id in enumerate(item_ids):
+            viewordering.entries.append(ViewOrderingEntry(viewordering, 
+                session.query(Item).get(item_id), idx))
         session.save(viewordering)
         session.commit()
 
