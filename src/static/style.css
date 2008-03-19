@@ -29,6 +29,7 @@ body, html {
   padding:5px;
 }
 
+
 #mainpane {
   position:absolute;
   top:0;
@@ -150,3 +151,43 @@ body, html {
 .taglink {
   cursor:pointer;
 }
+
+.dragging {
+  background-color:lightgray;
+}
+
+.dragging .editcontrols {
+  background-color:lightgray;
+}
+
+.draghandle {
+  border:1px solid black;
+  background-color:lightgray;
+  display:inline;
+  cursor:default;
+}
+
+.dropzone {
+  position:absolute;
+  min-height:9px;
+  left:25%;
+  width:50%;
+  visibility:hidden;
+  text-align:center;
+}
+
+.dropzone-active {
+  background-color:#ccc;
+  outline:1px inset;
+  outline-top-color:#aaa;
+  outline-left-color:#aaa;
+  outline-bottom-color:#ddd;
+  outline-right-color:#ddd;
+  visibility:visible;
+}
+
+.dropzone-hover {
+  background-color:#eee;
+  outline:1px outset;
+}
+

@@ -1,7 +1,7 @@
 class DataModel(object):
     def __init__(self):
         from sqlalchemy import Table, Column, \
-                Integer, Float, UnicodeText, Unicode, ForeignKey, \
+                Integer, Float, Text, UnicodeText, Unicode, ForeignKey, \
                 MetaData
 
         self.metadata = MetaData()
@@ -22,9 +22,22 @@ class DataModel(object):
                 Column('contents', UnicodeText())
                 )
 
-        self.itemversions_tags = Table('items_tags', self.metadata,
+        self.itemversions_tags = Table('itemversions_tags', self.metadata,
                 Column('itemversion_id', Integer, ForeignKey('itemversions.id'), index=True),
                 Column('tag_id', Integer, ForeignKey('tags.id'), index=True),
+                ) 
+
+        self.vieworderings = Table('vieworderings', self.metadata,
+                Column('id', Integer, primary_key=True),
+                Column('tagset', Text()), # ascending, comma-separated list of tag ids
+                Column('timestamp', Float, index=True),
+                ) 
+
+        self.viewordering_entries = Table('viewordering_entries', self.metadata,
+                Column('id', Integer, primary_key=True),
+                Column('viewordering_id', Integer, ForeignKey('vieworderings.id')),
+                Column('item_id', Integer, ForeignKey('items.id')),
+                Column('weight', Integer),
                 ) 
 
         from sqlalchemy.orm import mapper, relation
@@ -37,8 +50,16 @@ class DataModel(object):
             'tags':relation(Tag, secondary=self.itemversions_tags)
             })
 
+        mapper(ViewOrdering, self.vieworderings, properties={
+            'entries': relation(ViewOrderingEntry, backref='viewordering'),
+            })
+        mapper(ViewOrderingEntry, self.viewordering_entries, properties={
+            'item': relation(Item),
+            })
 
 
+
+# mapped instances ------------------------------------------------------------
 class Tag(object):
     def __init__(self, name):
         self.name = name
@@ -56,7 +77,8 @@ class Tag(object):
 
 
 class Item(object):
-    pass
+    def __repr__(self):
+        return "<Item %s>" % self.id
 
 
 
@@ -82,10 +104,48 @@ class ItemVersion(object):
                 contents=contents or self.contents,
                 )
 
+    def contents_html(self):
+        overrides = {
+                #'input_encoding': input_encoding,
+                'doctitle_xform': False,
+                'initial_header_level': 2,
+                }
+        from docutils.core import publish_parts
+        from wikisyntax import MyHTMLWriter
+        parts = publish_parts(source=self.contents, 
+                writer=MyHTMLWriter(), settings_overrides=overrides)
+        return parts['html_body']
 
 
 
-def find_tags(session, tags):
+class ViewOrdering(object):
+    def __init__(self, tagset, timestamp):
+        self.tagset = tagset
+        self.timestamp = timestamp
+
+    @staticmethod
+    def make_tagset(tags):
+        tags = list(tags)
+        tags.sort(key=lambda tag: tag.id)
+        ts = ",".join(str(tag.id) for tag in tags)
+        return ts
+
+
+
+
+class ViewOrderingEntry(object):
+    def __init__(self, viewordering, item, weight):
+        self.viewordering = viewordering
+        self.item = item
+        self.weight = weight
+
+    def __repr__(self):
+        return "<VOEntry item=%s, weight=%s>" % (self.item, self.weight)
+
+
+
+# tools -----------------------------------------------------------------------
+def find_tags(session, tags, create_them):
     result = []
     for tag_str in tags:
         if len(tag_str) == 0:
@@ -94,15 +154,20 @@ def find_tags(session, tags):
         tags = session.query(Tag).filter_by(name=tag_str)
         if tags.count():
             result.append(tags.one())
-        else:
-            new_tag = Tag(tag_str)
-            session.save(new_tag)
-            result.append(new_tag)
+        else: 
+            if create_them:
+                new_tag = Tag(tag_str)
+                session.save(new_tag)
+                result.append(new_tag)
+            else:
+                result.append(Tag(tag_str))
 
     return result
 
 
 
 
-def parse_tags(session, tags_str):
-    return find_tags(session, (s.strip() for s in tags_str.split(",")))
+def parse_tags(session, tags_str, create_them):
+    return find_tags(session, 
+            (s.strip() for s in tags_str.split(",")),
+            create_them=create_them)

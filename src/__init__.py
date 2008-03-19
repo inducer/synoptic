@@ -1,5 +1,7 @@
 from __future__ import with_statement
-from synoptic.datamodel import Item, ItemVersion, Tag, parse_tags, find_tags
+from synoptic.datamodel import \
+        Item, ItemVersion, Tag, ViewOrdering, ViewOrderingEntry, \
+        parse_tags, find_tags
 
 
 
@@ -59,7 +61,8 @@ class Request(WSGIRequest):
         self.datamodel = environ["datamodel"]
 
     def respond(self, *args, **kwargs):
-        return Response(self.environ, self.start_response, *args, **kwargs)()
+        resp = Response(self.environ, self.start_response, *args, **kwargs)
+        return resp()
 
 
 
@@ -90,19 +93,6 @@ class ApplicationBase:
 
 
 
-def int_or_null(val):
-    try:
-        return int(val)
-    except ValueError:
-        if val == "null":
-            return None
-        else:
-            from paste.httpexceptions import HTTPBadRequest
-            raise BadRequest("invalid integer_or_null parameter")
-
-
-
-
 class Application(ApplicationBase):
     def __init__(self):
         ApplicationBase.__init__(self,
@@ -110,8 +100,10 @@ class Application(ApplicationBase):
                     (r'^/$', self.index),
                     (r'^/timestamp/get_range$', self.get_tsrange),
                     (r'^/item/get_by_id$', self.get_item_by_id),
-                    (r'^/item/get_multi_by_tags$', self.get_multiple_items_by_tags),
+                    (r'^/item/get_multi_by_tags$', self.get_items_by_tags),
+                    (r'^/item/print_multi_by_tags$', self.print_items_by_tags),
                     (r'^/item/store$', self.store_item),
+                    (r'^/item/reorder$', self.reorder_item),
                     (r'^/tags/get$', self.get_tags),
                     (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ])
@@ -123,17 +115,7 @@ class Application(ApplicationBase):
         result = item.as_json()
 
         if item.contents is not None:
-            overrides = {
-                    #'input_encoding': input_encoding,
-                    'doctitle_xform': False,
-                    'initial_header_level': 2,
-                    }
-            from docutils.core import publish_parts
-            from wikisyntax import MyHTMLWriter
-            parts = publish_parts(source=item.contents, 
-                    writer=MyHTMLWriter(), settings_overrides=overrides)
-
-            result['contents_html'] = parts['html_body']
+            result['contents_html'] = item.contents_html()
         else:
             result['contents_html'] = None
 
@@ -154,6 +136,71 @@ class Application(ApplicationBase):
 
         result = result.group_by(model.itemversions.c.item_id)
         return result.alias("current_versions")
+
+    def get_result_ids_query(self, session, model, tags, max_timestamp=None):
+        """Given tags and max_timestamp, find the resulting ItemVersion ids,
+        in the right order."""
+
+        from sqlalchemy.sql import select, and_, or_, not_, func
+
+        # find appropriate versions of items
+        current_query = self.get_current_versions_query(model, max_timestamp)
+
+        # find view ordering
+        view_orderings = (session.query(ViewOrdering)
+                .filter_by(tagset=ViewOrdering.make_tagset(tags))
+                .order_by(ViewOrdering.timestamp.desc())
+                .limit(1)).all()
+
+        # out of that, find all that have matching tags and are not deleted
+        from_obj = model.itemversions.join(current_query,
+                        current_query.c.id==model.itemversions.c.id)
+
+        if view_orderings:
+            print "VO", view_orderings[0].entries
+            # if we have an ordering, we must also join the viewordering_entries table
+            # so we can order by weight
+            from_obj = from_obj.outerjoin(model.viewordering_entries,
+                    model.itemversions.c.item_id==model.viewordering_entries.c.item_id)
+                        
+        tag_where = model.itemversions.c.contents != None
+        for tag in tags:
+            tag_where = and_(tag_where, ItemVersion.tags.any(id=tag.id))
+
+        result = (select(
+            [
+                model.itemversions.c.id,
+                model.itemversions.c.item_id,
+                ], 
+            from_obj=[from_obj])
+            .where(tag_where))
+
+        if view_orderings:
+            # now find the correct viewordering_entries 
+            # add the order by clause
+            result = (result
+                    .where(model.viewordering_entries.c.viewordering_id
+                        ==view_orderings[0].id)
+                    .order_by(model.viewordering_entries.c.weight))
+
+        return result.group_by(model.itemversions.c.item_id)
+
+    def get_itemversions_for_tag_query(self, request):
+        tags = parse_tags(request.dbsession, request.GET["query"], 
+                create_them=False)
+
+        if "max_timestamp" in request.GET:
+            max_timestamp = float(request.GET["max_timestamp"])
+        else:
+            max_timestamp = None
+
+        item_query = self.get_result_ids_query(
+                request.dbsession, request.datamodel, 
+                tags, max_timestamp)
+
+        # now grab the ORMed instances
+        return [request.dbsession.query(ItemVersion).get(row['id']) 
+                for row in request.dbsession.execute(item_query)]
 
     # page handlers -----------------------------------------------------------
     def index(self, request):
@@ -189,7 +236,7 @@ class Application(ApplicationBase):
 
         current_query = self.get_current_versions_query(model, max_timestamp)
 
-        # twuc_q = tags_with_usecount_query
+        # twuc_q stands for tags_with_usecount_query
         twuc_q = (
                 select([
                     model.tags.c.name, 
@@ -242,45 +289,27 @@ class Application(ApplicationBase):
             raise HTTPNotFound()
 
         from simplejson import dumps
-        return request.respond(dumps(self.item_to_json(query.first())))
+        return request.respond(dumps(self.item_to_json(query.first())),
+                mimetype="text/plain")
 
-    def get_multiple_items_by_tags(self, request):
-        tags = parse_tags(request.dbsession, request.GET["query"])
-
-        model = request.datamodel
-
-        from sqlalchemy.sql import select, and_, or_, not_, func
-
-        tag_where = model.itemversions.c.contents != None
-        for tag in tags:
-            tag_where = and_(tag_where, ItemVersion.tags.any(id=tag.id))
-
-        # find appropriate versions of items
-        if "max_timestamp" in request.GET:
-            max_timestamp = float(request.GET["max_timestamp"])
-        else:
-            max_timestamp = None
-
-        current_query = self.get_current_versions_query(model, max_timestamp)
-
-        # out of that, find all that have matching tags and are not deleted
-        tag_query = (
-                select([model.itemversions.c.id],
-                    from_obj=[model.itemversions.join(
-                        current_query,
-                        current_query.c.id==model.itemversions.c.id)
-                        ])
-                .where(tag_where)
-                .group_by(model.itemversions.c.item_id)
-                )
-
-        # now grab the ORMed instances
-        versions = [request.dbsession.query(ItemVersion).get(row['id']) 
-                for row in request.dbsession.execute(tag_query)]
+    def get_items_by_tags(self, request):
+        versions = self.get_itemversions_for_tag_query(request)
 
         # and ship them out by JSON
         from simplejson import dumps
-        return request.respond(dumps([self.item_to_json(v) for v in versions]))
+        return request.respond(dumps([self.item_to_json(v) for v in versions]),
+                mimetype="text/plain")
+
+    def print_items_by_tags(self, request):
+        versions = self.get_itemversions_for_tag_query(request)
+
+        from html import printpage
+        from simplejson import dumps
+        return request.respond(
+                printpage({
+                    "title": "Synoptic Printout",
+                    "body": u"".join(v.contents_html() for v in versions),
+                    }))
 
     def store_item(self, request):
         from simplejson import loads, dumps
@@ -298,14 +327,65 @@ class Application(ApplicationBase):
         itemversion = ItemVersion(
                 item,
                 time(),
-                find_tags(request.dbsession, data["tags"]),
+                find_tags(request.dbsession, data["tags"], create_them=True),
                 data["contents"],
                 )
         request.dbsession.save(itemversion)
         request.dbsession.commit()
 
         from simplejson import dumps
-        return request.respond(dumps(self.item_to_json(itemversion)))
+        return request.respond(
+                dumps(self.item_to_json(itemversion)),
+                mimetype="text/plain")
+
+    def reorder_item(self, request):
+        from simplejson import loads
+        data = loads(request.POST["json"])
+
+        tags = find_tags(request.dbsession, data["current_search"], create_them=False)
+
+        model = request.datamodel
+        session = request.dbsession
+
+        items = [session.query(Item).get(row[1]) 
+                for row in session.execute(
+                self.get_result_ids_query(session, model, tags))]
+
+        def item_idx(item_id):
+            if item_id == None:
+                return len(items)
+            for idx, item in enumerate(items):
+                if item.id == item_id:
+                    return idx
+            raise ValueError, "invalid item id supplied"
+
+        print data
+
+        dragged_item_idx = item_idx(data["dragged_item"])
+        before_item_idx = item_idx(data["before_item"])
+
+        print "BEFORE", items
+        assert dragged_item_idx != before_item_idx
+
+        if before_item_idx < dragged_item_idx:
+            dragged_item = items.pop(dragged_item_idx)
+            items.insert(before_item_idx, dragged_item)
+        else:
+            items.insert(before_item_idx, items[dragged_item_idx])
+            items.pop(dragged_item_idx)
+
+        print "AFTER", items
+
+        from time import time
+
+        viewordering = ViewOrdering(ViewOrdering.make_tagset(tags), time())
+
+        for idx, item in enumerate(items):
+            viewordering.entries.append(ViewOrderingEntry(viewordering, item, idx))
+        session.save(viewordering)
+        session.commit()
+
+        return request.respond("", mimetype="text/plain")
 
     def serve_static(self, request, filename):
         from os.path import splitext, join, normpath

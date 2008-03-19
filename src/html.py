@@ -10,6 +10,23 @@ class Context(dict):
 
 
 
+def printpage(context):
+    return """
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+         "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+    <head>
+      <title>%(title)s</title>
+    </head>
+      <body>
+        %(body)s
+      </body>
+    </html>
+    """ % context
+
+
+
+
+
 def page(context):
     return """
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
@@ -21,9 +38,14 @@ def page(context):
       <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
       <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
       <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.base.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.mouse.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.slider.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.tabs.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.draggable.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.draggable.ext.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.droppable.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.droppable.ext.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/datepicker/core/ui.datepicker.js"></script>
       <script type="text/javascript" src="/static/inheritance.js"></script>
       <script type="text/javascript" src="/static/json2.js"></script>
@@ -44,7 +66,7 @@ def navpane(context):
         <div id="logo">Synoptic</div>
         <div id="history_nav">
           <div style="white-space:nowrap;">
-            <label for="search" accesskey="t"><img src="/static/time.png" alt="Time" class="inlineimg"/></label>
+            <label for="edit_date" accesskey="t"><img src="/static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
             <span id="history_time"></span>
             <img src="/static/go-last.png" id="btn_go_present" class="imagebutton"/>
@@ -84,6 +106,7 @@ def mainpane(context):
           <label for="search" accesskey="s">Search: </label>
           <input type="text" size="50" id="search"/>
           <img src="/static/edit-clear.png" alt="Clear search bar" id="btn_search_clear" class="imagebutton"/>
+          <img src="/static/print.png" alt="Print" id="btn_print" class="imagebutton"/>
         </div>
         <div id="items>
         </div>

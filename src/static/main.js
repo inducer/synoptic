@@ -84,10 +84,12 @@ ItemManager.method("set_from_obj", function(arg)
   this.contents_html = arg.contents_html;
 });
 
-ItemManager.method("call_with_item_div", function(mod_callback)
+ItemManager.method("call_with_item_div", function(inserter, when_created)
 {
-  mod_callback('<div id="item_[id]"></div>'.replace('[id]', this.id));
+  inserter('<div id="item_[id]"></div>'.replace('[id]', this.id));
   this.div = $("#item_"+this.id);
+  if (when_created != undefined)
+    when_created(this.div);
   this.fill_item_div();
 });
 
@@ -108,10 +110,13 @@ ItemManager.method("fill_item_div", function()
 {
   var self = this;
 
+  var have_dropzone = false;
   if (this.id == null)
   {
+    have_dropzone = true;
     this.div.html(
       (
+      '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
       '<div class="editcontrols">'+
       '<input type="button" id="new_[id]" value="New"/>'+
       '</div>'
@@ -123,9 +128,12 @@ ItemManager.method("fill_item_div", function()
   {
     if (this.manager.view_time == null)
     {
+      have_dropzone = true;
       this.div.html(
         (
+        '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
         '<div class="editcontrols">'+
+        '<div id="item_draghandle_[id]" class="draghandle">&uarr;&darr;</div> '+
         '<input type="button" id="edit_[id]" value="Edit"/> '+
         '<input type="button" id="delete_[id]" value="Delete"/> '+
         'Tags: [tags]'+
@@ -137,6 +145,18 @@ ItemManager.method("fill_item_div", function()
         );
       $('#edit_'+this.id).click(function(){ self.begin_edit() });
       $('#delete_'+this.id).click(function(){ self.do_delete() });
+      $('#item_draghandle_'+this.id).draggable({
+          helper: "clone",
+          start: function() 
+          { 
+            self.manager.dragging_item = self; 
+            self.div.addClass("dragging");
+          },
+          stop: function() 
+          { 
+            self.div.removeClass("dragging");
+          }
+          });
     }
     else
     {
@@ -192,6 +212,48 @@ ItemManager.method("fill_item_div", function()
 
     var query = "#item_[id] div.editcontrols a.taglink".replace("[id]", this.id);
     make_tag_links($(query));
+  }
+
+  if (have_dropzone)
+  {
+    $("#item_dropzone_"+this.id).droppable({
+      accept: ".draghandle",
+      activeClass: 'dropzone-active',
+      hoverClass:  'dropzone-hover',
+      tolerance: 'pointer',
+      drop: function(ev, ui) {
+        var dragged_item = self.manager.dragging_item;
+        if (self == dragged_item)
+          return;
+
+        // move dragged item's div in front of ours
+        dragged_item.div.hide("slow",
+          function()
+          {
+            dragged_item.div.remove();
+            dragged_item.call_with_item_div(
+              function(html) { self.div.before(html); } /* creator */
+              );
+          });
+
+        // report drag to server
+        $.ajax({
+          type: 'POST',
+          dataType: 'text',
+          url: '/item/reorder',
+          data: {json: JSON.stringify({
+            dragged_item: dragged_item.id,
+            before_item: self.id,
+            current_search: parse_tags($("#search").val()),
+          })},
+          error: function(req, stat, err) 
+          { report_error("Reordering failed on server."); },
+          success: function(data, msg) { 
+            set_message("Reordering OK."); 
+          }
+        });
+      }
+      });
   }
 });
 
@@ -266,7 +328,6 @@ ItemManager.method("begin_edit", function()
 ItemManager.method("do_delete", function()
 {
   var self = this;
-  self.manager.note_delete(self);
   self.div.remove();
 
   $.ajax({
@@ -314,7 +375,6 @@ function ItemCollectionManager()
 {
   var self = this;
   self.div = $("#items");
-  self.items = [];
   self.empty_item = new ItemManager(self);
 
   // set up search field
@@ -338,6 +398,14 @@ function ItemCollectionManager()
       $("#search").val('');
       $("#search").change();
       $("#search").focus();
+    });
+  $("#btn_print").click(function()
+    {
+      var printurl = "/item/print_multi_by_tags?query="+escape($("#search").val());
+      if (self.view_time != null)
+        printurl += "&max_timestamp="+escape(self.view_time.toString());
+
+      window.open(printurl);
     });
 
   // setup history management
@@ -429,12 +497,12 @@ ItemCollectionManager.method("set_time", function(new_time, origin)
   }
 });
 
-ItemCollectionManager.method("realize_items", function(query)
+ItemCollectionManager.method("realize_items", function(items)
 {
   var self = this;
   self.div.html('')
-  for (var i = 0; i<self.items.length; ++i)
-    self.items[i].call_with_item_div(function(html) { self.div.append(html) });
+  for (var i = 0; i<items.length; ++i)
+    items[i].call_with_item_div(function(html) { self.div.append(html) });
 
   // only allow adding if we're in the present
   if (self.view_time == null)
@@ -444,14 +512,8 @@ ItemCollectionManager.method("realize_items", function(query)
 ItemCollectionManager.method("empty_was_filled", function()
 {
   var self = this;
-  self.items.push(self.empty_item);
   self.empty_item = new ItemManager(self);
   self.empty_item.call_with_item_div(function(html) { self.div.append(html) });
-});
-
-ItemCollectionManager.method("note_delete", function(item)
-{
-  this.items.splice(this.items.indexOf(item), 1);
 });
 
 ItemCollectionManager.method("update", function()
@@ -468,7 +530,6 @@ ItemCollectionManager.method("fill", function(query, timestamp)
 
   this.last_query = query;
   this.last_timestamp = timestamp;
-  this.items = [];
 
   data = { query: query };
 
@@ -483,11 +544,12 @@ ItemCollectionManager.method("fill", function(query, timestamp)
     dataType:"json",
     success: function(list, status)
     {
+      var items = [];
       for (var i = 0; i < list.length; ++i)
       {
-        self.items.push(new ItemManager(self, list[i]));
+        items.push(new ItemManager(self, list[i]));
       }
-      self.realize_items();
+      self.realize_items(items);
     },
     error: function(req, stat, err)
     {
@@ -565,8 +627,6 @@ function make_tag_links(jq_result)
 // functions  ------------------------------------------------------------------
 $(document).ready(function()
 {
-  set_message("Welcome to Synoptic.");
-
   document.item_manager = new ItemCollectionManager();
   document.item_manager.update();
 
