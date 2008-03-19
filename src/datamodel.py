@@ -105,6 +105,16 @@ class ItemVersion(object):
                 )
 
     def contents_html(self):
+        if self.contents is not None:
+            c = self.contents
+            import re
+            c = re.sub(r"\~\~([^~]+)\~\~", r"<strike>\1</strike>", c)
+            from synoptic.markdown import markdown
+            return markdown(c)
+        else:
+            return None
+
+    def contents_html_from_docutils(self):
         overrides = {
                 #'input_encoding': input_encoding,
                 'doctitle_xform': False,

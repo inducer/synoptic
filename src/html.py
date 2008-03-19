@@ -84,12 +84,18 @@ def navpane(context):
         <div id="navtabs" class="flora">
           <ul>
             <li><a href="#fragment-1"><span>Tags</span></a></li>
-            <li><a href="#fragment-2"><span>Views</span></a></li>
+            <li><a href="#fragment-2"><span>Sub-Tags</span></a></li>
+            <li><a href="#fragment-3"><span>Search</span></a></li>
           </ul>
           <div id="fragment-1">
             <div id="tagcloud"> </div>
+            <input type="checkbox" id="chk_tagcloud_show_hidden"/>
+            <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
           </div>
           <div id="fragment-2">
+            <div id="subtagcloud"> </div>
+          </div>
+          <div id="fragment-3">
             <div id="viewlist"> </div>
           </div>
           </div>

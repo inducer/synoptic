@@ -150,6 +150,8 @@ body, html {
 
 .taglink {
   cursor:pointer;
+  user-select:none;
+  -moz-user-select:none;
 }
 
 .dragging {
@@ -158,6 +160,14 @@ body, html {
 
 .dragging .editcontrols {
   background-color:lightgray;
+}
+
+.collapser {
+  border:1px solid black;
+  background-color:lightgray;
+  cursor:default;
+  padding-left:3px;
+  padding-right:3px;
 }
 
 .draghandle {
@@ -191,3 +201,6 @@ body, html {
   outline:1px outset;
 }
 
+strike {
+  color:gray;
+}

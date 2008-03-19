@@ -114,11 +114,7 @@ class Application(ApplicationBase):
     def item_to_json(self, item):
         result = item.as_json()
 
-        if item.contents is not None:
-            result['contents_html'] = item.contents_html()
-        else:
-            result['contents_html'] = None
-
+        result['contents_html'] = item.contents_html()
         result['title'] = None
         return result
 
@@ -255,6 +251,7 @@ class Application(ApplicationBase):
         twuc_q = (twuc_q
                 .group_by(model.tags.c.id)
                 .having(func.count(current_query.c.id)>0)
+                .order_by(model.tags.c.name)
                 )
         if "limit" in request.GET:
             twuc_q = twuc_q.limit(int(request.GET["limit"]))
@@ -309,7 +306,7 @@ class Application(ApplicationBase):
         return request.respond(
                 printpage({
                     "title": "Synoptic Printout",
-                    "body": u"".join(v.contents_html() for v in versions),
+                    "body": "<hr/>".join(v.contents_html() for v in versions),
                     }))
 
     def store_item(self, request):

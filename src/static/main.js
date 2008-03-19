@@ -111,41 +111,42 @@ ItemManager.method("fill_item_div", function()
   var self = this;
 
   var have_dropzone = false;
-  if (this.id == null)
+  if (self.id == null)
   {
     have_dropzone = true;
-    this.div.html(
+    self.div.html(
       (
       '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
       '<div class="editcontrols">'+
       '<input type="button" id="new_[id]" value="New"/>'+
       '</div>'
-      ).allreplace('[id]', this.id)
+      ).allreplace('[id]', self.id)
       );
-    $('#new_'+this.id).click(function(){ self.begin_edit() });
+    $('#new_'+self.id).click(function(){ self.begin_edit() });
   }
   else 
   {
-    if (this.manager.view_time == null)
+    if (self.manager.view_time == null)
     {
       have_dropzone = true;
-      this.div.html(
+      self.div.html(
         (
         '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
         '<div class="editcontrols">'+
+        '<a id="item_collapser_[id]" class="collapser">-</a> '+
         '<div id="item_draghandle_[id]" class="draghandle">&uarr;&darr;</div> '+
         '<input type="button" id="edit_[id]" value="Edit"/> '+
         '<input type="button" id="delete_[id]" value="Delete"/> '+
         'Tags: [tags]'+
         '</div>'+
-        '<div>[contents]</div>'
-        ).allreplace('[id]', this.id)
-        .allreplace('[tags]', this.format_tag_links())
-        .allreplace('[contents]', this.contents_html)
+        '<div id="item_contents_[id]">[contents]</div>'
+        ).allreplace('[id]', self.id)
+        .allreplace('[tags]', self.format_tag_links())
+        .allreplace('[contents]', self.contents_html)
         );
-      $('#edit_'+this.id).click(function(){ self.begin_edit() });
-      $('#delete_'+this.id).click(function(){ self.do_delete() });
-      $('#item_draghandle_'+this.id).draggable({
+      $('#edit_'+self.id).click(function(){ self.begin_edit() });
+      $('#delete_'+self.id).click(function(){ self.do_delete() });
+      $('#item_draghandle_'+self.id).draggable({
           helper: "clone",
           start: function() 
           { 
@@ -160,19 +161,20 @@ ItemManager.method("fill_item_div", function()
     }
     else
     {
-      this.div.html(
+      self.div.html(
         (
         '<div class="editcontrols">'+
+        '<a id="item_collapser_[id]" class="collapser">-</a> '+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
         'Tags: [tags]'+
         '</div>'+
-        '<div>[contents]</div>'
-        ).allreplace('[id]', this.id)
-        .allreplace('[tags]', this.format_tag_links())
-        .allreplace('[contents]', this.contents_html)
+        '<div id="item_contents_[id]">[contents]</div>'
+        ).allreplace('[id]', self.id)
+        .allreplace('[tags]', self.format_tag_links())
+        .allreplace('[contents]', self.contents_html)
         );
-      $('#btn_revert_'+this.id).click(function()
+      $('#btn_revert_'+self.id).click(function()
         { 
           $.ajax({
             type: 'POST',
@@ -190,7 +192,7 @@ ItemManager.method("fill_item_div", function()
             }
           });
         });
-      $('#btn_copy_to_present_'+this.id).click(function()
+      $('#btn_copy_to_present_'+self.id).click(function()
         { 
           $.ajax({
             type: 'POST',
@@ -210,13 +212,30 @@ ItemManager.method("fill_item_div", function()
         });
     }
 
-    var query = "#item_[id] div.editcontrols a.taglink".replace("[id]", this.id);
+    var query = "#item_[id] div.editcontrols a.taglink".replace("[id]", self.id);
     make_tag_links($(query));
+
+    $("#item_collapser_"+self.id).click(
+        function()
+        {
+          if (self.hidden)
+          {
+            $("#item_collapser_"+self.id).html("-");
+            $("#item_contents_"+self.id).show("slow");
+            self.hidden = false;
+          }
+          else
+          {
+            $("#item_collapser_"+self.id).html("+");
+            $("#item_contents_"+self.id).hide("slow");
+            self.hidden = true;
+          }
+        });
   }
 
   if (have_dropzone)
   {
-    $("#item_dropzone_"+this.id).droppable({
+    $("#item_dropzone_"+self.id).droppable({
       accept: ".draghandle",
       activeClass: 'dropzone-active',
       hoverClass:  'dropzone-hover',
@@ -282,8 +301,10 @@ ItemManager.method("begin_edit", function()
 
   $("#editor_"+this.id).val(this.contents);
   $("#editor_"+this.id).focus();
+  /*
   $("#edit_tags_"+this.id).autocomplete("/tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
+      */
 
   var self = this;
   $("#edit_ok_"+this.id).click(function(){
@@ -338,7 +359,6 @@ ItemManager.method("do_delete", function()
     })},
     error: function(req, stat, err) { report_error("Delete failed."); },
     success: function(data, msg) { 
-      set_message("Delete successful."); 
       update_tag_cloud();
     }
   });
@@ -373,6 +393,7 @@ function ItemCollectionManager()
   var self = this;
   self.div = $("#items");
   self.empty_item = new ItemManager(self);
+  self.fill_sequence_number = 0;
 
   // set up search field
   $("#search").change(function()
@@ -388,8 +409,10 @@ function ItemCollectionManager()
     {
       self.div.stopTime("search_changewatch");
     });
+  /*
   $("#search").autocomplete("/tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
+      */
   $("#btn_search_clear").click(function()
     {
       $("#search").val('');
@@ -520,20 +543,22 @@ ItemCollectionManager.method("update", function()
 
 ItemCollectionManager.method("fill", function(query, timestamp)
 {
-  if (query == this.last_query && timestamp == this.last_timestamp)
+  var self = this;
+  if (query == self.last_query && timestamp == self.last_timestamp)
     return;
 
-  this.div.html(busy('Loading...'));
+  self.div.html(busy('Loading...'));
 
-  this.last_query = query;
-  this.last_timestamp = timestamp;
+  self.last_query = query;
+  self.last_timestamp = timestamp;
 
   data = { query: query };
 
   if (!(timestamp == null || timestamp == undefined))
     data.max_timestamp = timestamp;
 
-  var self = this;
+  ++self.fill_sequence_number;
+  var seq_no = self.fill_sequence_number;
 
   $.ajax({
     data: data,
@@ -541,6 +566,9 @@ ItemCollectionManager.method("fill", function(query, timestamp)
     dataType:"json",
     success: function(list, status)
     {
+      if (seq_no != self.fill_sequence_number)
+        return; // another fill was initiated before we completed, bail out.
+
       var items = [];
       for (var i = 0; i < list.length; ++i)
       {
@@ -567,6 +595,10 @@ function update_tag_cloud()
       for (var i = 0; i < json.data.length; ++i)
       {
         var tag = json.data[i][0];
+
+        if (tag[0] == "." && !$("#chk_tagcloud_show_hidden").get(0).checked)
+          continue;
+
         var usecount = json.data[i][1];
         var usefraction = json.data[i][1]/json.max_usecount;
         var sizefraction = 1-Math.pow(1-usefraction, 2);
@@ -598,13 +630,14 @@ function parse_tags(taglist_str)
 
 function click_tag(tag)
 {
-  var tags = parse_tags($("#search").val());
+  var search = $("#search").val();
+  var tags = parse_tags(search);
 
   var idx = tags.indexOf(tag);
   if (idx == -1)
     tags.push(tag);
   else
-    tags.pop(idx);
+    tags.splice(idx, 1);
 
   $("#search").val(tags.join(", "));
   $("#search").change();
@@ -615,6 +648,12 @@ function make_tag_links(jq_result)
   jq_result.click(function()
     {
       click_tag($(this).html());
+    });
+  jq_result.dblclick(function()
+    {
+      var tag = $(this).html();
+      $("#search").val(tag);
+      $("#search").change();
     });
 }
 
@@ -630,4 +669,5 @@ $(document).ready(function()
   $("#navtabs > ul").tabs();
 
   update_tag_cloud();
+  $("#chk_tagcloud_show_hidden").change(update_tag_cloud);
 });
