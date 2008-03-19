@@ -133,7 +133,7 @@ class Application(ApplicationBase):
         result = result.group_by(model.itemversions.c.item_id)
         return result.alias("current_versions")
 
-    def get_result_ids_query(self, session, model, tags, max_timestamp=None):
+    def get_itemversions_query(self, session, model, tags, max_timestamp=None):
         """Given tags and max_timestamp, find the resulting ItemVersion ids,
         in the right order."""
 
@@ -169,10 +169,7 @@ class Application(ApplicationBase):
             tag_where = and_(tag_where, ItemVersion.tags.any(id=tag.id))
 
         result = (select(
-            [
-                model.itemversions.c.id,
-                model.itemversions.c.item_id,
-                ], 
+            [model.itemversions], 
             from_obj=[from_obj])
             .where(tag_where))
 
@@ -182,7 +179,7 @@ class Application(ApplicationBase):
 
         return result.group_by(model.itemversions.c.item_id)
 
-    def get_itemversions_for_tag_query(self, request):
+    def get_itemversions_for_tag(self, request):
         tags = parse_tags(request.dbsession, request.GET["query"], 
                 create_them=False)
 
@@ -191,13 +188,59 @@ class Application(ApplicationBase):
         else:
             max_timestamp = None
 
-        item_query = self.get_result_ids_query(
-                request.dbsession, request.datamodel, 
-                tags, max_timestamp)
+        session = request.dbsession
+        model = request.datamodel
 
-        # now grab the ORMed instances
-        return [request.dbsession.query(ItemVersion).get(row['id']) 
-                for row in request.dbsession.execute(item_query)]
+        # grab the ORMed instances
+        return (session
+                .query(ItemVersion)
+                .from_statement(self.get_itemversions_query(
+                    session, model, tags, max_timestamp)))
+
+    def get_json_items_for_request(self, request):
+        tags = parse_tags(request.dbsession, request.GET["query"], 
+                create_them=False)
+
+        if "max_timestamp" in request.GET:
+            max_timestamp = float(request.GET["max_timestamp"])
+        else:
+            max_timestamp = None
+
+        session = request.dbsession
+        model = request.datamodel
+
+        itemversions_query = self.get_itemversions_query(
+                session, model, tags, max_timestamp).alias("currentitemversions")
+
+        # prepare eager loading of tags
+        from sqlalchemy.sql import select
+        iv_and_t_query = select([itemversions_query, model.tags],
+                from_obj=[itemversions_query
+                    .join(model.itemversions_tags, 
+                        itemversions_query.c.id
+                        ==model.itemversions_tags.c.itemversion_id)
+                    .join(model.tags, 
+                        model.itemversions_tags.c.tag_id
+                        ==model.tags.c.id)
+                    ],
+                use_labels=True)
+
+        last_id = None
+        result = []
+        for row in session.execute(iv_and_t_query):
+            if last_id != row[itemversions_query.c.id]:
+                last_id = row[itemversions_query.c.id]
+                result.append(
+                        {"id": row[itemversions_query.c.item_id],
+                            "title": None,
+                            "contents": row[itemversions_query.c.contents],
+                            "contents_html": ItemVersion.htmlize(
+                                row[itemversions_query.c.contents]),
+                            "tags": [],
+                            })
+            result[-1]["tags"].append(row[model.tags.c.name])
+
+        return result
 
     # page handlers -----------------------------------------------------------
     def index(self, request):
@@ -291,8 +334,7 @@ class Application(ApplicationBase):
                 mimetype="text/plain")
 
     def get_items_by_tags(self, request):
-        json_items = [self.item_to_json(v) 
-                for v in self.get_itemversions_for_tag_query(request)]
+        json_items = self.get_json_items_for_request(request)
 
         tag_counter = {}
         for it in json_items:
@@ -307,12 +349,12 @@ class Application(ApplicationBase):
         return request.respond(dumps({
             "items": json_items,
             "tags": tags,
-            "max_usecount": max(tag_counter.itervalues()),
+            "max_usecount": max([0]+tag_counter.values()),
             }),
                 mimetype="text/plain")
 
     def print_items_by_tags(self, request):
-        versions = self.get_itemversions_for_tag_query(request)
+        versions = self.get_itemversions_for_tag(request)
 
         from html import printpage
         from simplejson import dumps
@@ -358,34 +400,29 @@ class Application(ApplicationBase):
         model = request.datamodel
         session = request.dbsession
 
-        items = [session.query(Item).get(row[1]) 
+        item_ids = [row[model.itemversions.c.item_id]
                 for row in session.execute(
-                self.get_result_ids_query(session, model, tags))]
+                self.get_itemversions_query(session, model, tags))]
 
         def item_idx(item_id):
             if item_id == None:
-                return len(items)
-            for idx, item in enumerate(items):
+                return len(item_ids)
+            for idx, item in enumerate(item_ids):
                 if item.id == item_id:
                     return idx
             raise ValueError, "invalid item id supplied"
 
-        print data
-
         dragged_item_idx = item_idx(data["dragged_item"])
         before_item_idx = item_idx(data["before_item"])
 
-        print "BEFORE", items
         assert dragged_item_idx != before_item_idx
 
         if before_item_idx < dragged_item_idx:
-            dragged_item = items.pop(dragged_item_idx)
-            items.insert(before_item_idx, dragged_item)
+            dragged_item = item_ids.pop(dragged_item_idx)
+            item_ids.insert(before_item_idx, dragged_item)
         else:
-            items.insert(before_item_idx, items[dragged_item_idx])
-            items.pop(dragged_item_idx)
-
-        print "AFTER", items
+            item_ids.insert(before_item_idx, item_ids[dragged_item_idx])
+            item_ids.pop(dragged_item_idx)
 
         from time import time
 

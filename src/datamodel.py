@@ -104,15 +104,18 @@ class ItemVersion(object):
                 contents=contents or self.contents,
                 )
 
-    def contents_html(self):
-        if self.contents is not None:
-            c = self.contents
+    @staticmethod
+    def htmlize(text):
+        if text is not None:
             import re
-            c = re.sub(r"\~\~([^~]+)\~\~", r"<strike>\1</strike>", c)
+            text = re.sub(r"\~\~([^~]+)\~\~", r"<strike>\1</strike>", text)
             from synoptic.markdown import markdown
-            return markdown(c)
+            return markdown(text)
         else:
             return None
+
+    def contents_html(self):
+        return self.htmlize(self.contents)
 
 
 
