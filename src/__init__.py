@@ -1,5 +1,5 @@
 from __future__ import with_statement
-from synoptic.datamodel import Item, ItemVersion, Tag, parse_tags
+from synoptic.datamodel import Item, ItemVersion, Tag, parse_tags, find_tags
 
 
 
@@ -121,9 +121,23 @@ class Application(ApplicationBase):
     # tools -------------------------------------------------------------------
     def item_to_json(self, item):
         result = item.as_json()
-        from synoptic.wikimarkup import parse
-        result["contents_html"] = parse(result["contents"])
-        result["title"] = None
+
+        if item.contents is not None:
+            overrides = {
+                    #'input_encoding': input_encoding,
+                    'doctitle_xform': False,
+                    'initial_header_level': 2,
+                    }
+            from docutils.core import publish_parts
+            from wikisyntax import MyHTMLWriter
+            parts = publish_parts(source=item.contents, 
+                    writer=MyHTMLWriter(), settings_overrides=overrides)
+
+            result['contents_html'] = parts['html_body']
+        else:
+            result['contents_html'] = None
+
+        result['title'] = None
         return result
 
     def get_current_versions_query(self, model, max_timestamp=None):
@@ -199,10 +213,16 @@ class Application(ApplicationBase):
 
         result = request.dbsession.execute(twuc_q)
 
-        if "with_usecount" in request.GET:
+        if "withusecount" in request.GET:
             from simplejson import dumps
+
+            data = [list(row) for row in result]
+
             return request.respond(
-                    dumps([[row[0], row[1]] for row in result]),
+                    dumps({ 
+                    "data": data,
+                    "max_usecount": max(row[1] for row in data),
+                    }),
                     mimetype="text/plain")
         else:
             return request.respond(u"\n".join(row[0] for row in result), 
@@ -278,14 +298,14 @@ class Application(ApplicationBase):
         itemversion = ItemVersion(
                 item,
                 time(),
-                parse_tags(request.dbsession, data["tags"]),
+                find_tags(request.dbsession, data["tags"]),
                 data["contents"],
                 )
         request.dbsession.save(itemversion)
         request.dbsession.commit()
 
         from simplejson import dumps
-        return request.respond(dumps({"id": item.id}))
+        return request.respond(dumps(self.item_to_json(itemversion)))
 
     def serve_static(self, request, filename):
         from os.path import splitext, join, normpath

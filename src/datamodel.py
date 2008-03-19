@@ -70,7 +70,7 @@ class ItemVersion(object):
 
     def as_json(self):
         return {"id": self.item.id, 
-                "tags": u", ".join(tag.name for tag in self.tags),
+                "tags": [tag.name for tag in self.tags],
                 "contents": self.contents,
                 }
 
@@ -85,9 +85,9 @@ class ItemVersion(object):
 
 
 
-def parse_tags(session, tags_str):
+def find_tags(session, tags):
     result = []
-    for tag_str in [s.strip() for s in tags_str.split(",")]:
+    for tag_str in tags:
         if len(tag_str) == 0:
             continue
 
@@ -100,3 +100,9 @@ def parse_tags(session, tags_str):
             result.append(new_tag)
 
     return result
+
+
+
+
+def parse_tags(session, tags_str):
+    return find_tags(session, (s.strip() for s in tags_str.split(",")))

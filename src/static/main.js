@@ -43,8 +43,10 @@ String.method("allreplace", function(from, to)
   return current;
 })
 
-
-
+String.method("trim", function()
+{
+  return this.replace(/^\s*(.*?)\s*$/,"$1");
+});
 
 function str(val)
 {
@@ -82,13 +84,25 @@ ItemManager.method("set_from_obj", function(arg)
   this.contents_html = arg.contents_html;
 });
 
-ItemManager.method("append_item_div", function(where)
+ItemManager.method("call_with_item_div", function(mod_callback)
 {
-  where.append('<div id="item_[id]"></div>'.replace('[id]', this.id));
+  mod_callback('<div id="item_[id]"></div>'.replace('[id]', this.id));
   this.div = $("#item_"+this.id);
   this.fill_item_div();
 });
 
+
+ItemManager.method("format_tag_links", function() 
+{
+  var result = '';
+  for (var i = 0; i < this.tags.length; ++i)
+  {
+    result += '<a class="taglink">'+this.tags[i]+'</a>';
+    if (i < this.tags.length-1)
+      result += ', ';
+  }
+  return result;
+});
 
 ItemManager.method("fill_item_div", function() 
 {
@@ -99,7 +113,7 @@ ItemManager.method("fill_item_div", function()
     this.div.html(
       (
       '<div class="editcontrols">'+
-      '<input type="button" id="new_[id]" value="New" accesskey="N">'+
+      '<input type="button" id="new_[id]" value="New"/>'+
       '</div>'
       ).allreplace('[id]', this.id)
       );
@@ -112,13 +126,13 @@ ItemManager.method("fill_item_div", function()
       this.div.html(
         (
         '<div class="editcontrols">'+
-        '<input type="button" id="edit_[id]" value="Edit"> '+
-        '<input type="button" id="delete_[id]" value="Delete"> '+
+        '<input type="button" id="edit_[id]" value="Edit"/> '+
+        '<input type="button" id="delete_[id]" value="Delete"/> '+
         'Tags: [tags]'+
         '</div>'+
         '<div>[contents]</div>'
         ).allreplace('[id]', this.id)
-        .allreplace('[tags]', this.tags)
+        .allreplace('[tags]', this.format_tag_links())
         .allreplace('[contents]', this.contents_html)
         );
       $('#edit_'+this.id).click(function(){ self.begin_edit() });
@@ -129,13 +143,13 @@ ItemManager.method("fill_item_div", function()
       this.div.html(
         (
         '<div class="editcontrols">'+
-        '<input type="button" id="btn_revert_[id]" value="Revert"> '+
-        '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"> '+
+        '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
+        '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
         'Tags: [tags]'+
         '</div>'+
         '<div>[contents]</div>'
         ).allreplace('[id]', this.id)
-        .allreplace('[tags]', this.tags)
+        .allreplace('[tags]', this.format_tag_links())
         .allreplace('[contents]', this.contents_html)
         );
       $('#btn_revert_'+this.id).click(function()
@@ -150,7 +164,10 @@ ItemManager.method("fill_item_div", function()
               contents: self.contents
             })},
             error: function(req, stat, err) { report_error("Revert failed."); },
-            success: function(data, msg) { set_message("Revert successful."); }
+            success: function(data, msg) { 
+              set_message("Revert successful."); 
+              update_tag_cloud();
+            }
           });
         });
       $('#btn_copy_to_present_'+this.id).click(function()
@@ -165,10 +182,16 @@ ItemManager.method("fill_item_div", function()
               contents: self.contents
             })},
             error: function(req, stat, err) { report_error("Copy failed."); },
-            success: function(data, msg) { set_message("Copy successful."); }
+            success: function(data, msg) { 
+              set_message("Copy successful."); 
+              update_tag_cloud();
+            }
           });
         });
     }
+
+    var query = "#item_[id] div.editcontrols a.taglink".replace("[id]", this.id);
+    make_tag_links($(query));
   }
 });
 
@@ -212,7 +235,7 @@ ItemManager.method("begin_edit", function()
       url: '/item/store',
       data: {json: JSON.stringify({
         id: self.id,
-        tags: $("#edit_tags_"+self.id).val(),
+        tags: parse_tags($("#edit_tags_"+self.id).val()),
         contents: $("#editor_"+self.id).val()
       })},
       error: function(req, stat, err) {
@@ -223,10 +246,14 @@ ItemManager.method("begin_edit", function()
       {
         var prev_id = self.id;
         $("#edit_errors_"+self.id).html('');
+        self.set_from_obj(data);
         self.id = data.id;
-        self.load_from_server(function(){self.fill_item_div(); });
+        self.call_with_item_div(function(html){ self.div.replaceWith(html); });
+        update_tag_cloud();
         if (prev_id == null)
+        {
           self.manager.empty_was_filled();
+        }
       }
     });
   });
@@ -248,9 +275,14 @@ ItemManager.method("do_delete", function()
     url: '/item/store',
     data: {json: JSON.stringify({
       id: self.id,
-      tags: "",
+      tags: [],
       contents: null
     })},
+    error: function(req, stat, err) { report_error("Delete failed."); },
+    success: function(data, msg) { 
+      set_message("Delete successful."); 
+      update_tag_cloud();
+    }
   });
 });
 
@@ -399,20 +431,22 @@ ItemCollectionManager.method("set_time", function(new_time, origin)
 
 ItemCollectionManager.method("realize_items", function(query)
 {
-  this.div.html('')
-  for (var i = 0; i<this.items.length; ++i)
-    this.items[i].append_item_div(this.div);
+  var self = this;
+  self.div.html('')
+  for (var i = 0; i<self.items.length; ++i)
+    self.items[i].call_with_item_div(function(html) { self.div.append(html) });
 
   // only allow adding if we're in the present
-  if (this.view_time == null)
-    this.empty_item.append_item_div(this.div);
+  if (self.view_time == null)
+    self.empty_item.call_with_item_div(function(html) { self.div.append(html) });
 });
 
 ItemCollectionManager.method("empty_was_filled", function()
 {
-  this.items.push(this.empty_item);
-  this.empty_item = new ItemManager(this);
-  this.empty_item.append_item_div(this.div);
+  var self = this;
+  self.items.push(self.empty_item);
+  self.empty_item = new ItemManager(self);
+  self.empty_item.call_with_item_div(function(html) { self.div.append(html) });
 });
 
 ItemCollectionManager.method("note_delete", function(item)
@@ -465,6 +499,69 @@ ItemCollectionManager.method("fill", function(query, timestamp)
 
 
 
+// tag cloud -------------------------------------------------------------------
+function update_tag_cloud()
+{
+  $.getJSON("/tags/get?withusecount", function (json)
+    {  
+      var html = '';
+      for (var i = 0; i < json.data.length; ++i)
+      {
+        var tag = json.data[i][0];
+        var usecount = json.data[i][1];
+        var usefraction = json.data[i][1]/json.max_usecount;
+        var sizefraction = 1-Math.pow(1-usefraction, 2);
+        var fontsize = Math.round(8.+usefraction*15);
+
+        html += ('<a class="taglink" style="font-size:[fs]pt">[tag]</a> '
+          .allreplace("[fs]", fontsize)
+          .allreplace("[tag]", tag));
+      }
+
+      $("#tagcloud").html(html);
+      make_tag_links($("#tagcloud a"));
+    });
+}
+
+function parse_tags(taglist_str)
+{
+  var tags = taglist_str.split(",");
+  var trimmed_tags = [];
+
+  for (var i = 0; i < tags.length; ++i)
+  {
+    var trimmed = tags[i].trim();
+    if (trimmed.length != 0)
+      trimmed_tags.push(trimmed);
+  }
+  return trimmed_tags;
+}
+
+function click_tag(tag)
+{
+  var tags = parse_tags($("#search").val());
+
+  var idx = tags.indexOf(tag);
+  if (idx == -1)
+    tags.push(tag);
+  else
+    tags.pop(idx);
+
+  $("#search").val(tags.join(", "));
+  $("#search").change();
+}
+
+function make_tag_links(jq_result)
+{
+  jq_result.click(function()
+    {
+      click_tag($(this).html());
+    });
+}
+
+
+
+
 // functions  ------------------------------------------------------------------
 $(document).ready(function()
 {
@@ -472,4 +569,8 @@ $(document).ready(function()
 
   document.item_manager = new ItemCollectionManager();
   document.item_manager.update();
+
+  $("#navtabs > ul").tabs();
+
+  update_tag_cloud();
 });

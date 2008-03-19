@@ -21,6 +21,7 @@ def main():
               "Paste>=1.6",
               "SqlAlchemy>=0.4.4",
               "SimpleJSON>=1.7",
+              "docutils>=0.4",
               ],
 
           scripts=["bin/synoptic"],

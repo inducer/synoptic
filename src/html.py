@@ -23,6 +23,7 @@ def page(context):
       <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.mouse.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.slider.js"></script>
+      <script type="text/javascript" src="/static/jquery-ui/ui.tabs.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/datepicker/core/ui.datepicker.js"></script>
       <script type="text/javascript" src="/static/inheritance.js"></script>
       <script type="text/javascript" src="/static/json2.js"></script>
@@ -40,9 +41,10 @@ def navpane(context):
     return """
     <div id="navpane">
       <div id="innernavpane">
+        <div id="logo">Synoptic</div>
         <div id="history_nav">
           <div style="white-space:nowrap;">
-            <label for="search" accesskey="t">Time: </label>
+            <label for="search" accesskey="t"><img src="/static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
             <span id="history_time"></span>
             <img src="/static/go-last.png" id="btn_go_present" class="imagebutton"/>
@@ -53,9 +55,22 @@ def navpane(context):
             </div>
           </div>
         </div>
-        <ul id="taglist">
-        </ul>
+
         <div id="messagearea">
+        </div>
+
+        <div id="navtabs" class="flora">
+          <ul>
+            <li><a href="#fragment-1"><span>Tags</span></a></li>
+            <li><a href="#fragment-2"><span>Views</span></a></li>
+          </ul>
+          <div id="fragment-1">
+            <div id="tagcloud"> </div>
+          </div>
+          <div id="fragment-2">
+            <div id="viewlist"> </div>
+          </div>
+          </div>
         </div>
       </div>
     </div>
@@ -79,5 +94,5 @@ def mainpane(context):
 def mainpage(context):
     return page(context.add(
         title="Synoptic",
-        body=navpane(context)+mainpane(context)
+        body='<div id="main_container">%s</div>' % (navpane(context)+mainpane(context))
         ))
