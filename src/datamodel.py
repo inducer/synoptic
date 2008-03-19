@@ -114,18 +114,6 @@ class ItemVersion(object):
         else:
             return None
 
-    def contents_html_from_docutils(self):
-        overrides = {
-                #'input_encoding': input_encoding,
-                'doctitle_xform': False,
-                'initial_header_level': 2,
-                }
-        from docutils.core import publish_parts
-        from wikisyntax import MyHTMLWriter
-        parts = publish_parts(source=self.contents, 
-                writer=MyHTMLWriter(), settings_overrides=overrides)
-        return parts['html_body']
-
 
 
 class ViewOrdering(object):
