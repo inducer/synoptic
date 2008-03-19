@@ -83,6 +83,7 @@ class Item(object):
 
 
 
+_html_cache = {}
 class ItemVersion(object):
     def __init__(self, item, timestamp, tags, contents):
         self.item = item
@@ -107,10 +108,16 @@ class ItemVersion(object):
     @staticmethod
     def htmlize(text):
         if text is not None:
-            import re
-            text = re.sub(r"\~\~([^~]+)\~\~", r"<strike>\1</strike>", text)
-            from synoptic.markdown import markdown
-            return markdown(text)
+            try:
+                return _html_cache[text]
+            except KeyError:
+                import re
+                text = re.sub(r"\~\~([^~]+)\~\~", r"<strike>\1</strike>", text)
+                from synoptic.markdown import markdown
+                result = markdown(text)
+
+                _html_cache[text] = result
+                return result
         else:
             return None
 
