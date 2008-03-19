@@ -93,19 +93,6 @@ ItemManager.method("call_with_item_div", function(inserter, when_created)
   this.fill_item_div();
 });
 
-
-ItemManager.method("format_tag_links", function() 
-{
-  var result = '';
-  for (var i = 0; i < this.tags.length; ++i)
-  {
-    result += '<a class="taglink">'+this.tags[i]+'</a>';
-    if (i < this.tags.length-1)
-      result += ', ';
-  }
-  return result;
-});
-
 ItemManager.method("fill_item_div", function() 
 {
   var self = this;
@@ -141,7 +128,7 @@ ItemManager.method("fill_item_div", function()
         '</div>'+
         '<div id="item_contents_[id]">[contents]</div>'
         ).allreplace('[id]', self.id)
-        .allreplace('[tags]', self.format_tag_links())
+        .allreplace('[tags]', format_tag_links(self.tags))
         .allreplace('[contents]', self.contents_html)
         );
       $('#edit_'+self.id).click(function(){ self.begin_edit() });
@@ -171,7 +158,7 @@ ItemManager.method("fill_item_div", function()
         '</div>'+
         '<div id="item_contents_[id]">[contents]</div>'
         ).allreplace('[id]', self.id)
-        .allreplace('[tags]', self.format_tag_links())
+        .allreplace('[tags]', format_tag_links(self.tags))
         .allreplace('[contents]', self.contents_html)
         );
       $('#btn_revert_'+self.id).click(function()
@@ -564,17 +551,28 @@ ItemCollectionManager.method("fill", function(query, timestamp)
     data: data,
     url: '/item/get_multi_by_tags',
     dataType:"json",
-    success: function(list, status)
+    success: function(json, status)
     {
       if (seq_no != self.fill_sequence_number)
         return; // another fill was initiated before we completed, bail out.
 
+      var jsonlist = json.list;
+
       var items = [];
-      for (var i = 0; i < list.length; ++i)
+      for (var i = 0; i < json.items.length; ++i)
       {
-        items.push(new ItemManager(self, list[i]));
+        items.push(new ItemManager(self, json.items[i]));
       }
       self.realize_items(items);
+
+      // generate sub-tag cloud
+      var search_tags = parse_tags($("#search").val());
+      $("#subtagcloud").html(
+        make_tag_cloud(json.tags, json.max_usecount, true, search_tags));
+      make_tag_links($("#subtagcloud a"));
+
+      $("#subtagcloud_search_tags").html(format_tag_links(search_tags, " &middot; "));
+      make_tag_links($("#subtagcloud_search_tags a"));
     },
     error: function(req, stat, err)
     {
@@ -587,29 +585,55 @@ ItemCollectionManager.method("fill", function(query, timestamp)
 
 
 // tag cloud -------------------------------------------------------------------
+function format_tag_links(tags, joiner) 
+{
+  if (joiner == undefined)
+    joiner = ", ";
+
+  var result = '';
+  for (var i = 0; i < tags.length; ++i)
+  {
+    result += '<a class="taglink">'+tags[i]+'</a>';
+    if (i < tags.length-1)
+      result += joiner;
+  }
+  return result;
+}
+
+function make_tag_cloud(data, max_usecount, show_hidden, exclude)
+{
+  var html = '';
+  for (var i = 0; i < data.length; ++i)
+  {
+    var tag = data[i][0];
+
+    if (exclude != undefined)
+      if (exclude.indexOf(tag) != -1)
+        continue;
+
+    if (tag[0] == "." && !show_hidden)
+      continue;
+
+    var usecount = data[i][1];
+    var usefraction = data[i][1]/max_usecount;
+    var sizefraction = 1-Math.pow(1-usefraction, 2);
+    var fontsize = Math.round(8.+usefraction*15);
+
+    html += ('<a class="taglink" style="font-size:[fs]pt">[tag]</a> '
+      .allreplace("[fs]", fontsize)
+      .allreplace("[tag]", tag));
+  }
+
+  return html;
+}
+
 function update_tag_cloud()
 {
   $.getJSON("/tags/get?withusecount", function (json)
     {  
-      var html = '';
-      for (var i = 0; i < json.data.length; ++i)
-      {
-        var tag = json.data[i][0];
-
-        if (tag[0] == "." && !$("#chk_tagcloud_show_hidden").get(0).checked)
-          continue;
-
-        var usecount = json.data[i][1];
-        var usefraction = json.data[i][1]/json.max_usecount;
-        var sizefraction = 1-Math.pow(1-usefraction, 2);
-        var fontsize = Math.round(8.+usefraction*15);
-
-        html += ('<a class="taglink" style="font-size:[fs]pt">[tag]</a> '
-          .allreplace("[fs]", fontsize)
-          .allreplace("[tag]", tag));
-      }
-
-      $("#tagcloud").html(html);
+      $("#tagcloud").html(make_tag_cloud(
+          json.data, json.max_usecount,
+          $("#chk_tagcloud_show_hidden").get(0).checked));
       make_tag_links($("#tagcloud a"));
     });
 }

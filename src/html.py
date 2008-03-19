@@ -93,6 +93,7 @@ def navpane(context):
             <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
           </div>
           <div id="fragment-2">
+            <div id="subtagcloud_search_tags"> </div>
             <div id="subtagcloud"> </div>
           </div>
           <div id="fragment-3">

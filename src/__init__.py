@@ -291,11 +291,24 @@ class Application(ApplicationBase):
                 mimetype="text/plain")
 
     def get_items_by_tags(self, request):
-        versions = self.get_itemversions_for_tag_query(request)
+        json_items = [self.item_to_json(v) 
+                for v in self.get_itemversions_for_tag_query(request)]
+
+        tag_counter = {}
+        for it in json_items:
+            for tag in it["tags"]:
+                tag_counter[tag] = tag_counter.get(tag, 0) + 1
+
+        tags = [list(it) for it in tag_counter.items()]
+        tags.sort()
 
         # and ship them out by JSON
         from simplejson import dumps
-        return request.respond(dumps([self.item_to_json(v) for v in versions]),
+        return request.respond(dumps({
+            "items": json_items,
+            "tags": tags,
+            "max_usecount": max(tag_counter.itervalues()),
+            }),
                 mimetype="text/plain")
 
     def print_items_by_tags(self, request):
