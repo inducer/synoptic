@@ -157,11 +157,16 @@ class Application(ApplicationBase):
                         current_query.c.id==model.itemversions.c.id)
 
         if view_orderings:
-            print "VO", view_orderings[0].entries
             # if we have an ordering, we must also join the viewordering_entries table
             # so we can order by weight
-            from_obj = from_obj.outerjoin(model.viewordering_entries,
-                    model.itemversions.c.item_id==model.viewordering_entries.c.item_id)
+
+            vo_entries = (
+                    select([model.viewordering_entries])
+                    .where(model.viewordering_entries.c.viewordering_id
+                        ==view_orderings[0].id)).alias("vo_entries")
+
+            from_obj = from_obj.outerjoin(vo_entries,
+                    model.itemversions.c.item_id==vo_entries.c.item_id)
                         
         tag_where = model.itemversions.c.contents != None
         for tag in tags:
@@ -176,12 +181,8 @@ class Application(ApplicationBase):
             .where(tag_where))
 
         if view_orderings:
-            # now find the correct viewordering_entries 
-            # add the order by clause
-            result = (result
-                    .where(model.viewordering_entries.c.viewordering_id
-                        ==view_orderings[0].id)
-                    .order_by(model.viewordering_entries.c.weight))
+            # add the ordering clause
+            result = result.order_by(vo_entries.c.weight)
 
         return result.group_by(model.itemversions.c.item_id)
 

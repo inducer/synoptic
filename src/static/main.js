@@ -248,9 +248,6 @@ ItemManager.method("fill_item_div", function()
           })},
           error: function(req, stat, err) 
           { report_error("Reordering failed on server."); },
-          success: function(data, msg) { 
-            set_message("Reordering OK."); 
-          }
         });
       }
       });
