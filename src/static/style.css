@@ -208,3 +208,12 @@ strike {
 #subtagcloud_search_tags a.taglink {
   color:red;
 }
+
+.cursorfield {
+  display:inline;
+  font-weight:bold;
+}
+
+.editcontrols.hascursor {
+  background-color:#bbe;
+}

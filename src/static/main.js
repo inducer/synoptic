@@ -75,6 +75,9 @@ function ItemManager(mgr, arg)
     this.set_from_obj(arg);
 }
 
+
+
+
 ItemManager.method("set_from_obj", function(arg)
 {
   this.id = arg.id;
@@ -84,6 +87,9 @@ ItemManager.method("set_from_obj", function(arg)
   this.contents_html = arg.contents_html;
 });
 
+
+
+
 ItemManager.method("call_with_item_div", function(inserter, when_created)
 {
   inserter('<div id="item_[id]"></div>'.replace('[id]', this.id));
@@ -92,6 +98,9 @@ ItemManager.method("call_with_item_div", function(inserter, when_created)
     when_created(this.div);
   this.fill_item_div();
 });
+
+
+
 
 ItemManager.method("fill_item_div", function() 
 {
@@ -105,7 +114,8 @@ ItemManager.method("fill_item_div", function()
       (
       '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
       '<div class="editcontrols">'+
-      '<input type="button" id="new_[id]" value="New"/>'+
+      '<div id="item_cursor_[id]" class="cursorfield"></div> '+
+      '<input type="button" id="new_[id]" value="New" class="editbutton"/>'+
       '</div>'
       ).allreplace('[id]', self.id)
       );
@@ -120,13 +130,14 @@ ItemManager.method("fill_item_div", function()
         (
         '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
         '<div class="editcontrols">'+
+        '<div id="item_cursor_[id]" class="cursorfield"></div> '+
         '<a id="item_collapser_[id]" class="collapser">-</a> '+
         '<div id="item_draghandle_[id]" class="draghandle">&uarr;&darr;</div> '+
-        '<input type="button" id="edit_[id]" value="Edit"/> '+
-        '<input type="button" id="delete_[id]" value="Delete"/> '+
+        '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
+        '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
         'Tags: [tags]'+
         '</div>'+
-        '<div id="item_contents_[id]">[contents]</div>'
+        '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
         .allreplace('[tags]', format_tag_links(self.tags))
         .allreplace('[contents]', self.contents_html)
@@ -151,12 +162,13 @@ ItemManager.method("fill_item_div", function()
       self.div.html(
         (
         '<div class="editcontrols">'+
+        '<div id="item_cursor_[id]" class="cursorfield"></div> '+
         '<a id="item_collapser_[id]" class="collapser">-</a> '+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
         'Tags: [tags]'+
         '</div>'+
-        '<div id="item_contents_[id]">[contents]</div>'
+        '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
         .allreplace('[tags]', format_tag_links(self.tags))
         .allreplace('[contents]', self.contents_html)
@@ -240,6 +252,7 @@ ItemManager.method("fill_item_div", function()
             dragged_item.call_with_item_div(
               function(html) { self.div.before(html); } /* creator */
               );
+            self.manager.set_cursor_to(dragged_item.div);
           });
 
         // report drag to server
@@ -260,9 +273,18 @@ ItemManager.method("fill_item_div", function()
   }
 });
 
+
+
+
 ItemManager.method("begin_edit", function() 
 {
-  this.div.html(
+  var self = this;
+
+  var text_height = self.div.find(".itemcontents").height();
+  if (text_height < 150)
+    text_height = 150;
+
+  self.div.html(
     (
     '<div id="edit_div_[id]" class="edit_div">'+
     '<table>'+
@@ -272,29 +294,34 @@ ItemManager.method("begin_edit", function()
     '<label for="edit_tags_[id]" accesskey="t">Tags: </label><input id="edit_tags_[id]" type="text" size="50"/>'+
     '</td></tr>'+
     '<tr><td>'+
-    '<textarea id="editor_[id]" cols="80" rows="10"></textarea>'+
+    '<textarea id="editor_[id]" cols="80"></textarea>'+
     '</td></tr>'+
     '</tr></table>'+
     '</div>'+
     '<div  id="edit_errors_[id]"  class="errors"></div>'
-    ).allreplace("[id]",  this.id)
+    ).allreplace("[id]",  self.id)
     );
 
   // default to current search tags
-  if (this.id == null)
-    $("#edit_tags_"+this.id).val($("#search").val());
+  if (self.id == null)
+    $("#edit_tags_"+self.id).val($("#search").val());
   else
-    $("#edit_tags_"+this.id).val(this.tags);
+    $("#edit_tags_"+self.id).val(self.tags);
 
-  $("#editor_"+this.id).val(this.contents);
-  $("#editor_"+this.id).focus();
+  $("#editor_"+self.id).val(self.contents);
+
+  // focus after a delay
+  self.manager.install_focus_handlers($("#editor_"+self.id));
+  $("#editor_"+self.id).get(0).focus();
+  $("#editor_"+self.id).height(text_height);
+
+  self.manager.install_focus_handlers($("#edit_tags_"+self.id));
   /*
-  $("#edit_tags_"+this.id).autocomplete("/tags/get",
+  $("#edit_tags_"+self.id).autocomplete("/tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
       */
 
-  var self = this;
-  $("#edit_ok_"+this.id).click(function(){
+  $("#edit_ok_"+self.id).click(function(){
     $("edit_div_"+self.id).html(busy('Saving...'));
     $.ajax({
       type: 'POST',
@@ -316,6 +343,7 @@ ItemManager.method("begin_edit", function()
         self.set_from_obj(data);
         self.id = data.id;
         self.call_with_item_div(function(html){ self.div.replaceWith(html); });
+        self.manager.set_cursor_to(self.div);
         update_tag_cloud();
         if (prev_id == null)
         {
@@ -325,14 +353,20 @@ ItemManager.method("begin_edit", function()
     });
   });
 
-  $("#edit_cancel_"+this.id).click(function(){
+  $("#edit_cancel_"+self.id).click(function(){
     self.fill_item_div();
+    self.manager.redraw_cursor();
   });
 });
+
+
+
 
 ItemManager.method("do_delete", function()
 {
   var self = this;
+
+  self.manager.set_cursor_to(self.div.next());
   self.div.remove();
 
   $.ajax({
@@ -382,40 +416,18 @@ function ItemCollectionManager()
   self.empty_item = new ItemManager(self);
   self.fill_sequence_number = 0;
 
-  // set up search field
-  $("#search").change(function()
-    {
-      self.update();
-    });
-  $("#search").focus(function()
-    {
-      self.div.everyTime("250ms", "search_changewatch",
-        function() { self.update(); });
-    });
-  $("#search").blur(function()
-    {
-      self.div.stopTime("search_changewatch");
-    });
-  /*
-  $("#search").autocomplete("/tags/get",
-      { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
-      */
-  $("#btn_search_clear").click(function()
-    {
-      $("#search").val('');
-      $("#search").change();
-      $("#search").focus();
-    });
-  $("#btn_print").click(function()
-    {
-      var printurl = "/item/print_multi_by_tags?query="+escape($("#search").val());
-      if (self.view_time != null)
-        printurl += "&max_timestamp="+escape(self.view_time.toString());
+  self.setup_history_handling();
+  self.setup_search();
+  self.setup_keyboard_nav();
+}
 
-      window.open(printurl);
-    });
 
-  // setup history management
+
+
+ItemCollectionManager.method("setup_history_handling", function()
+{
+  var self = this;
+
   self.tsrange = null;
   $.getJSON("/timestamp/get_range", function (json)
     { self.tsrange = json; });
@@ -452,15 +464,176 @@ function ItemCollectionManager()
 
   // setup history datepicker
   $("#edit_date").datepicker();
+  $("#edit_date").change(function()
+      {
+        var val = $("#edit_date").val();
+
+        if (val == "")
+          self.set_time(null);
+        else
+          self.set_time(Date.parse(val)/1000, "picker");
+      });
 
   $("#btn_go_present").click(function()
     { self.set_time(null, "button"); });
 
   $("#edit_date").val('');
   $("#history_time").html('present');
-}
 
-ItemCollectionManager.method("show_time", function(new_time)
+  self.install_focus_handlers($("#edit_date"));
+});
+
+
+
+
+ItemCollectionManager.method("setup_search", function()
+{
+  var self = this;
+
+  $("#search").change(function()
+    {
+      self.update();
+    });
+  $("#search").focus(function()
+    {
+      self.div.everyTime("250ms", "search_changewatch",
+        function() { self.update(); });
+    });
+  $("#search").blur(function()
+    {
+      self.div.stopTime("search_changewatch");
+    });
+  /*
+  $("#search").autocomplete("/tags/get",
+      { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
+      */
+  $("#btn_search_clear").click(function()
+    {
+      $("#search").val('');
+      $("#search").change();
+      $("#search").get(0).focus();
+    });
+
+  self.install_focus_handlers($("#search"));
+});
+
+
+
+
+ItemCollectionManager.method("setup_keyboard_nav", function()
+{
+  var self = this;
+  self.cursor_at = null;
+  self.kb_handler_inhibitions = 0;
+  
+  $(document).keypress(function(ev)
+    {
+      var key = String.fromCharCode(ev.charCode);
+      var handled = false;
+
+      if (self.kb_handler_inhibitions != 0)
+        return true;
+
+      if (key == "s")
+        $("#search").get(0).focus();
+
+      if (self.cursor_at != null)
+      {
+        if (key == "j")
+        {
+          var successor = self.cursor_at.next();
+          if (successor.length)
+            self.set_cursor_to(successor, false);
+          handled = true;
+        }
+        else if (key == "k")
+        {
+          var pred = self.cursor_at.prev();
+          if (pred.length)
+            self.set_cursor_to(pred, true);
+          handled = true;
+        }
+        else if (key == "e")
+          self.cursor_at.find(".editcontrols .editbutton").click();
+        else if (key == "d")
+          self.cursor_at.find(".editcontrols .deletebutton").click();
+        else if (key == "n")
+        {
+          var new_item_div = $("#item_null");
+          if (new_item_div.length)
+          {
+            self.set_cursor_to(new_item_div);
+            self.cursor_at.find(".editcontrols .editbutton").click();
+          }
+        }
+      }
+
+      return !handled;
+    });
+});
+
+
+
+
+ItemCollectionManager.method("redraw_cursor", function()
+{
+  if (this.cursor_at != null)
+    this.set_cursor_to(this.cursor_at);
+});
+
+
+
+
+ItemCollectionManager.method("set_cursor_to", function(div, is_up)
+{
+  if (this.cursor_at != null)
+  {
+    this.cursor_at.find(".editcontrols .cursorfield").html("");
+    this.cursor_at.find(".editcontrols").removeClass("hascursor");
+  }
+
+  div.find(".editcontrols .cursorfield").html(">");
+  div.find(".editcontrols").addClass("hascursor");
+  div.get(0).scrollIntoView(is_up);
+  this.cursor_at = div;
+});
+
+
+
+
+ItemCollectionManager.method("install_focus_handlers", function(input_el)
+{
+  var self = this;
+  input_el.focus(function(ev) 
+    { 
+      ++self.kb_handler_inhibitions; 
+    });
+  input_el.blur(function(ev) 
+    { 
+      --self.kb_handler_inhibitions; 
+    });
+});
+
+
+
+
+ItemCollectionManager.method("note_list_emptied", function(item)
+{
+  this.cursor_at = null;
+});
+
+
+
+
+ItemCollectionManager.method("note_new_first_item", function(item)
+{
+  this.set_cursor_to(item.div);
+});
+
+
+
+
+ItemCollectionManager.method("show_time", function(new_time, origin)
 {
   if (this.tsrange == undefined)
   {
@@ -477,11 +650,17 @@ ItemCollectionManager.method("show_time", function(new_time)
   else
     $("#history_time").html('present');
 
-  if (dt != null)
-    $("#edit_date").val((dt.getMonth()+1)+"/"+dt.getDate()+"/"+dt.getFullYear());
-  else
-    $("#edit_date").val('');
+  if (origin != "picker")
+  {
+    if (dt != null)
+      $("#edit_date").val((dt.getMonth()+1)+"/"+dt.getDate()+"/"+dt.getFullYear());
+    else
+      $("#edit_date").val('');
+  }
 });
+
+
+
 
 ItemCollectionManager.method("set_time", function(new_time, origin)
 {
@@ -493,7 +672,7 @@ ItemCollectionManager.method("set_time", function(new_time, origin)
 
   this.view_time = new_time;
   this.update();
-  this.show_time(new_time);
+  this.show_time(new_time, origin);
 
   if (origin != "slider")
   {
@@ -504,6 +683,9 @@ ItemCollectionManager.method("set_time", function(new_time, origin)
   }
 });
 
+
+
+
 ItemCollectionManager.method("realize_items", function(items)
 {
   var self = this;
@@ -512,9 +694,22 @@ ItemCollectionManager.method("realize_items", function(items)
     items[i].call_with_item_div(function(html) { self.div.append(html) });
 
   // only allow adding if we're in the present
-  if (self.view_time == null)
+  var have_empty_item = self.view_time == null;
+
+  if (have_empty_item)
     self.empty_item.call_with_item_div(function(html) { self.div.append(html) });
+
+  if (items.length)
+    self.note_new_first_item(items[0]);
+  else
+  {
+    if (have_empty_item)
+      self.note_new_first_item(self.empty_item);
+  }
 });
+
+
+
 
 ItemCollectionManager.method("empty_was_filled", function()
 {
@@ -523,10 +718,16 @@ ItemCollectionManager.method("empty_was_filled", function()
   self.empty_item.call_with_item_div(function(html) { self.div.append(html) });
 });
 
+
+
+
 ItemCollectionManager.method("update", function()
 {
   this.fill($("#search").val(), this.view_time);
 })
+
+
+
 
 ItemCollectionManager.method("fill", function(query, timestamp)
 {
@@ -535,6 +736,7 @@ ItemCollectionManager.method("fill", function(query, timestamp)
     return;
 
   self.div.html(busy('Loading...'));
+  self.note_list_emptied();
 
   self.last_query = query;
   self.last_timestamp = timestamp;
@@ -600,6 +802,9 @@ function format_tag_links(tags, joiner)
   return result;
 }
 
+
+
+
 function make_tag_cloud(data, max_usecount, show_hidden, exclude)
 {
   var html = '';
@@ -627,6 +832,9 @@ function make_tag_cloud(data, max_usecount, show_hidden, exclude)
   return html;
 }
 
+
+
+
 function update_tag_cloud()
 {
   $.getJSON("/tags/get?withusecount", function (json)
@@ -637,6 +845,9 @@ function update_tag_cloud()
       make_tag_links($("#tagcloud a"));
     });
 }
+
+
+
 
 function parse_tags(taglist_str)
 {
@@ -652,6 +863,9 @@ function parse_tags(taglist_str)
   return trimmed_tags;
 }
 
+
+
+
 function click_tag(tag)
 {
   var search = $("#search").val();
@@ -666,6 +880,9 @@ function click_tag(tag)
   $("#search").val(tags.join(", "));
   $("#search").change();
 }
+
+
+
 
 function make_tag_links(jq_result)
 {
@@ -694,4 +911,13 @@ $(document).ready(function()
 
   update_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_tag_cloud);
+
+  $("#btn_print").click(function()
+    {
+      var printurl = "/item/print_multi_by_tags?query="+escape($("#search").val());
+      if (self.view_time != null)
+        printurl += "&max_timestamp="+escape(self.view_time.toString());
+
+      window.open(printurl);
+    });
 });
