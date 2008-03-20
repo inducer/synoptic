@@ -1,0 +1,116 @@
+TAGS: welcome
+#Welcome to Synoptic!
+
+Synoptic is "GMail for your notes". It gives you an efficient and friendly interface that makes it possible to keep and categorize a *large* number of small-ish notes and tidbits of information.
+
+The following features set it apart:
+
+* **Fully versioned:** Never deletes *anything*, *ever*. If you want to go back to a previous version of something, just drag that slider up there in the top-left corner.
+
+* **Efficient keyboard control.** Never take your hands of the keyboard while you're working with Synoptic. All every-day functions are keyboard-accessible.
+
+* **Tags.** Synoptic is meant to scale to *large* note collections. Tags provide easy categorization, plus the Web 2.0 goodness of that tag cloud over there on the left.
+
+* **Easy Syntax.** Synoptic uses [Markdown](http://daringfireball.net/projects/markdown/basics) to allow you to type formatted notes easily and quickly.
+---------------------------------------------------------------------------
+TAGS: keyboard,navigation,welcome
+## Keyboard Navigation
+
+When navigating:
+
+* **J**, **K**: move down/up.
+* **E**, **D**: edit/delete.
+* **S**: jump to the search bar.
+* **N**: create a new note.
+
+When editing:
+
+* **Alt-Shift-O** to hit OK.
+* **Alt-Shift-C** to cancel.
+
+(those are valid for Firefox, other browsers treat access keys differently.)
+---------------------------------------------------------------------------
+TAGS: advanced,wsgi
+## Advanced Features
+
+* **Reordering**: You can sort notes by dragging the \[&uarr; &darr;\] box in their edit bar. Synoptic will remember the order and show the items in the same order the next time you use the presently active set of search tags.
+
+* **Use your notes from anywhere**: Synoptic is, at its core, just a [WSGI](http://wsgi.org) application. Install it on your web server, put some form of authentication in front of it, and *cha-ching*: you have worldwide notes.
+
+* **Printing**: Just in case you missed it: There's a print button up there by the search bar that will turn your current view into a simple HTML page.
+
+* **Dealing with history**: Once you travel away from the "present" view of your notes, all the editing features go away. The past is immutable, you might say. :) However, each item gets two new buttons: *Revert* and *Copy to present*. Upon clicking either of these, you will find a copy of that note once you return to the present. In the case of "Revert", it will have replaced whatever state the same note was in in the "present", and with "Copy", there will simply be another copy of it, leaving the current state of the note well alone.
+---------------------------------------------------------------------------
+TAGS: welcome,credits,wsgi
+# Credits
+
+Synoptic was cooked up by [Andreas Klöckner](http://news.tiker.net) while procrastinating from his PhD. (Well, I needed a better note taking tool for my research. :-)
+
+It's not all that big a piece of software, just shy of 2000 lines. It stands on the shoulders of the following giants:
+
+* [Python](http://www.python.org), the programming language.
+* [SQLite](http://www.sqlite.org), the storage engine. Comes with Python nowadays.
+* [SQLAlchemy](http://www.sqlalchemy.org), the Object-Relational Mapper and performer of incredible SQL magic.
+* [Python Paste](http://pythonpaste.org/), bits of usefulness for WSGI.
+* [jQuery](http://jquery.com/), makes hacking Javascript fun again. *[included, with several plugins]*
+* [Python Markdown](http://www.freewisdom.org/projects/python-markdown/), the Wiki syntax *[included]*
+* [SimpleJSON](http://www.undefined.org/python/), a Python/JSON interface.
+* [Setuptools](http://peak.telecommunity.com/DevCenter/setuptools) automatically pulls together all these dependencies so alll you have to type to install synoptic is `easy_install synoptic`.
+
+and lastly:
+
+* Synoptic needs a decent, compliant browser. I test and develop with [Firefox](http://getfirefox.org). Other browsers may or may not work.
+
+In part to say thank you to the people who wrote these amazing pieces of software and everybody supporting Open Source, Synoptic is released under an unrestrictive MIT license.
+
+Synoptic's home page is at <http://news.tiker.net/software/synoptic>.
+---------------------------------------------------------------------------
+TAGS: license
+Synoptic is licensed under the [MIT license](http://opensource.org/licenses/mit-license.html):
+
+Copyright (c) 2008 Andreas Klöckner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+---------------------------------------------------------------------------
+TAGS: bugs
+# Bugs and known issues
+
+* The slider in the history pane sometimes ends up in the wrong spot. But it's fine when you drag it.
+---------------------------------------------------------------------------
+TAGS: welcome
+# Getting Started
+
+You can get started right here! Just delete all these startup notes that are already here, and start your own set of notes. Should you want to come back to these notes, just slide the history slider to the very left. *Remember:* They're not gone when you delete them!
+---------------------------------------------------------------------------
+TAGS: tags,navigation,advanced
+## Navigating with Tags
+
+* **Two ways of tag navigation**: There are two modes of tag navigation, "All tags" and "Sub-Tags". Each has their own tab on the left. Try them out!
+
+* **Hidden tags**: You can create hidden tags. If a tag starts with a dot ("."), it won't show up in the tag cloud by default, unless you click the "show hidden" checkbox.
+
+* **Clicking in the tag cloud**: A single click on a tag adds and removes this tag from the current search. A double click makes this tag the *only* current search term.
+---------------------------------------------------------------------------
+TAGS: syntax,editing
+## Note syntax (and Markdown extensions)
+
+In addition to everything described in the [Markdown syntax specification](http://daringfireball.net/projects/markdown/basics), Synoptic supports the following extensions:
+
+* If you surround some text with double tildes, it will appear in ~~strike trough~~.
+

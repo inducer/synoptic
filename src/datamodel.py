@@ -154,6 +154,9 @@ class ViewOrderingEntry(object):
 
 # tools -----------------------------------------------------------------------
 def find_tags(session, tags, create_them):
+    if isinstance(tags, basestring):
+        tags = [s.strip() for s in tags.split(",")]
+
     result = []
     for tag_str in tags:
         if len(tag_str) == 0:
@@ -171,11 +174,3 @@ def find_tags(session, tags, create_them):
                 result.append(Tag(tag_str))
 
     return result
-
-
-
-
-def parse_tags(session, tags_str, create_them):
-    return find_tags(session, 
-            (s.strip() for s in tags_str.split(",")),
-            create_them=create_them)

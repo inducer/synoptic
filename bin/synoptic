@@ -15,11 +15,26 @@ def main():
     from synoptic import Application
     app = Application()
 
+    if len(args) != 1:
+        parser.print_usage()
+        import sys
+        sys.exit(1)
+
+    dbname = args[0]
+
+    from os import access, F_OK
+    exists = access(dbname, F_OK)
+
     from synoptic import DBSessionInjector
-    app = DBSessionInjector(app, "sqlite:///%s" % args[0])
+    app = dbinj = DBSessionInjector(app, "sqlite:///%s" % args[0])
 
     from paste.exceptions.errormiddleware import ErrorMiddleware
     app = ErrorMiddleware(app, debug=True)
+
+    if not exists:
+        from synoptic import import_file, get_static_file
+        import_file(dbinj.sessionmaker(), 
+                get_static_file("initial-content.txt")[0])
 
     from paste.httpserver import serve
     serve(app, port=options.port)

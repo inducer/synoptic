@@ -1,8 +1,88 @@
-from __future__ import with_statement
 from synoptic.datamodel import \
         Item, ItemVersion, Tag, ViewOrdering, ViewOrderingEntry, \
-        parse_tags, find_tags
+        find_tags
 
+
+
+
+def get_static_file(filename):
+    from os.path import splitext, join, normpath
+
+    import synoptic
+    root_path = join(synoptic.__path__[0], "static")
+
+    full_path = normpath(join(root_path, filename))
+    if not full_path.startswith(root_path):
+        from paste.httpexceptions import HTTPForbidden
+        raise HTTPForbidden()
+
+    inf = open(full_path, "rb")
+    data = inf.read()
+    inf.close()
+
+    name, ext = splitext(filename)
+    mimetypes = {
+            ".jpg": "image/jpeg",
+            ".png": "image/png",
+            ".css": "text/css",
+            ".txt": "text/plain",
+            ".js": "text/javascript",
+            ".js": "text/javascript",
+            }
+
+    if ext == ".txt":
+        data = data.decode("utf-8")
+
+    return (data, mimetypes.get(ext, "application/octet-stream"))
+
+
+
+
+def store_itemversion(dbsession, contents, tags, item_id=None):
+    if item_id is None:
+        item = Item()
+        dbsession.save(item)
+    else:
+        assert isinstance(item_id, int)
+        item = dbsession.query(Item).get(item_id)
+
+    from time import time
+    itemversion = ItemVersion(
+            item,
+            time(),
+            find_tags(dbsession, tags, create_them=True),
+            contents,
+            )
+    dbsession.save(itemversion)
+
+    return itemversion
+
+
+
+
+def import_file(dbsession, text):
+    lines = text.split("\n")
+
+    tags_label = "TAGS: "
+    separator = 60*"-"
+
+    idx = 0
+    while idx < len(lines):
+        assert lines[idx].startswith(tags_label)
+        tags = lines[idx][len(tags_label):]
+        idx += 1
+
+        body = []
+
+        while idx < len(lines) and not lines[idx].startswith(separator):
+            body.append(lines[idx])
+            idx += 1
+
+        idx += 1  # skip separator
+
+        store_itemversion(dbsession, "\n".join(body), tags)
+
+    dbsession.commit()
 
 
 
@@ -102,6 +182,7 @@ class Application(ApplicationBase):
                     (r'^/item/get_by_id$', self.get_item_by_id),
                     (r'^/item/get_multi_by_tags$', self.get_items_by_tags),
                     (r'^/item/print_multi_by_tags$', self.print_items_by_tags),
+                    (r'^/item/export_multi_by_tags$', self.export_items_by_tags),
                     (r'^/item/store$', self.store_item),
                     (r'^/item/reorder$', self.reorder_item),
                     (r'^/tags/get$', self.get_tags),
@@ -180,7 +261,7 @@ class Application(ApplicationBase):
         return result.group_by(model.itemversions.c.item_id)
 
     def get_itemversions_for_tag(self, request):
-        tags = parse_tags(request.dbsession, request.GET["query"], 
+        tags = find_tags(request.dbsession, request.GET.get("query", ""), 
                 create_them=False)
 
         if "max_timestamp" in request.GET:
@@ -198,7 +279,7 @@ class Application(ApplicationBase):
                     session, model, tags, max_timestamp)))
 
     def get_json_items_for_request(self, request):
-        tags = parse_tags(request.dbsession, request.GET["query"], 
+        tags = find_tags(request.dbsession, request.GET["query"], 
                 create_them=False)
 
         if "max_timestamp" in request.GET:
@@ -216,10 +297,10 @@ class Application(ApplicationBase):
         from sqlalchemy.sql import select
         iv_and_t_query = select([itemversions_query, model.tags],
                 from_obj=[itemversions_query
-                    .join(model.itemversions_tags, 
+                    .outerjoin(model.itemversions_tags, 
                         itemversions_query.c.id
                         ==model.itemversions_tags.c.itemversion_id)
-                    .join(model.tags, 
+                    .outerjoin(model.tags, 
                         model.itemversions_tags.c.tag_id
                         ==model.tags.c.id)
                     ],
@@ -238,7 +319,8 @@ class Application(ApplicationBase):
                                 row[itemversions_query.c.contents]),
                             "tags": [],
                             })
-            result[-1]["tags"].append(row[model.tags.c.name])
+            if row[model.tags.c.name] is not None:
+                result[-1]["tags"].append(row[model.tags.c.name])
 
         return result
 
@@ -309,7 +391,7 @@ class Application(ApplicationBase):
             return request.respond(
                     dumps({ 
                     "data": data,
-                    "max_usecount": max(row[1] for row in data),
+                    "max_usecount": max([0] + [row[1] for row in data]),
                     }),
                     mimetype="text/plain")
         else:
@@ -357,34 +439,32 @@ class Application(ApplicationBase):
         versions = self.get_itemversions_for_tag(request)
 
         from html import printpage
-        from simplejson import dumps
         return request.respond(
                 printpage({
                     "title": "Synoptic Printout",
                     "body": "<hr/>".join(v.contents_html() for v in versions),
                     }))
 
+    def export_items_by_tags(self, request):
+        versions = self.get_itemversions_for_tag(request)
+
+        sep = (75*"-") + "\n"
+        return request.respond(
+                sep.join(
+                    "TAGS: %s\n%s\n" % (
+                        ",".join(tag.name for tag in v.tags),
+                        v.contents)
+                    for v in versions),
+                mimetype="text/plain;charset=utf-8")
+
     def store_item(self, request):
         from simplejson import loads, dumps
         data = loads(request.POST["json"])
-        item_id = data["id"]
 
-        if item_id is None:
-            item = Item()
-            request.dbsession.save(item)
-        else:
-            assert isinstance(item_id, int)
-            item = request.dbsession.query(Item).get(item_id)
+        itemversion = store_itemversion(request.dbsession, 
+                data["contents"], data["tags"], data["id"])
 
-        from time import time
-        itemversion = ItemVersion(
-                item,
-                time(),
-                find_tags(request.dbsession, data["tags"], create_them=True),
-                data["contents"],
-                )
-        request.dbsession.save(itemversion)
-        request.dbsession.commit()
+        request.dbsession.commit() # fills in the item id
 
         from simplejson import dumps
         return request.respond(
@@ -437,33 +517,11 @@ class Application(ApplicationBase):
         return request.respond("", mimetype="text/plain")
 
     def serve_static(self, request, filename):
-        from os.path import splitext, join, normpath
-
-        import synoptic
-        root_path = join(synoptic.__path__[0], "static")
-
         try:
-            full_path = normpath(join(root_path, filename))
-            if not full_path.startswith(root_path):
-                from paste.httpexceptions import HTTPForbidden
-                raise HTTPForbidden()
-
-            with open(full_path, "rb") as inf:
-                data = inf.read()
+            data, mimetype = get_static_file(filename)
         except IOError:
             print "NOT FOUND:", filename
             from paste.httpexceptions import HTTPNotFound
             raise HTTPNotFound()
 
-        name, ext = splitext(filename)
-        mimetypes = {
-                ".jpg": "image/jpeg",
-                ".png": "image/png",
-                ".css": "text/css",
-                ".js": "text/javascript",
-                ".js": "text/javascript",
-                }
-
-        return request.respond(data, 
-                mimetype=mimetypes.get(ext, "application/octet-stream"))
-
+        return request.respond(data, mimetype=mimetype)

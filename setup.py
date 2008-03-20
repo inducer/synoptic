@@ -30,6 +30,7 @@ def main():
               'static/*.js',
               'static/*.gif',
               'static/*.png',
+              'static/*.txt',
               'static/*.css',
               'static/jquery-ui/*.js',
               'static/jquery-ui/themes/flora/*.css',
