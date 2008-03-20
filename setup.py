@@ -8,11 +8,11 @@ def main():
     import os.path
 
     setup(name="synoptic",
-          version="0.10",
+          version="0.90",
           description="An AJAXy desktop wiki",
           author=u"Andreas Kloeckner",
           author_email="inform@tiker.net",
-          license = "BSD, like Python",
+          license = "MIT",
           url="http://news.tiker.net/software/synoptic",
 
           zip_safe=False,
@@ -26,6 +26,7 @@ def main():
           scripts=["bin/synoptic"],
           packages=["synoptic"],
           package_dir={'synoptic': "src"},
+          include_package_data=True,
           package_data={'synoptic': [
               'static/*.js',
               'static/*.gif',
