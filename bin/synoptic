@@ -9,6 +9,9 @@ def main():
     parser.add_option(
             "-p", "--port", default=7331, type="int",
             help="Listen port", metavar="PORT")
+    parser.add_option(
+            "-b", "--bind-address", default=None,
+            help="Allow remote connection")
 
     options, args = parser.parse_args()
 
@@ -37,7 +40,7 @@ def main():
                 get_static_file("initial-content.txt")[0])
 
     from paste.httpserver import serve
-    serve(app, port=options.port)
+    serve(app, port=options.port, host=options.bind_address)
 
 if __name__ == "__main__":
     main()

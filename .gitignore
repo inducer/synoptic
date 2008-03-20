@@ -5,3 +5,4 @@ build
 dist
 *egg-info
 .svn
+*.pyc
