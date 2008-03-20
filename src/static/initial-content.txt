@@ -96,7 +96,7 @@ TAGS: bugs
 TAGS: welcome
 # Getting Started
 
-You can get started right here! Just delete all these startup notes that are already here, and start your own set of notes. Should you want to come back to these notes, just slide the history slider to the very left. *Remember:* They're not gone when you delete them!
+You can get started right here! Just delete all these startup notes that are already here, and start your own set of notes. Should you want to come back to these notes, just slide the history slider to the somewhere near the left edge. *Remember:* They're not gone when you delete them!
 ---------------------------------------------------------------------------
 TAGS: tags,navigation,advanced
 ## Navigating with Tags
