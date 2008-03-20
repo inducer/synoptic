@@ -3,8 +3,9 @@
 def main():
     from optparse import OptionParser
 
-    description = "An AJAXy personal wiki"
-    parser = OptionParser(description=description)
+    description = "An AJAXy information/note manager"
+    parser = OptionParser(description=description,
+            usage="%prog [options] dbfile")
     parser.add_option(
             "-p", "--port", default=7331, type="int",
             help="Listen port", metavar="PORT")
