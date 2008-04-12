@@ -114,7 +114,10 @@ class ItemVersion(object):
                 import re
                 text = re.sub(r"\~\~([^~]+)\~\~", r"<strike>\1</strike>", text)
                 from synoptic.markdown import markdown
-                result = markdown(text)
+                try:
+                    result = markdown(text)
+                except:
+                    result = "*** MARKDOWN ERROR *** "+text;
 
                 _html_cache[text] = result
                 return result
