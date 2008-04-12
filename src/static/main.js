@@ -323,13 +323,22 @@ ItemManager.method("begin_edit", function()
 
   $("#edit_ok_"+self.id).click(function(){
     $("edit_div_"+self.id).html(busy('Saving...'));
+    var tags = parse_tags($("#edit_tags_"+self.id).val());
+
+    for (var i = 0; i<tags.length; ++i)
+      if (!is_valid_tag(tags[i]))
+      {
+        alert("Invalid tag: '[tag]'".allreplace("[tag]", tags[i]));
+        return;
+      }
+
     $.ajax({
       type: 'POST',
       dataType: 'json',
       url: '/item/store',
       data: {json: JSON.stringify({
         id: self.id,
-        tags: parse_tags($("#edit_tags_"+self.id).val()),
+        tags: tags,
         contents: $("#editor_"+self.id).val()
       })},
       error: function(req, stat, err) {
