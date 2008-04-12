@@ -39,6 +39,17 @@ def get_static_file(filename):
 
 
 def store_itemversion(dbsession, contents, tags, item_id=None):
+    import re
+    from htmlentitydefs import name2codepoint
+
+    def replace_special_char(match):
+        try:
+            return unichr(name2codepoint[match.group(1)])
+        except KeyError:
+            return match.group(0)
+
+    contents = re.sub(r"\\([a-z0-9]+)", replace_special_char, contents)
+
     if item_id is None:
         item = Item()
         dbsession.save(item)
