@@ -38,6 +38,7 @@ def page(context):
       <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
       <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
       <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
+      <script type="text/javascript" src="/static/jquery.contextmenu.r2.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.base.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.mouse.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.slider.js"></script>
@@ -85,7 +86,7 @@ def navpane(context):
           <ul>
             <li><a href="#fragment-1"><span>Tags</span></a></li>
             <li><a href="#fragment-2"><span>Sub-Tags</span></a></li>
-            <li><a href="#fragment-3"><span>Search</span></a></li>
+            <li><a href="#fragment-3"><span>Bookmarks</span></a></li>
           </ul>
           <div id="fragment-1">
             <div id="tagcloud"> </div>
@@ -95,9 +96,11 @@ def navpane(context):
           <div id="fragment-2">
             <div id="subtagcloud_search_tags"> </div>
             <div id="subtagcloud"> </div>
+            <input type="checkbox" id="chk_subtagcloud_show_hidden"/>
+            <label for="chk_subtagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
           </div>
           <div id="fragment-3">
-            <div id="viewlist"> </div>
+            <div id="bookmarks"> </div>
           </div>
           </div>
         </div>
@@ -115,14 +118,27 @@ def mainpane(context):
           <img src="/static/edit-clear.png" alt="Clear search bar" id="btn_search_clear" class="imagebutton"/>
           <img src="/static/print.png" alt="Print" id="btn_print" class="imagebutton"/>
         </div>
-        <div id="items>
+        <div id="items">
         </div>
       </div>
+    </div>
+    """
+
+def context_menus():
+    return """
+    <div id="tag_context_menu">
+      <ul>
+        <li id="rename">Rename</li>
+        <li id="restrict">Restrict search</li>
+        <li id="search">Make new search term</li>
+      </ul>
     </div>
     """
 
 def mainpage(context):
     return page(context.add(
         title="Synoptic",
-        body='<div id="main_container">%s</div>' % (navpane(context)+mainpane(context))
+        body='<div id="main_container">%s</div>%s' % (
+            navpane(context)+mainpane(context),
+            context_menus())
         ))

@@ -212,7 +212,7 @@ ItemManager.method("fill_item_div", function()
     }
 
     var query = "#item_[id] div.editcontrols a.taglink".replace("[id]", self.id);
-    make_tag_links($(query));
+    add_tag_behavior($(query));
 
     $("#item_collapser_"+self.id).click(
         function()
@@ -721,18 +721,18 @@ ItemCollectionManager.method("empty_was_filled", function()
 
 
 
-ItemCollectionManager.method("update", function()
+ItemCollectionManager.method("update", function(force)
 {
-  this.fill($("#search").val(), this.view_time);
+  this.fill($("#search").val(), this.view_time, force);
 })
 
 
 
 
-ItemCollectionManager.method("fill", function(query, timestamp)
+ItemCollectionManager.method("fill", function(query, timestamp, force)
 {
   var self = this;
-  if (query == self.last_query && timestamp == self.last_timestamp)
+  if (!force && query == self.last_query && timestamp == self.last_timestamp)
     return;
 
   self.div.html(busy('Loading...'));
@@ -771,10 +771,10 @@ ItemCollectionManager.method("fill", function(query, timestamp)
       var search_tags = parse_tags($("#search").val());
       $("#subtagcloud").html(
         make_tag_cloud(json.tags, json.max_usecount, true, search_tags));
-      make_tag_links($("#subtagcloud a"));
+      add_tag_behavior($("#subtagcloud a"));
 
       $("#subtagcloud_search_tags").html(format_tag_links(search_tags, " &middot; "));
-      make_tag_links($("#subtagcloud_search_tags a"));
+      add_tag_behavior($("#subtagcloud_search_tags a"));
     },
     error: function(req, stat, err)
     {
@@ -787,6 +787,14 @@ ItemCollectionManager.method("fill", function(query, timestamp)
 
 
 // tag cloud -------------------------------------------------------------------
+function is_valid_tag(tag)
+{
+  return tag.match(/^[.a-zA-Z][.a-zA-Z0-9]*$/) != null;
+}
+
+
+
+
 function format_tag_links(tags, joiner) 
 {
   if (joiner == undefined)
@@ -842,7 +850,7 @@ function update_tag_cloud()
       $("#tagcloud").html(make_tag_cloud(
           json.data, json.max_usecount,
           $("#chk_tagcloud_show_hidden").get(0).checked));
-      make_tag_links($("#tagcloud a"));
+      add_tag_behavior($("#tagcloud a"));
     });
 }
 
@@ -884,7 +892,7 @@ function click_tag(tag)
 
 
 
-function make_tag_links(jq_result)
+function add_tag_behavior(jq_result)
 {
   jq_result.click(function()
     {
@@ -896,6 +904,49 @@ function make_tag_links(jq_result)
       $("#search").val(tag);
       $("#search").change();
     });
+  jq_result.contextMenu("tag_context_menu", {
+      bindings: {
+        'rename': function(tag_html) 
+        {
+          var old_name = $(tag_html).html();
+          var new_name = prompt(
+            "Rename tag '[old_name]' to:"
+            .allreplace("[old_name]", old_name),
+            old_name);
+          if (new_name != undefined && new_name != old_name)
+          {
+            if (!is_valid_tag(new_name))
+              alert("Cannot rename--not a valid tag.");
+            else
+            {
+              $.ajax({
+                type: 'POST',
+                dataType: 'text',
+                url: '/tags/rename',
+                data: {json: JSON.stringify({
+                  old_name: old_name,
+                  new_name: new_name,
+                })},
+                error: function(req, stat, err) { report_error("Rename failed."); },
+                success: function(data, msg) { 
+                  set_message("Rename successful."); 
+                  update_tag_cloud();
+                  document.item_manager.update(true);
+                }
+              });
+            }
+          }
+        },
+        'restrict': function(tag_html) {
+          click_tag($(tag_html).html());
+        },
+        'search': function(tag_html) {
+          var tag = $(tag_html).html();
+          $("#search").val(tag);
+          $("#search").change();
+        }
+      }
+      });
 }
 
 

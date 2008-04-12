@@ -186,6 +186,7 @@ class Application(ApplicationBase):
                     (r'^/item/store$', self.store_item),
                     (r'^/item/reorder$', self.reorder_item),
                     (r'^/tags/get$', self.get_tags),
+                    (r'^/tags/rename$', self.rename_tag),
                     (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ])
 
@@ -397,6 +398,23 @@ class Application(ApplicationBase):
         else:
             return request.respond(u"\n".join(row[0] for row in result), 
                     mimetype="text/plain")
+
+    def rename_tag(self, request):
+        from simplejson import loads, dumps
+        data = loads(request.POST["json"])
+
+        old_name = data["old_name"]
+        new_name = data["new_name"]
+
+        tag = request.dbsession.query(Tag).filter_by(name=old_name).one()
+        new_tag_query = request.dbsession.query(Tag).filter_by(name=new_name)
+        
+        if new_tag_query.count():
+            raise ValueError, "tag already exsits"
+
+        tag.name = new_name
+
+        return request.respond("", mimetype="text/plain")
 
     def get_item_by_id(self, request):
         query = (
