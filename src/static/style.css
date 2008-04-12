@@ -154,6 +154,16 @@ body, html {
   -moz-user-select:none;
 }
 
+
+strike {
+  color:gray;
+}
+
+#subtagcloud_search_tags a.taglink {
+  color:red;
+}
+
+/* dragging-related --------------------------------------------------------- */
 .dragging {
   background-color:lightgray;
 }
@@ -163,10 +173,11 @@ body, html {
 }
 
 .draghandle {
-  border:1px solid black;
-  background-color:lightgray;
   display:inline;
   cursor:default;
+  position:relative;
+  top:0.2em;
+  cursor:move;
 }
 
 .dropzone {
@@ -193,15 +204,7 @@ body, html {
   outline:1px outset;
 }
 
-strike {
-  color:gray;
-}
-
-#subtagcloud_search_tags a.taglink {
-  color:red;
-}
-
-/* Cursor related ----------------------------------------------------------- */
+/* cursor-related ----------------------------------------------------------- */
 .cursorfield {
   padding-left:14px;
   background-repeat:no-repeat;
@@ -215,7 +218,7 @@ strike {
   background-image:url("cursor.png");
 }
 
-/* Collapsing-related ------------------------------------------------------- */
+/* collapsing-related ------------------------------------------------------- */
 
 .item .editcontrols .collapser {
   cursor:default;

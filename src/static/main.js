@@ -133,9 +133,12 @@ ItemManager.method("fill_item_div", function()
         '<div class="editcontrols">'+
         '<span id="item_cursor_[id]" class="cursorfield"></span> '+
         '<span id="item_collapser_[id]" class="collapser"></span> '+
-        '<div id="item_draghandle_[id]" class="draghandle">&uarr;&darr;</div> '+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
         '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
+        '<div id="item_draghandle_[id]" class="draghandle">'+
+          '<img src="/static/dragger.png" alt="drag handle" '+
+          'title="Drag this handle to change display order"/>'+
+        '</div> '+
         'Tags: [tags]'+
         '</div>'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
