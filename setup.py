@@ -9,12 +9,51 @@ def main():
 
     setup(name="synoptic",
           version="0.90",
-          description="An AJAXy desktop wiki",
+          description="An AJAXy notes manager",
+          long_description="""
+          Synoptic is "GMail for your notes". It gives you an efficient and
+          friendly interface that makes it possible to keep and categorize a
+          *large* number of small-ish notes and tidbits of information.
+
+          The following features set it apart:
+
+          * **Fully versioned:** Never deletes *anything*, *ever*. If you want
+            to go back to a previous version of something, just drag the
+            slider up there in the top-left corner.
+
+          * **Efficient keyboard control.** Never take your hands of the
+            keyboard while you're working with Synoptic. All every-day
+            functions are keyboard-accessible.
+
+          * **Tags.** Synoptic is meant to scale to *large* note collections.
+            Tags provide easy categorization, plus the Web 2.0 goodness of that
+            tag cloud over there on the left.
+
+          * **Easy Syntax.** Synoptic uses
+            Markdown to allow you to type formatted notes easily and quickly.
+          """,
           author=u"Andreas Kloeckner",
           author_email="inform@tiker.net",
           license = "MIT",
           url="http://news.tiker.net/software/synoptic",
-
+          classifiers=[
+              'Development Status :: 4 - Beta',
+              'Environment :: Console',
+              'Environment :: Web Environment',
+              'Intended Audience :: End Users/Desktop',
+              'Intended Audience :: Developers',
+              'Intended Audience :: Science/Research',
+              'Intended Audience :: Legal Industry',
+              'License :: OSI Approved :: MIT License',
+              'Operating System :: MacOS :: MacOS X',
+              'Operating System :: Microsoft :: Windows',
+              'Operating System :: POSIX',
+              'Programming Language :: Python',
+              'Topic :: Communications :: Email',
+              'Topic :: Office/Business',
+              'Topic :: Utilities',
+              'Topic :: Text Processing',
+              ],
           zip_safe=False,
 
           install_requires=[
