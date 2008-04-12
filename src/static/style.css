@@ -162,14 +162,6 @@ body, html {
   background-color:lightgray;
 }
 
-.collapser {
-  border:1px solid black;
-  background-color:lightgray;
-  cursor:default;
-  padding-left:3px;
-  padding-right:3px;
-}
-
 .draghandle {
   border:1px solid black;
   background-color:lightgray;
@@ -209,13 +201,41 @@ strike {
   color:red;
 }
 
+/* Cursor related ----------------------------------------------------------- */
 .cursorfield {
-  display:inline;
-  font-weight:bold;
+  padding-left:14px;
+  background-repeat:no-repeat;
 }
 
 .editcontrols.hascursor {
   background-color:#bbe;
+}
+
+.editcontrols.hascursor .cursorfield {
+  background-image:url("cursor.png");
+}
+
+/* Collapsing-related ------------------------------------------------------- */
+
+.item .editcontrols .collapser {
+  cursor:default;
+  padding-left:20px;
+  background-image:url("expanded.png");
+  background-repeat:no-repeat;
+}
+
+.item .editcontrols .collapser:hover {
+  background-image:url("expanded-hover.png");
+}
+.item.collapsed .editcontrols .collapser {
+  background-image:url("collapsed.png");
+}
+.item.collapsed .editcontrols .collapser:hover {
+  background-image:url("collapsed-hover.png");
+}
+
+.item.collapsed .itemcontents {
+  display:none;
 }
 
 /* Content styling ---------------------------------------------------------- */

@@ -92,8 +92,9 @@ ItemManager.method("set_from_obj", function(arg)
 
 ItemManager.method("call_with_item_div", function(inserter, when_created)
 {
-  inserter('<div id="item_[id]"></div>'.replace('[id]', this.id));
+  inserter('<div id="item_[id]" class="item"></div>'.replace('[id]', this.id));
   this.div = $("#item_"+this.id);
+
   if (when_created != undefined)
     when_created(this.div);
   this.fill_item_div();
@@ -114,7 +115,7 @@ ItemManager.method("fill_item_div", function()
       (
       '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
       '<div class="editcontrols">'+
-      '<div id="item_cursor_[id]" class="cursorfield"></div> '+
+      '<span id="item_cursor_[id]" class="cursorfield"></span> '+
       '<input type="button" id="new_[id]" value="New" class="editbutton"/>'+
       '</div>'
       ).allreplace('[id]', self.id)
@@ -130,8 +131,8 @@ ItemManager.method("fill_item_div", function()
         (
         '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
         '<div class="editcontrols">'+
-        '<div id="item_cursor_[id]" class="cursorfield"></div> '+
-        '<a id="item_collapser_[id]" class="collapser">-</a> '+
+        '<span id="item_cursor_[id]" class="cursorfield"></span> '+
+        '<span id="item_collapser_[id]" class="collapser"></span> '+
         '<div id="item_draghandle_[id]" class="draghandle">&uarr;&darr;</div> '+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
         '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
@@ -162,7 +163,7 @@ ItemManager.method("fill_item_div", function()
       self.div.html(
         (
         '<div class="editcontrols">'+
-        '<div id="item_cursor_[id]" class="cursorfield"></div> '+
+        '<span id="item_cursor_[id]" class="cursorfield"></span> '+
         '<a id="item_collapser_[id]" class="collapser">-</a> '+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
@@ -215,21 +216,8 @@ ItemManager.method("fill_item_div", function()
     add_tag_behavior($(query));
 
     $("#item_collapser_"+self.id).click(
-        function()
-        {
-          if (self.hidden)
-          {
-            $("#item_collapser_"+self.id).html("-");
-            $("#item_contents_"+self.id).show("slow");
-            self.hidden = false;
-          }
-          else
-          {
-            $("#item_collapser_"+self.id).html("+");
-            $("#item_contents_"+self.id).hide("slow");
-            self.hidden = true;
-          }
-        });
+        function() { item_toggle_collapsed(self.div); }
+        );
   }
 
   if (have_dropzone)
@@ -274,6 +262,13 @@ ItemManager.method("fill_item_div", function()
 });
 
 
+function item_toggle_collapsed(div)
+{
+  if ($(div).hasClass("collapsed"))
+    $(div).removeClass("collapsed");
+  else
+    $(div).addClass("collapsed");
+}
 
 
 ItemManager.method("begin_edit", function() 
@@ -310,7 +305,6 @@ ItemManager.method("begin_edit", function()
 
   $("#editor_"+self.id).val(self.contents);
 
-  // focus after a delay
   self.manager.install_focus_handlers($("#editor_"+self.id));
   $("#editor_"+self.id).get(0).focus();
   $("#editor_"+self.id).height(text_height);
@@ -428,6 +422,7 @@ function ItemCollectionManager()
   self.setup_history_handling();
   self.setup_search();
   self.setup_keyboard_nav();
+  self.setup_toolbar();
 }
 
 
@@ -507,10 +502,12 @@ ItemCollectionManager.method("setup_search", function()
     {
       self.div.everyTime("250ms", "search_changewatch",
         function() { self.update(); });
+      ++self.search_focused;
     });
   $("#search").blur(function()
     {
       self.div.stopTime("search_changewatch");
+      --self.search_focused;
     });
   /*
   $("#search").autocomplete("/tags/get",
@@ -533,18 +530,28 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
 {
   var self = this;
   self.cursor_at = null;
-  self.kb_handler_inhibitions = 0;
+  self.kb_shortcut_inhibitions = 0;
+  self.search_focused = 0;
   
   $(document).keypress(function(ev)
     {
       var key = String.fromCharCode(ev.charCode);
       var handled = false;
 
-      if (self.kb_handler_inhibitions != 0)
+      if (self.search_focused && ev.keyCode == 13)
+      {
+        $("#search").get(0).blur();
+        return;
+      }
+
+      if (self.kb_shortcut_inhibitions != 0)
         return true;
 
-      if (key == "s")
+      if (key == "s" || key =="/")
         $("#search").get(0).focus();
+
+      if (key == "c")
+        self.cursor_at.find(".editcontrols .collapser").click();
 
       if (self.cursor_at != null)
       {
@@ -584,6 +591,29 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
 
 
 
+ItemCollectionManager.method("setup_toolbar", function()
+{
+  $("#btn_print").click(function()
+    {
+      var printurl = "/item/print_multi_by_tags?query="+escape($("#search").val());
+      if (self.view_time != null)
+        printurl += "&max_timestamp="+escape(self.view_time.toString());
+
+      window.open(printurl);
+    });
+  $("#btn_expand").click(function()
+    { 
+      $(".item").removeClass("collapsed");
+    });
+  $("#btn_collapse").click(function()
+    { 
+      $(".item").addClass("collapsed");
+    });
+});
+
+
+
+
 ItemCollectionManager.method("redraw_cursor", function()
 {
   if (this.cursor_at != null)
@@ -597,11 +627,9 @@ ItemCollectionManager.method("set_cursor_to", function(div, is_up)
 {
   if (this.cursor_at != null)
   {
-    this.cursor_at.find(".editcontrols .cursorfield").html("");
     this.cursor_at.find(".editcontrols").removeClass("hascursor");
   }
 
-  div.find(".editcontrols .cursorfield").html(">");
   div.find(".editcontrols").addClass("hascursor");
   div.get(0).scrollIntoView(is_up);
   this.cursor_at = div;
@@ -615,11 +643,11 @@ ItemCollectionManager.method("install_focus_handlers", function(input_el)
   var self = this;
   input_el.focus(function(ev) 
     { 
-      ++self.kb_handler_inhibitions; 
+      ++self.kb_shortcut_inhibitions; 
     });
   input_el.blur(function(ev) 
     { 
-      --self.kb_handler_inhibitions; 
+      --self.kb_shortcut_inhibitions; 
     });
 });
 
@@ -971,13 +999,4 @@ $(document).ready(function()
 
   update_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_tag_cloud);
-
-  $("#btn_print").click(function()
-    {
-      var printurl = "/item/print_multi_by_tags?query="+escape($("#search").val());
-      if (self.view_time != null)
-        printurl += "&max_timestamp="+escape(self.view_time.toString());
-
-      window.open(printurl);
-    });
 });
