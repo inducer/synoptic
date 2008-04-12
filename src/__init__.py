@@ -48,7 +48,7 @@ def store_itemversion(dbsession, contents, tags, item_id=None):
         except KeyError:
             return match.group(0)
 
-    contents = re.sub(r"\\([a-z0-9]+)", replace_special_char, contents)
+    contents = re.sub(r"(?<!\\)\\([a-z0-9]+)", replace_special_char, contents)
 
     if item_id is None:
         item = Item()
