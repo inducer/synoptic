@@ -50,6 +50,7 @@ def page(context):
       <script type="text/javascript" src="/static/jquery-ui/datepicker/core/ui.datepicker.js"></script>
       <script type="text/javascript" src="/static/inheritance.js"></script>
       <script type="text/javascript" src="/static/json2.js"></script>
+      <script type="text/javascript" src="/static/rsh.js"></script>
       <script type="text/javascript" src="/static/main.js"></script>
       <link rel="stylesheet" type="text/css" href="/static/style.css">
       <link rel="stylesheet" href="/static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
@@ -86,7 +87,6 @@ def navpane(context):
           <ul>
             <li><a href="#fragment-1"><span>Tags</span></a></li>
             <li><a href="#fragment-2"><span>All Tags</span></a></li>
-            <li><a href="#fragment-3"><span>Bookmarks</span></a></li>
           </ul>
           <div id="fragment-1">
             <div id="subtagcloud_search_tags"> </div>
@@ -98,10 +98,6 @@ def navpane(context):
             <div id="tagcloud"> </div>
             <input type="checkbox" id="chk_tagcloud_show_hidden"/>
             <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
-          </div>
-          <div id="fragment-3">
-            <div id="bookmarks"> </div>
-          </div>
           </div>
         </div>
       </div>

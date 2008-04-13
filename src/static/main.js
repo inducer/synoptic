@@ -167,7 +167,7 @@ ItemManager.method("fill_item_div", function()
         (
         '<div class="editcontrols">'+
         '<span id="item_cursor_[id]" class="cursorfield"></span> '+
-        '<a id="item_collapser_[id]" class="collapser">-</a> '+
+        '<span id="item_collapser_[id]" class="collapser"></span> '+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
         'Tags: [tags]'+
@@ -302,7 +302,13 @@ ItemManager.method("begin_edit", function()
 
   // default to current search tags
   if (self.id == null)
-    $("#edit_tags_"+self.id).val($("#search").val());
+  {
+    var search_val = $("#search").val();
+    if (search_val == "")
+      $("#edit_tags_"+self.id).val("home");
+    else
+      $("#edit_tags_"+self.id).val(search_val);
+  }
   else
     $("#edit_tags_"+self.id).val(self.tags);
 
@@ -431,20 +437,43 @@ function ItemCollectionManager()
 
 
 
+ItemCollectionManager.method("set_history_slider", function(time)
+{
+  var new_percentage;
+  if (time == null || this.tsrange == undefined)
+    new_percentage = 100.;
+  else
+    new_percentage = (time-this.tsrange.min)
+      / (this.tsrange.max-this.tsrange.min)* 100.;
+
+  ++this.slider_update_inhibitions;
+  $("#history_slider").slider("moveTo", new_percentage);
+  --this.slider_update_inhibitions;
+});
+
+
+
+
 ItemCollectionManager.method("setup_history_handling", function()
 {
   var self = this;
 
   self.tsrange = null;
   $.getJSON("/timestamp/get_range", function (json)
-    { self.tsrange = json; });
+    { 
+      self.tsrange = json; 
+      self.set_history_slider(self.view_time);
+    });
+
   self.view_time = null;
 
   // setup history slider
+  self.slider_update_inhibitions = 0;
+
   $("#history_slider").slider({
       slide: function(e, ui)
         {
-          if (self.tsrange == null)
+          if (self.tsrange == null || self.slider_update_inhibitions)
             return;
 
           if (ui.value == 100)
@@ -456,15 +485,17 @@ ItemCollectionManager.method("setup_history_handling", function()
         },
       change: function(e, ui)
         {
-          if (self.tsrange == null)
+          if (self.tsrange == null || self.slider_update_inhibitions)
             return;
 
           if (ui.value == 100)
             self.set_time(null, "slider");
           else
+          {
             var new_time = self.tsrange.min 
               + ui.value/100.*(self.tsrange.max-self.tsrange.min);
             self.set_time(new_time, "slider");
+          }
         },
       startValue: 100,
       });
@@ -493,6 +524,36 @@ ItemCollectionManager.method("setup_history_handling", function()
 
 
 
+ItemCollectionManager.method("add_history_item", function()
+{
+  dhtmlHistory.add(
+    escape(JSON.stringify({
+      query:$("#search").val(),
+      timestamp:this.view_time,
+    })));
+});
+
+
+
+
+ItemCollectionManager.method("handle_history_event", function(new_loc, dummy)
+{
+  if (new_loc != "")
+  {
+    var loc_descriptor = JSON.parse(unescape(new_loc));
+    $("#search").val(loc_descriptor.query);
+    this.set_time(loc_descriptor.timestamp, "history");
+  }
+  else
+  {
+    $("#search").val("");
+    this.set_time(null, "history");
+  }
+});
+
+
+
+
 ItemCollectionManager.method("setup_search", function()
 {
   var self = this;
@@ -503,13 +564,39 @@ ItemCollectionManager.method("setup_search", function()
     });
   $("#search").focus(function()
     {
-      self.div.everyTime("250ms", "search_changewatch",
-        function() { self.update(); });
+      var last_search = $("#search").val();
+      var unchanged_count = 0;
+      var is_updated = true;
+
+      self.div.everyTime("100ms", "search_changewatch",
+        function() 
+        { 
+          var search = $("#search").val();
+          if (search != last_search)
+          {
+            is_updated = false;
+            last_search = search;
+            unchanged_count = 0;
+            return
+          }
+
+          if (!is_updated)
+          {
+            ++unchanged_count;
+
+            if (unchanged_count > 3)
+            {
+              self.update(); 
+              is_updated = true;
+            }
+          }
+        });
       ++self.search_focused;
     });
   $("#search").blur(function()
     {
       self.div.stopTime("search_changewatch");
+      self.add_history_item();
       --self.search_focused;
     });
   /*
@@ -675,12 +762,6 @@ ItemCollectionManager.method("note_new_first_item", function(item)
 
 ItemCollectionManager.method("show_time", function(new_time, origin)
 {
-  if (this.tsrange == undefined)
-  {
-    report_error("Cannot set date until timestamp range has been received.");
-    return;
-  }
-
   var dt = null;
   if (new_time != null)
   {
@@ -704,23 +785,15 @@ ItemCollectionManager.method("show_time", function(new_time, origin)
 
 ItemCollectionManager.method("set_time", function(new_time, origin)
 {
-  if (this.tsrange == undefined)
-  {
-    report_error("Cannot set date until timestamp range has been received.");
-    return;
-  }
-
   this.view_time = new_time;
   this.update();
   this.show_time(new_time, origin);
 
+  if (origin != "history")
+    this.add_history_item();
+
   if (origin != "slider")
-  {
-    var new_percentage = (new_time-this.tsrange.min)
-      / (this.tsrange.max-this.tsrange.min)* 100.
-    this.set_time(new_time, "slider");
-    $("#history_slider").slider("moveTo", new_percentage.toInt());
-  }
+    this.set_history_slider(new_time);
 });
 
 
@@ -971,7 +1044,7 @@ function add_tag_behavior(jq_result)
                 success: function(data, msg) { 
                   set_message("Rename successful."); 
                   update_tag_cloud();
-                  document.item_manager.update(true);
+                  document.collection_manager.update(true);
                 }
               });
             }
@@ -995,11 +1068,32 @@ function add_tag_behavior(jq_result)
 // functions  ------------------------------------------------------------------
 $(document).ready(function()
 {
-  document.item_manager = new ItemCollectionManager();
-  document.item_manager.update();
+  var collection_manager = new ItemCollectionManager()
+  document.collection_manager = collection_manager;
 
   $("#navtabs > ul").tabs();
 
   update_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_tag_cloud);
+
+  dhtmlHistory.initialize();
+  dhtmlHistory.addListener(
+    function (new_loc, data)
+    { 
+      collection_manager.handle_history_event(new_loc, data); 
+    });
+  if (dhtmlHistory.isFirstLoad())
+    collection_manager.handle_history_event(dhtmlHistory.getCurrentLocation(), null);
+});
+
+
+window.dhtmlHistory.create({
+  toJSON: function(o) 
+  {
+    return JSON.stringify(o);
+  }, 
+  fromJSON: function(s) 
+  {
+    return JSON.parse(s);
+  }
 });

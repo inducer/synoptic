@@ -268,7 +268,7 @@ replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
 
 // If the text is not JSON parseable, then a SyntaxError is thrown.
 
-                throw new SyntaxError('parseJSON');
+                throw new SyntaxError('Invalid JSON string');
             }
         };
     }();
