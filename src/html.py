@@ -111,10 +111,10 @@ def mainpane(context):
         <div style="white-space:nowrap;">
           <label for="search" accesskey="s">Search: </label>
           <input type="text" size="50" id="search"/>
-          <img src="/static/edit-clear.png" alt="Clear search bar" id="btn_search_clear" class="imagebutton"/>
-          <img src="/static/print.png" alt="Print" id="btn_print" class="imagebutton"/>
-          <a id="btn_expand">Expand all</a>
-          <a id="btn_collapse">Collapse all</a>
+          <img src="/static/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
+          <img src="/static/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>
+          <img src="/static/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
+          <img src="/static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
         </div>
         <div id="items">
         </div>
