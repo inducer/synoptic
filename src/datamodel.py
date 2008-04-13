@@ -134,13 +134,6 @@ class ViewOrdering(object):
         self.tagset = tagset
         self.timestamp = timestamp
 
-    @staticmethod
-    def make_tagset(tags):
-        tags = list(tags)
-        tags.sort(key=lambda tag: tag.id)
-        ts = ",".join(str(tag.id) for tag in tags)
-        return ts
-
 
 
 
@@ -152,6 +145,7 @@ class ViewOrderingEntry(object):
 
     def __repr__(self):
         return "<VOEntry item=%s, weight=%s>" % (self.item, self.weight)
+
 
 
 
@@ -177,3 +171,68 @@ def find_tags(session, tags, create_them):
                 result.append(Tag(tag_str))
 
     return result
+
+
+
+
+def store_itemversion(dbsession, contents, tags, item_id=None):
+    import re
+    from htmlentitydefs import name2codepoint
+
+    if contents is not None:
+        def replace_special_char(match):
+            try:
+                return unichr(name2codepoint[match.group(1)])
+            except KeyError:
+                return match.group(0)
+
+        contents = re.sub(r"(?<!\\)\\([a-z0-9]+)", replace_special_char, contents)
+
+    if item_id is None:
+        item = Item()
+        dbsession.save(item)
+    else:
+        assert isinstance(item_id, int)
+        item = dbsession.query(Item).get(item_id)
+
+    from time import time
+    itemversion = ItemVersion(
+            item,
+            time(),
+            find_tags(dbsession, tags, create_them=True),
+            contents,
+            )
+    dbsession.save(itemversion)
+
+    return itemversion
+
+
+
+
+# query rewrite visitor -------------------------------------------------------
+class SQLifyQueryVisitor(object):
+    def __init__(self, session):
+        self.session = session
+
+    def visit_tag_query(self, q):
+        tags = self.session.query(Tag).filter_by(name=q.name)
+        if tags.count() == 1:
+            return ItemVersion.tags.any(id=tags[0].id)
+        else:
+            from sqlalchemy.sql import literal
+            return literal(False)
+
+    def visit_fulltext_query(self, q):
+        return ItemVersion.contents.contains(q.substr)
+
+    def visit_not_query(self, q):
+        from sqlalchemy.sql import not_
+        return not_(q.child.visit(self))
+
+    def visit_and_query(self, q):
+        from sqlalchemy.sql import and_
+        return reduce(and_, (ch.visit(self) for ch in q.children))
+
+    def visit_or_query(self, q):
+        from sqlalchemy.sql import or_
+        return reduce(or_, (ch.visit(self) for ch in q.children))

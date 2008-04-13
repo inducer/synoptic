@@ -598,7 +598,7 @@ ItemCollectionManager.method("setup_toolbar", function()
 {
   $("#btn_print").click(function()
     {
-      var printurl = "/item/print_multi_by_tags?query="+escape($("#search").val());
+      var printurl = "/items/print?query="+escape($("#search").val());
       if (self.view_time != null)
         printurl += "&max_timestamp="+escape(self.view_time.toString());
 
@@ -791,7 +791,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
 
   $.ajax({
     data: data,
-    url: '/item/get_multi_by_tags',
+    url: '/items/get',
     dataType:"json",
     success: function(json, status)
     {

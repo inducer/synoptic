@@ -1,6 +1,6 @@
 from synoptic.datamodel import \
         Item, ItemVersion, Tag, ViewOrdering, ViewOrderingEntry, \
-        find_tags
+        store_itemversion
 
 
 
@@ -38,40 +38,6 @@ def get_static_file(filename):
 
 
 
-def store_itemversion(dbsession, contents, tags, item_id=None):
-    import re
-    from htmlentitydefs import name2codepoint
-
-    if contents is not None:
-        def replace_special_char(match):
-            try:
-                return unichr(name2codepoint[match.group(1)])
-            except KeyError:
-                return match.group(0)
-
-        contents = re.sub(r"(?<!\\)\\([a-z0-9]+)", replace_special_char, contents)
-
-    if item_id is None:
-        item = Item()
-        dbsession.save(item)
-    else:
-        assert isinstance(item_id, int)
-        item = dbsession.query(Item).get(item_id)
-
-    from time import time
-    itemversion = ItemVersion(
-            item,
-            time(),
-            find_tags(dbsession, tags, create_them=True),
-            contents,
-            )
-    dbsession.save(itemversion)
-
-    return itemversion
-
-
-
-
 def import_file(dbsession, text):
     lines = text.split("\n")
 
@@ -95,6 +61,7 @@ def import_file(dbsession, text):
         store_itemversion(dbsession, "\n".join(body), tags)
 
     dbsession.commit()
+
 
 
 
@@ -160,7 +127,7 @@ class Request(WSGIRequest):
 
 
         
-class ApplicationBase:
+class ApplicationBase(object):
     def __init__(self, table):
         import re
         self.table = [
@@ -184,7 +151,6 @@ class ApplicationBase:
 
 
 
-
 class Application(ApplicationBase):
     def __init__(self):
         ApplicationBase.__init__(self,
@@ -192,9 +158,9 @@ class Application(ApplicationBase):
                     (r'^/$', self.index),
                     (r'^/timestamp/get_range$', self.get_tsrange),
                     (r'^/item/get_by_id$', self.get_item_by_id),
-                    (r'^/item/get_multi_by_tags$', self.get_items_by_tags),
-                    (r'^/item/print_multi_by_tags$', self.print_items_by_tags),
-                    (r'^/item/export_multi_by_tags$', self.export_items_by_tags),
+                    (r'^/items/get$', self.get_items_by_tags),
+                    (r'^/items/print$', self.print_items_by_tags),
+                    (r'^/items/export$', self.export_items_by_tags),
                     (r'^/item/store$', self.store_item),
                     (r'^/item/reorder$', self.reorder_item),
                     (r'^/tags/get$', self.get_tags),
@@ -227,8 +193,8 @@ class Application(ApplicationBase):
         result = result.group_by(model.itemversions.c.item_id)
         return result.alias("current_versions")
 
-    def get_itemversions_query(self, session, model, tags, max_timestamp=None):
-        """Given tags and max_timestamp, find the resulting ItemVersion ids,
+    def get_itemversions_query(self, session, model, parsed_query, max_timestamp=None):
+        """Given parsed_query and max_timestamp, find the resulting ItemVersion ids,
         in the right order."""
 
         from sqlalchemy.sql import select, and_, or_, not_, func
@@ -238,7 +204,7 @@ class Application(ApplicationBase):
 
         # find view ordering
         view_orderings = (session.query(ViewOrdering)
-                .filter_by(tagset=ViewOrdering.make_tagset(tags))
+                .filter_by(tagset=str(parsed_query))
                 .order_by(ViewOrdering.timestamp.desc())
                 .limit(1)).all()
 
@@ -258,9 +224,11 @@ class Application(ApplicationBase):
             from_obj = from_obj.outerjoin(vo_entries,
                     model.itemversions.c.item_id==vo_entries.c.item_id)
                         
-        tag_where = model.itemversions.c.contents != None
-        for tag in tags:
-            tag_where = and_(tag_where, ItemVersion.tags.any(id=tag.id))
+        from synoptic.datamodel import SQLifyQueryVisitor
+        tag_where = and_(
+                model.itemversions.c.contents != None,
+                parsed_query.visit(SQLifyQueryVisitor(session))
+                )
 
         result = (select(
             [model.itemversions], 
@@ -273,9 +241,9 @@ class Application(ApplicationBase):
 
         return result.group_by(model.itemversions.c.item_id)
 
-    def get_itemversions_for_tag(self, request):
-        tags = find_tags(request.dbsession, request.GET.get("query", ""), 
-                create_them=False)
+    def get_itemversions_for_request(self, request):
+        from synoptic.query import parse_query
+        parsed_query = parse_query(request.GET.get("query", ""))
 
         if "max_timestamp" in request.GET:
             max_timestamp = float(request.GET["max_timestamp"])
@@ -289,11 +257,11 @@ class Application(ApplicationBase):
         return (session
                 .query(ItemVersion)
                 .from_statement(self.get_itemversions_query(
-                    session, model, tags, max_timestamp)))
+                    session, model, parsed_query, max_timestamp)))
 
     def get_json_items_for_request(self, request):
-        tags = find_tags(request.dbsession, request.GET["query"], 
-                create_them=False)
+        from synoptic.query import parse_query
+        parsed_query = parse_query(request.GET.get("query", ""))
 
         if "max_timestamp" in request.GET:
             max_timestamp = float(request.GET["max_timestamp"])
@@ -304,7 +272,7 @@ class Application(ApplicationBase):
         model = request.datamodel
 
         itemversions_query = self.get_itemversions_query(
-                session, model, tags, max_timestamp).alias("currentitemversions")
+                session, model, parsed_query, max_timestamp).alias("currentitemversions")
 
         # prepare eager loading of tags
         from sqlalchemy.sql import select
@@ -466,7 +434,7 @@ class Application(ApplicationBase):
                 mimetype="text/plain")
 
     def print_items_by_tags(self, request):
-        versions = self.get_itemversions_for_tag(request)
+        versions = self.get_itemversions_for_request(request)
 
         from html import printpage
         return request.respond(
@@ -476,7 +444,7 @@ class Application(ApplicationBase):
                     }))
 
     def export_items_by_tags(self, request):
-        versions = self.get_itemversions_for_tag(request)
+        versions = self.get_itemversions_for_request(request)
 
         sep = (75*"-") + "\n"
         return request.respond(
@@ -505,7 +473,8 @@ class Application(ApplicationBase):
         from simplejson import loads
         data = loads(request.POST["json"])
 
-        tags = find_tags(request.dbsession, data["current_search"], create_them=False)
+        from synoptic.query import parse_query
+        parsed_query = parse_query(data["current_search"])
 
         model = request.datamodel
         session = request.dbsession
@@ -536,7 +505,7 @@ class Application(ApplicationBase):
 
         from time import time
 
-        viewordering = ViewOrdering(ViewOrdering.make_tagset(tags), time())
+        viewordering = ViewOrdering(str(parsed_query), time())
 
         for idx, item_id in enumerate(item_ids):
             viewordering.entries.append(ViewOrderingEntry(viewordering, 

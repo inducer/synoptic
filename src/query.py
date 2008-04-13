@@ -151,6 +151,10 @@ class OrQuery(Query):
 def make_not_query(child):
     if isinstance(child, NotQuery):
         return child.child
+    elif isinstance(child, AndQuery):
+        return OrQuery([make_not_query(subchild) for subchild in child.children])
+    elif isinstance(child, OrQuery):
+        return AndQuery([make_not_query(subchild) for subchild in child.children])
     else:
         return NotQuery(child)
 
@@ -220,19 +224,19 @@ class StringifyVisitor(object):
 
 
 class ReprVisitor(object):
-    def visit_tag_query(self, q, enclosing_prec=0):
+    def visit_tag_query(self, q):
         return "%s(%s)" % (q.__class__.__name__, repr(q.name))
 
-    def visit_fulltext_query(self, q, enclosing_prec=0):
+    def visit_fulltext_query(self, q):
         return "%s(%s)" % (q.__class__.__name__, repr(q.substr))
 
-    def visit_not_query(self, q, enclosing_prec=0):
+    def visit_not_query(self, q):
         return "%s(%s)" % (q.__class__.__name__, repr(q.child))
 
-    def visit_and_query(self, q, enclosing_prec=0):
+    def visit_and_query(self, q):
         return "%s(%s)" % (q.__class__.__name__, repr(q.children))
 
-    def visit_or_query(self, q, enclosing_prec=0):
+    def visit_or_query(self, q):
         return "%s(%s)" % (q.__class__.__name__, repr(q.children))
 
 
@@ -274,7 +278,7 @@ _TERMINALS = [_tag, _negtag, _fulltext]
 
 
 # parser ----------------------------------------------------------------------
-def parse(expr_str):
+def parse_query(expr_str):
     def parse_terminal(pstate):
         next_tag = pstate.next_tag()
         if next_tag is _tag:
@@ -286,15 +290,15 @@ def parse(expr_str):
         else:
             pstate.expected("terminal")
 
-    def parse_query(pstate, min_precedence=0):
+    def inner_parse(pstate, min_precedence=0):
         pstate.expect_not_end()
 
         if pstate.is_next(_not):
             pstate.advance()
-            left_query = NotQuery(parse_query(pstate, _PREC_NOT))
+            left_query = make_not_query(inner_parse(pstate, _PREC_NOT))
         elif pstate.is_next(_openpar):
             pstate.advance()
-            left_query = parse_query(pstate)
+            left_query = inner_parse(pstate)
             pstate.expect(_closepar)
             pstate.advance()
         else:
@@ -310,14 +314,14 @@ def parse(expr_str):
 
             if next_tag is _and and _PREC_AND > min_precedence:
                 pstate.advance()
-                left_query = make_and_query([left_query, parse_query(pstate, _PREC_AND)])
+                left_query = make_and_query([left_query, inner_parse(pstate, _PREC_AND)])
                 did_something = True
             elif next_tag is _or and _PREC_OR > min_precedence:
                 pstate.advance()
-                left_query = make_or_query([left_query, parse_query(pstate, _PREC_OR)])
+                left_query = make_or_query([left_query, inner_parse(pstate, _PREC_OR)])
                 did_something = True
             elif next_tag in _TERMINALS + [_not, _openpar] and _PREC_AND > min_precedence:
-                left_query = make_and_query([left_query, parse_query(pstate, _PREC_AND)])
+                left_query = make_and_query([left_query, inner_parse(pstate, _PREC_AND)])
                 did_something = True
 
         return left_query
@@ -329,7 +333,10 @@ def parse(expr_str):
          for (tag, s, idx) in lex(_LEX_TABLE, expr_str)
          if tag is not _whitespace], expr_str)
 
-    result = parse_query(pstate)
+    if pstate.is_at_end():
+        return TagQuery("home")
+
+    result = inner_parse(pstate)
     if not pstate.is_at_end():
         pstate.raise_parse_error("leftover input after completed parse")
 
@@ -339,9 +346,11 @@ def parse(expr_str):
 
 
 if __name__ == "__main__":
-    v = parse('not (yuck "yy!" and (not (not them or me) and you))')
+    v = parse_query('not (yuck "yy!" and (not (not them and (yes or me)) and you))')
     print v
-    v2 = parse(str(v))
+    v2 = parse_query(str(v))
     print v2
-    v3 = parse(str(v2))
+    v3 = parse_query(str(v2))
     print v3
+    print parse_query('yuck bluck')
+    print parse_query('')
