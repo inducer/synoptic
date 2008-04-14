@@ -242,6 +242,31 @@ class ReprVisitor(object):
 
 
 
+class TagListVisitor(object):
+    def visit_tag_query(self, q):
+        return [q.name]
+
+    def visit_fulltext_query(self, q):
+        return []
+
+    def visit_not_query(self, q):
+        return q.child.visit(self)
+
+    def visit_and_query(self, q):
+        result = []
+        for ch in q.children:
+            result += ch.visit(self)
+        return result
+
+    def visit_or_query(self, q):
+        result = []
+        for ch in q.children:
+            result += ch.visit(self)
+        return result
+
+
+
+
 # lexer data ------------------------------------------------------------------
 _and = intern("and")
 _or = intern("or")

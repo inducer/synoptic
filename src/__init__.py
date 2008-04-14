@@ -185,7 +185,7 @@ class Application(ApplicationBase):
 
         max_timestamps_per_item = select(
                 [model.itemversions.c.item_id, 
-                    func.max(model.itemversions.c.timestamp).label("max_ts")])
+                    func.max(model.itemversions.c.timestamp).label("max_timestamp")])
                 
         if max_timestamp is not None:
             max_timestamps_per_item = max_timestamps_per_item.where(
@@ -193,12 +193,14 @@ class Application(ApplicationBase):
 
         max_timestamps_per_item = max_timestamps_per_item.group_by(
                 model.itemversions.c.item_id)
-        max_timestamps_per_item.alias("max_ts")
+        max_timestamps_per_item = max_timestamps_per_item.alias("max_ts")
 
         return model.itemversions.join(max_timestamps_per_item,
                     and_(
-                        max_timestamps_per_item.c.item_id==model.itemversions.c.item_id,
-                        max_timestamps_per_item.c.max_ts==model.itemversions.c.timestamp,
+                        max_timestamps_per_item.c.item_id
+                          ==model.itemversions.c.item_id,
+                        max_timestamps_per_item.c.max_timestamp
+                          ==model.itemversions.c.timestamp,
                         ))
 
     def query_itemversions(self, session, model, parsed_query, max_timestamp=None):
@@ -262,18 +264,7 @@ class Application(ApplicationBase):
                 .from_statement(self.query_itemversions(
                     session, model, parsed_query, max_timestamp)))
 
-    def get_json_items_for_request(self, request):
-        from synoptic.query import parse_query
-        parsed_query = parse_query(request.GET.get("query", ""))
-
-        if "max_timestamp" in request.GET:
-            max_timestamp = float(request.GET["max_timestamp"])
-        else:
-            max_timestamp = None
-
-        session = request.dbsession
-        model = request.datamodel
-
+    def get_json_items(self, session, model, parsed_query, max_timestamp):
         itemversions_query = self.query_itemversions(
                 session, model, parsed_query, max_timestamp).alias("currentitemversions")
 
@@ -377,27 +368,28 @@ class Application(ApplicationBase):
         if query != "":
             from synoptic.query import parse_query
             parsed_query = parse_query(query)
+
+            from synoptic.query import TagListVisitor
+            query_tags = parsed_query.visit(TagListVisitor())
         else:
             parsed_query = None
+            query_tags = []
 
         result = self.get_tags_with_usecounts(
                 request.dbsession, request.datamodel, parsed_query,
                 max_timestamp)
 
-        if "withusecount" in request.GET:
-            from simplejson import dumps
+        from simplejson import dumps
 
-            tags = [list(row) for row in result]
+        tags = [list(row) for row in result]
 
-            return request.respond(
-                    dumps({ 
-                    "tags": tags,
-                    "max_usecount": max([0] + [row[1] for row in tags]),
-                    }),
-                    mimetype="text/plain")
-        else:
-            return request.respond(u"\n".join(row[0] for row in result), 
-                    mimetype="text/plain")
+        return request.respond(
+                dumps({ 
+                "tags": tags,
+                "query_tags": query_tags,
+                "max_usecount": max([0] + [row[1] for row in tags]),
+                }),
+                mimetype="text/plain")
 
     def http_rename_tag(self, request):
         from simplejson import loads, dumps
@@ -436,7 +428,17 @@ class Application(ApplicationBase):
     def http_get_items(self, request):
         qry = request.GET.get("query", "")
 
-        json_items = self.get_json_items_for_request(request)
+        from synoptic.query import parse_query
+        parsed_query = parse_query(qry)
+
+        if "max_timestamp" in request.GET:
+            max_timestamp = float(request.GET["max_timestamp"])
+        else:
+            max_timestamp = None
+
+        json_items = self.get_json_items(
+                request.dbsession, request.datamodel, 
+                parsed_query, max_timestamp)
 
         if qry != "":
             tag_counter = {}
@@ -446,6 +448,9 @@ class Application(ApplicationBase):
 
             tags = [list(it) for it in tag_counter.iteritems()]
             tags.sort()
+
+            from synoptic.query import TagListVisitor
+            query_tags = parsed_query.visit(TagListVisitor())
         else:
             # the empty query parses as "home", but we need to show
             # all tags, not just the ones relative to that,
@@ -460,11 +465,14 @@ class Application(ApplicationBase):
                         request.dbsession, request.datamodel,
                         max_timestamp=max_timestamp)]
 
+            query_tags = []
+
         # and ship them out by JSON
         from simplejson import dumps
         return request.respond(dumps({
             "items": json_items,
             "tags": tags,
+            "query_tags": query_tags,
             "max_usecount": max([0] + [row[1] for row in tags]),
             }),
                 mimetype="text/plain")
@@ -517,7 +525,8 @@ class Application(ApplicationBase):
 
         item_ids = [row[model.itemversions.c.item_id]
                 for row in session.execute(
-                self.get_itemversions_query(session, model, tags))]
+                self.query_itemversions(session, model, parsed_query)
+                .alias("currentversions"))]
 
         def item_idx(sought_item_id):
             if sought_item_id == None:

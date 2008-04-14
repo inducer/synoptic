@@ -254,7 +254,7 @@ ItemManager.method("fill_item_div", function()
           data: {json: JSON.stringify({
             dragged_item: dragged_item.id,
             before_item: self.id,
-            current_search: parse_tags($("#search").val()),
+            current_search: $("#search").val(),
           })},
           error: function(req, stat, err) 
           { report_error("Reordering failed on server."); },
@@ -887,16 +887,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
       }
       self.realize_items(items);
 
-      // generate sub-tag cloud
-      var search_tags = parse_tags($("#search").val());
-      $("#subtagcloud").html(
-        make_tag_cloud(json.tags, json.max_usecount, 
-          $("#chk_subtagcloud_show_hidden").get(0).checked, 
-          search_tags));
-      add_tag_behavior($("#subtagcloud a"));
-
-      $("#subtagcloud_search_tags").html(format_tag_links(search_tags, " &middot; "));
-      add_tag_behavior($("#subtagcloud_search_tags a"));
+      fill_subtag_cloud(json);
     },
     error: function(req, stat, err)
     {
@@ -968,7 +959,7 @@ function make_tag_cloud(data, max_usecount, show_hidden, exclude)
 function update_tag_clouds()
 {
   update_main_tag_cloud();
-  update_sub_tag_cloud();
+  update_subtag_cloud();
 }
 
 
@@ -976,7 +967,7 @@ function update_tag_clouds()
 
 function update_main_tag_cloud()
 {
-  $.getJSON("/tags/get?withusecount", function (json)
+  $.getJSON("/tags/get", function (json)
     {  
       $("#tagcloud").html(make_tag_cloud(
           json.tags, json.max_usecount,
@@ -988,21 +979,30 @@ function update_main_tag_cloud()
 
 
 
-function update_sub_tag_cloud()
+function fill_subtag_cloud(data)
+{
+  $("#subtagcloud").html(
+    make_tag_cloud(data.tags, data.max_usecount, 
+      $("#chk_subtagcloud_show_hidden").get(0).checked, 
+      data.query_tags));
+  add_tag_behavior($("#subtagcloud a"));
+
+  $("#subtagcloud_search_tags").html(
+      format_tag_links(data.query_tags, " &middot; ")
+      );
+  add_tag_behavior($("#subtagcloud_search_tags a"));
+}
+
+
+
+
+function update_subtag_cloud()
 {
   $.ajax({
     dataType: 'json',
     url: '/tags/get',
-    data: {
-      withusecount: 1,
-      query: $("#search").val(),
-      },
-    success: function(json, msg) { 
-      $("#subtagcloud").html(make_tag_cloud(
-          json.tags, json.max_usecount,
-          $("#chk_subtagcloud_show_hidden").get(0).checked));
-      add_tag_behavior($("#subtagcloud a"));
-    }
+    data: { query: $("#search").val(), },
+    success: function(data, msg) { fill_subtag_cloud(data); }
   });
 }
 
@@ -1039,15 +1039,25 @@ function set_search(search)
 function click_tag(tag)
 {
   var search = $("#search").val();
-  var tags = parse_tags(search);
 
-  var idx = tags.indexOf(tag);
+  var idx = search.indexOf(tag);
   if (idx == -1)
-    tags.push(tag);
+  {
+    if (search.length == 0)
+      search = tag;
+    else
+      search = search + " " + tag;
+  }
   else
-    tags.splice(idx, 1);
+  {
+    search = search.replace(RegExp("-"+tag+" ", "g"), "");
+    search = search.replace(RegExp(" -"+tag, "g"), "");
+    search = search.replace(RegExp(tag+" ", "g"), "");
+    search = search.replace(RegExp(" "+tag, "g"), "");
+    search = search.replace(RegExp(tag, "g"), "");
+  }
 
-  set_search(tags.join(" "));
+  set_search(search);
 }
 
 
@@ -1117,7 +1127,7 @@ $(document).ready(function()
 
   update_main_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_main_tag_cloud);
-  $("#chk_subtagcloud_show_hidden").change(update_sub_tag_cloud);
+  $("#chk_subtagcloud_show_hidden").change(update_subtag_cloud);
 
   dhtmlHistory.initialize();
   dhtmlHistory.addListener(
