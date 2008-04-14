@@ -263,8 +263,8 @@ _LEX_TABLE = [
     (_not, RE(r"not")),
     (_openpar, RE(r"\(")),
     (_closepar, RE(r"\)")),
-    (_tag, RE(r"[.a-zA-Z][.a-zA-Z0-9]*")),
-    (_negtag, RE(r"-[.a-zA-Z][.a-zA-Z0-9]*")),
+    (_tag, RE(r"[.a-zA-Z0-9]+")),
+    (_negtag, RE(r"-[.a-zA-Z0-9]+")),
     (_fulltext, RE(r'".*(?!\\\\)"')),
     (_whitespace, RE("[ \t]+")),
     ]

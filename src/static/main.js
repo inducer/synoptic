@@ -191,7 +191,7 @@ ItemManager.method("fill_item_div", function()
             error: function(req, stat, err) { report_error("Revert failed."); },
             success: function(data, msg) { 
               set_message("Revert successful."); 
-              update_tag_cloud();
+              update_tag_clouds();
             }
           });
         });
@@ -209,7 +209,7 @@ ItemManager.method("fill_item_div", function()
             error: function(req, stat, err) { report_error("Copy failed."); },
             success: function(data, msg) { 
               set_message("Copy successful."); 
-              update_tag_cloud();
+              update_tag_clouds();
             }
           });
         });
@@ -356,7 +356,7 @@ ItemManager.method("begin_edit", function()
         self.id = data.id;
         self.call_with_item_div(function(html){ self.div.replaceWith(html); });
         self.manager.set_cursor_to(self.div);
-        update_tag_cloud();
+        update_tag_clouds();
         if (prev_id == null)
         {
           self.manager.empty_was_filled();
@@ -392,7 +392,7 @@ ItemManager.method("do_delete", function()
     })},
     error: function(req, stat, err) { report_error("Delete failed."); },
     success: function(data, msg) { 
-      update_tag_cloud();
+      update_tag_clouds();
     }
   });
 });
@@ -605,8 +605,7 @@ ItemCollectionManager.method("setup_search", function()
       */
   $("#btn_search_clear").click(function()
     {
-      $("#search").val('');
-      $("#search").change();
+      set_search("");
       $("#search").get(0).focus();
     });
 
@@ -690,6 +689,14 @@ ItemCollectionManager.method("setup_toolbar", function()
         printurl += "&max_timestamp="+escape(self.view_time.toString());
 
       window.open(printurl);
+    });
+  $("#btn_export").click(function()
+    {
+      var exporturl = "/items/export?query="+escape($("#search").val());
+      if (self.view_time != null)
+        exporturl += "&max_timestamp="+escape(self.view_time.toString());
+
+      window.open(exporturl);
     });
   $("#btn_expand").click(function()
     { 
@@ -883,7 +890,9 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
       // generate sub-tag cloud
       var search_tags = parse_tags($("#search").val());
       $("#subtagcloud").html(
-        make_tag_cloud(json.tags, json.max_usecount, true, search_tags));
+        make_tag_cloud(json.tags, json.max_usecount, 
+          $("#chk_subtagcloud_show_hidden").get(0).checked, 
+          search_tags));
       add_tag_behavior($("#subtagcloud a"));
 
       $("#subtagcloud_search_tags").html(format_tag_links(search_tags, " &middot; "));
@@ -956,15 +965,45 @@ function make_tag_cloud(data, max_usecount, show_hidden, exclude)
 
 
 
-function update_tag_cloud()
+function update_tag_clouds()
+{
+  update_main_tag_cloud();
+  update_sub_tag_cloud();
+}
+
+
+
+
+function update_main_tag_cloud()
 {
   $.getJSON("/tags/get?withusecount", function (json)
     {  
       $("#tagcloud").html(make_tag_cloud(
-          json.data, json.max_usecount,
+          json.tags, json.max_usecount,
           $("#chk_tagcloud_show_hidden").get(0).checked));
       add_tag_behavior($("#tagcloud a"));
     });
+}
+
+
+
+
+function update_sub_tag_cloud()
+{
+  $.ajax({
+    dataType: 'json',
+    url: '/tags/get',
+    data: {
+      withusecount: 1,
+      query: $("#search").val(),
+      },
+    success: function(json, msg) { 
+      $("#subtagcloud").html(make_tag_cloud(
+          json.tags, json.max_usecount,
+          $("#chk_subtagcloud_show_hidden").get(0).checked));
+      add_tag_behavior($("#subtagcloud a"));
+    }
+  });
 }
 
 
@@ -987,6 +1026,16 @@ function parse_tags(taglist_str)
 
 
 
+function set_search(search)
+{
+  $("#search").val(search);
+  $("#search").change();
+  document.collection_manager.add_history_item();
+}
+
+
+
+
 function click_tag(tag)
 {
   var search = $("#search").val();
@@ -998,8 +1047,7 @@ function click_tag(tag)
   else
     tags.splice(idx, 1);
 
-  $("#search").val(tags.join(", "));
-  $("#search").change();
+  set_search(tags.join(" "));
 }
 
 
@@ -1012,11 +1060,7 @@ function add_tag_behavior(jq_result)
       click_tag($(this).html());
     });
   jq_result.dblclick(function()
-    {
-      var tag = $(this).html();
-      $("#search").val(tag);
-      $("#search").change();
-    });
+    { set_search($(this).html()); });
   jq_result.contextMenu("tag_context_menu", {
       bindings: {
         'rename': function(tag_html) 
@@ -1043,7 +1087,7 @@ function add_tag_behavior(jq_result)
                 error: function(req, stat, err) { report_error("Rename failed."); },
                 success: function(data, msg) { 
                   set_message("Rename successful."); 
-                  update_tag_cloud();
+                  update_tag_clouds();
                   document.collection_manager.update(true);
                 }
               });
@@ -1054,9 +1098,7 @@ function add_tag_behavior(jq_result)
           click_tag($(tag_html).html());
         },
         'search': function(tag_html) {
-          var tag = $(tag_html).html();
-          $("#search").val(tag);
-          $("#search").change();
+          set_search($(tag_html).html());
         }
       }
       });
@@ -1073,8 +1115,9 @@ $(document).ready(function()
 
   $("#navtabs > ul").tabs();
 
-  update_tag_cloud();
-  $("#chk_tagcloud_show_hidden").change(update_tag_cloud);
+  update_main_tag_cloud();
+  $("#chk_tagcloud_show_hidden").change(update_main_tag_cloud);
+  $("#chk_subtagcloud_show_hidden").change(update_sub_tag_cloud);
 
   dhtmlHistory.initialize();
   dhtmlHistory.addListener(

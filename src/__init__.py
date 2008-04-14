@@ -156,15 +156,15 @@ class Application(ApplicationBase):
         ApplicationBase.__init__(self,
                 [
                     (r'^/$', self.index),
-                    (r'^/timestamp/get_range$', self.get_tsrange),
-                    (r'^/item/get_by_id$', self.get_item_by_id),
-                    (r'^/items/get$', self.get_items_by_tags),
-                    (r'^/items/print$', self.print_items_by_tags),
-                    (r'^/items/export$', self.export_items_by_tags),
-                    (r'^/item/store$', self.store_item),
-                    (r'^/item/reorder$', self.reorder_item),
-                    (r'^/tags/get$', self.get_tags),
-                    (r'^/tags/rename$', self.rename_tag),
+                    (r'^/timestamp/get_range$', self.http_get_tsrange),
+                    (r'^/item/get_by_id$', self.http_get_item_by_id),
+                    (r'^/items/get$', self.http_get_items),
+                    (r'^/items/print$', self.http_print_items),
+                    (r'^/items/export$', self.http_export_items),
+                    (r'^/item/store$', self.http_store_item),
+                    (r'^/item/reorder$', self.http_reorder_item),
+                    (r'^/tags/get$', self.http_get_tags),
+                    (r'^/tags/rename$', self.http_rename_tag),
                     (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ])
 
@@ -178,29 +178,34 @@ class Application(ApplicationBase):
         result['title'] = None
         return result
 
-    def get_current_versions_query(self, model, max_timestamp=None):
+    def get_current_itemversions_join(self, model, max_timestamp=None):
         """Find the current version of all items."""
 
         from sqlalchemy.sql import select, and_, or_, not_, func
 
-        result = select(
-                [model.itemversions.c.id, 
-                    func.max(model.itemversions.c.timestamp)])
+        max_timestamps_per_item = select(
+                [model.itemversions.c.item_id, 
+                    func.max(model.itemversions.c.timestamp).label("max_ts")])
                 
         if max_timestamp is not None:
-            result = result.where(model.itemversions.c.timestamp <= max_timestamp)
+            max_timestamps_per_item = max_timestamps_per_item.where(
+                    model.itemversions.c.timestamp <= max_timestamp)
 
-        result = result.group_by(model.itemversions.c.item_id)
-        return result.alias("current_versions")
+        max_timestamps_per_item = max_timestamps_per_item.group_by(
+                model.itemversions.c.item_id)
+        max_timestamps_per_item.alias("max_ts")
 
-    def get_itemversions_query(self, session, model, parsed_query, max_timestamp=None):
+        return model.itemversions.join(max_timestamps_per_item,
+                    and_(
+                        max_timestamps_per_item.c.item_id==model.itemversions.c.item_id,
+                        max_timestamps_per_item.c.max_ts==model.itemversions.c.timestamp,
+                        ))
+
+    def query_itemversions(self, session, model, parsed_query, max_timestamp=None):
         """Given parsed_query and max_timestamp, find the resulting ItemVersion ids,
         in the right order."""
 
         from sqlalchemy.sql import select, and_, or_, not_, func
-
-        # find appropriate versions of items
-        current_query = self.get_current_versions_query(model, max_timestamp)
 
         # find view ordering
         view_orderings = (session.query(ViewOrdering)
@@ -208,9 +213,8 @@ class Application(ApplicationBase):
                 .order_by(ViewOrdering.timestamp.desc())
                 .limit(1)).all()
 
-        # out of that, find all that have matching tags and are not deleted
-        from_obj = model.itemversions.join(current_query,
-                        current_query.c.id==model.itemversions.c.id)
+        # compose base set: the current versions of all items
+        from_obj = self.get_current_itemversions_join(model, max_timestamp)
 
         if view_orderings:
             # if we have an ordering, we must also join the viewordering_entries table
@@ -225,19 +229,18 @@ class Application(ApplicationBase):
                     model.itemversions.c.item_id==vo_entries.c.item_id)
                         
         from synoptic.datamodel import SQLifyQueryVisitor
-        tag_where = and_(
+        where = and_(
                 model.itemversions.c.contents != None,
                 parsed_query.visit(SQLifyQueryVisitor(session))
                 )
 
-        result = (select(
-            [model.itemversions], 
-            from_obj=[from_obj])
-            .where(tag_where))
+        result = select([model.itemversions], from_obj=[from_obj]).where(where)
 
         if view_orderings:
             # add the ordering clause
             result = result.order_by(vo_entries.c.weight)
+        else:
+            result = result.order_by(model.itemversions.c.timestamp.desc())
 
         return result.group_by(model.itemversions.c.item_id)
 
@@ -256,7 +259,7 @@ class Application(ApplicationBase):
         # grab the ORMed instances
         return (session
                 .query(ItemVersion)
-                .from_statement(self.get_itemversions_query(
+                .from_statement(self.query_itemversions(
                     session, model, parsed_query, max_timestamp)))
 
     def get_json_items_for_request(self, request):
@@ -271,7 +274,7 @@ class Application(ApplicationBase):
         session = request.dbsession
         model = request.datamodel
 
-        itemversions_query = self.get_itemversions_query(
+        itemversions_query = self.query_itemversions(
                 session, model, parsed_query, max_timestamp).alias("currentitemversions")
 
         # prepare eager loading of tags
@@ -311,7 +314,7 @@ class Application(ApplicationBase):
         ctx = Context()
         return request.respond(mainpage(ctx))
 
-    def get_tsrange(self, request):
+    def http_get_tsrange(self, request):
         from time import time
 
         now = time()
@@ -327,59 +330,76 @@ class Application(ApplicationBase):
                     }),
                 mimetype="text/plain")
 
-    def get_tags(self, request):
+    def get_tags_with_usecounts(self, session, model, parsed_query=None, 
+            max_timestamp=None):
         from sqlalchemy.sql import select, and_, or_, not_, func
 
-        model = request.datamodel
-
-        if "max_timestamp" in request.GET:
-            max_timestamp = float(request.GET["max_timestamp"])
+        if parsed_query is not None:
+            itemversions_q = self.query_itemversions(session, model,
+                    parsed_query, max_timestamp)
         else:
-            max_timestamp = None
-
-        current_query = self.get_current_versions_query(model, max_timestamp)
+            itemversions_q = select([model.itemversions],
+                    from_obj=[self.get_current_itemversions_join(
+                        model, max_timestamp)
+                        ])
+                    
+        itemversions_q = itemversions_q.alias("currentversions")
 
         # twuc_q stands for tags_with_usecount_query
         twuc_q = (
                 select([
                     model.tags.c.name, 
-                    func.count(current_query.c.id).label("use_count"),
+                    func.count(itemversions_q.c.id).label("use_count"),
                         ],
                     from_obj=[model.itemversions_tags
-                        .join(current_query, 
-                            current_query.c.id==model.itemversions_tags.c.itemversion_id)
+                        .join(itemversions_q, 
+                            itemversions_q.c.id==model.itemversions_tags.c.itemversion_id)
                         .join(model.tags)
                         ])
                 )
-        if "q" in request.GET:
-            twuc_q = twuc_q.where(model.tags.c.name.like('%s%%' % request.GET["q"]))
 
         twuc_q = (twuc_q
                 .group_by(model.tags.c.id)
-                .having(func.count(current_query.c.id)>0)
+                .having(func.count(itemversions_q.c.id)>0)
                 .order_by(model.tags.c.name)
                 )
-        if "limit" in request.GET:
-            twuc_q = twuc_q.limit(int(request.GET["limit"]))
 
-        result = request.dbsession.execute(twuc_q)
+        return session.execute(twuc_q)
+
+    def http_get_tags(self, request):
+        if "max_timestamp" in request.GET:
+            max_timestamp = float(request.GET["max_timestamp"])
+        else:
+            max_timestamp = None
+
+        query = request.GET.get("query", "")
+
+        if query != "":
+            from synoptic.query import parse_query
+            parsed_query = parse_query(query)
+        else:
+            parsed_query = None
+
+        result = self.get_tags_with_usecounts(
+                request.dbsession, request.datamodel, parsed_query,
+                max_timestamp)
 
         if "withusecount" in request.GET:
             from simplejson import dumps
 
-            data = [list(row) for row in result]
+            tags = [list(row) for row in result]
 
             return request.respond(
                     dumps({ 
-                    "data": data,
-                    "max_usecount": max([0] + [row[1] for row in data]),
+                    "tags": tags,
+                    "max_usecount": max([0] + [row[1] for row in tags]),
                     }),
                     mimetype="text/plain")
         else:
             return request.respond(u"\n".join(row[0] for row in result), 
                     mimetype="text/plain")
 
-    def rename_tag(self, request):
+    def http_rename_tag(self, request):
         from simplejson import loads, dumps
         data = loads(request.POST["json"])
 
@@ -396,7 +416,7 @@ class Application(ApplicationBase):
 
         return request.respond("", mimetype="text/plain")
 
-    def get_item_by_id(self, request):
+    def http_get_item_by_id(self, request):
         query = (
                 request.dbsession.query(ItemVersion)
                 .filter_by(item_id=int(request.GET["id"]))
@@ -413,27 +433,43 @@ class Application(ApplicationBase):
         return request.respond(dumps(self.item_to_json(query.first())),
                 mimetype="text/plain")
 
-    def get_items_by_tags(self, request):
+    def http_get_items(self, request):
+        qry = request.GET.get("query", "")
+
         json_items = self.get_json_items_for_request(request)
 
-        tag_counter = {}
-        for it in json_items:
-            for tag in it["tags"]:
-                tag_counter[tag] = tag_counter.get(tag, 0) + 1
+        if qry != "":
+            tag_counter = {}
+            for it in json_items:
+                for tag in it["tags"]:
+                    tag_counter[tag] = tag_counter.get(tag, 0) + 1
 
-        tags = [list(it) for it in tag_counter.items()]
-        tags.sort()
+            tags = [list(it) for it in tag_counter.iteritems()]
+            tags.sort()
+        else:
+            # the empty query parses as "home", but we need to show
+            # all tags, not just the ones relative to that,
+
+            if "max_timestamp" in request.GET:
+                max_timestamp = float(request.GET["max_timestamp"])
+            else:
+                max_timestamp = None
+
+            tags = [list(row) 
+                    for row in self.get_tags_with_usecounts(
+                        request.dbsession, request.datamodel,
+                        max_timestamp=max_timestamp)]
 
         # and ship them out by JSON
         from simplejson import dumps
         return request.respond(dumps({
             "items": json_items,
             "tags": tags,
-            "max_usecount": max([0]+tag_counter.values()),
+            "max_usecount": max([0] + [row[1] for row in tags]),
             }),
                 mimetype="text/plain")
 
-    def print_items_by_tags(self, request):
+    def http_print_items(self, request):
         versions = self.get_itemversions_for_request(request)
 
         from html import printpage
@@ -443,7 +479,7 @@ class Application(ApplicationBase):
                     "body": "<hr/>".join(v.contents_html() for v in versions),
                     }))
 
-    def export_items_by_tags(self, request):
+    def http_export_items(self, request):
         versions = self.get_itemversions_for_request(request)
 
         sep = (75*"-") + "\n"
@@ -455,7 +491,7 @@ class Application(ApplicationBase):
                     for v in versions),
                 mimetype="text/plain;charset=utf-8")
 
-    def store_item(self, request):
+    def http_store_item(self, request):
         from simplejson import loads, dumps
         data = loads(request.POST["json"])
 
@@ -469,7 +505,7 @@ class Application(ApplicationBase):
                 dumps(self.item_to_json(itemversion)),
                 mimetype="text/plain")
 
-    def reorder_item(self, request):
+    def http_reorder_item(self, request):
         from simplejson import loads
         data = loads(request.POST["json"])
 
