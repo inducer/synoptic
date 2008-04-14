@@ -560,9 +560,15 @@ ItemCollectionManager.method("handle_history_event", function(new_loc, dummy)
 {
   if (new_loc != "")
   {
-    var loc_descriptor = JSON.parse(unescape(new_loc));
-    $("#search").val(loc_descriptor.query);
-    this.set_time(loc_descriptor.timestamp, "history");
+    new_loc = unescape(new_loc);
+    if (new_loc[0] == "{")
+    {
+      var loc_descriptor = JSON.parse(new_loc);
+      $("#search").val(loc_descriptor.query);
+      this.set_time(loc_descriptor.timestamp, "history");
+    }
+    else
+      set_search(new_loc, true);
   }
   else
   {
@@ -1052,11 +1058,12 @@ function parse_tags(taglist_str)
 
 
 
-function set_search(search)
+function set_search(search, no_hist_update)
 {
   $("#search").val(search);
   $("#search").change();
-  document.collection_manager.add_history_item();
+  if (!no_hist_update)
+    document.collection_manager.add_history_item();
 }
 
 
