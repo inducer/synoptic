@@ -972,8 +972,25 @@ function format_tag_links(tags, joiner)
 
 
 
-function make_tag_cloud(data, max_usecount, show_hidden, exclude)
+function make_tag_cloud(data, show_hidden, exclude)
 {
+  var max_usecount = 0;
+  for (var i = 0; i < data.length; ++i)
+  {
+    var tag = data[i][0];
+    var usecount = data[i][1];
+
+    if (exclude != undefined)
+      if (exclude.indexOf(tag) != -1)
+        continue;
+
+    if (tag[0] == "." && !show_hidden)
+      continue;
+
+    if (usecount > max_usecount)
+      max_usecount = usecount;
+  }
+
   var html = '';
   for (var i = 0; i < data.length; ++i)
   {
@@ -1016,8 +1033,7 @@ function update_main_tag_cloud()
   $.getJSON("/tags/get", function (json)
     {  
       $("#tagcloud").html(make_tag_cloud(
-          json.tags, json.max_usecount,
-          $("#chk_tagcloud_show_hidden").get(0).checked));
+          json.tags, $("#chk_tagcloud_show_hidden").get(0).checked));
       add_tag_behavior($("#tagcloud a"));
     });
 }
@@ -1028,7 +1044,7 @@ function update_main_tag_cloud()
 function fill_subtag_cloud(data)
 {
   $("#subtagcloud").html(
-    make_tag_cloud(data.tags, data.max_usecount, 
+    make_tag_cloud(data.tags, 
       $("#chk_subtagcloud_show_hidden").get(0).checked, 
       data.query_tags));
   add_tag_behavior($("#subtagcloud a"));

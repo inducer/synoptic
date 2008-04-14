@@ -345,7 +345,6 @@ class Application(ApplicationBase):
                 dumps({ 
                 "tags": tags,
                 "query_tags": query_tags,
-                "max_usecount": max([0] + [row[1] for row in tags]),
                 }),
                 mimetype="text/plain")
 
@@ -431,7 +430,6 @@ class Application(ApplicationBase):
             "items": json_items,
             "tags": tags,
             "query_tags": query_tags,
-            "max_usecount": max([0] + [row[1] for row in tags]),
             }),
                 mimetype="text/plain")
 
