@@ -128,7 +128,7 @@ def context_menus():
       <ul>
         <li id="rename">Rename</li>
         <li id="restrict">Restrict search</li>
-        <li id="search">Make new search term</li>
+        <li id="search">Search for only this tag</li>
       </ul>
     </div>
     """

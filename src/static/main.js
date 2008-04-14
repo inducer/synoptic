@@ -295,8 +295,7 @@ ItemManager.method("begin_edit", function()
     '<textarea id="editor_[id]" cols="80"></textarea>'+
     '</td></tr>'+
     '</tr></table>'+
-    '</div>'+
-    '<div  id="edit_errors_[id]"  class="errors"></div>'
+    '</div>'
     ).allreplace("[id]",  self.id)
     );
 
@@ -335,6 +334,8 @@ ItemManager.method("begin_edit", function()
         return;
       }
 
+    self.contents = $("#editor_"+self.id).val();
+
     $.ajax({
       type: 'POST',
       dataType: 'json',
@@ -342,16 +343,18 @@ ItemManager.method("begin_edit", function()
       data: {json: JSON.stringify({
         id: self.id,
         tags: tags,
-        contents: $("#editor_"+self.id).val()
+        contents: self.contents
       })},
-      error: function(req, stat, err) {
+
+      error: function(req, stat, err) 
+      {
+        set_message("Saving failed.");
         self.begin_edit();
-        $("#edit_errors_"+self.id).html(req.responseText);
       },
+
       success: function(data, msg) 
       {
         var prev_id = self.id;
-        $("#edit_errors_"+self.id).html('');
         self.set_from_obj(data);
         self.id = data.id;
         self.call_with_item_div(function(html){ self.div.replaceWith(html); });
@@ -902,7 +905,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
 // tag cloud -------------------------------------------------------------------
 function is_valid_tag(tag)
 {
-  return tag.match(/^[.a-zA-Z][.a-zA-Z0-9]*$/) != null;
+  return tag.match(/^[.a-zA-Z0-9]+$/) != null;
 }
 
 
@@ -942,8 +945,8 @@ function make_tag_cloud(data, max_usecount, show_hidden, exclude)
 
     var usecount = data[i][1];
     var usefraction = data[i][1]/max_usecount;
-    var sizefraction = 1-Math.pow(1-usefraction, 2);
-    var fontsize = Math.round(8.+usefraction*15);
+    var sizefraction = 1-Math.pow(1-usefraction, 0.8);
+    var fontsize = Math.round(7.+usefraction*15);
 
     html += ('<a class="taglink" style="font-size:[fs]pt">[tag]</a> '
       .allreplace("[fs]", fontsize)
