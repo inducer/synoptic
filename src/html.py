@@ -37,7 +37,6 @@ def page(context):
       <script type="text/javascript" src="/static/jquery.timers.js"></script>
       <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
       <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
-      <script type="text/javascript" src="/static/jquery.autocomplete.js"></script>
       <script type="text/javascript" src="/static/jquery.contextmenu.r2.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.base.js"></script>
       <script type="text/javascript" src="/static/jquery-ui/ui.mouse.js"></script>

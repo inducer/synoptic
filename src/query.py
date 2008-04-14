@@ -362,9 +362,9 @@ _whitespace = intern("whitespace")
 
 from synoptic.lex import RE
 _LEX_TABLE = [
-    (_and, RE(r"and")),
-    (_or, RE(r"or")),
-    (_not, RE(r"not")),
+    (_and, RE(r"and\b")),
+    (_or, RE(r"or\b")),
+    (_not, RE(r"not\b")),
     (_openpar, RE(r"\(")),
     (_closepar, RE(r"\)")),
     (_before, RE(r"before\(([-:, A-Za-z0-9]+)\)")),
@@ -447,7 +447,7 @@ def parse_query(expr_str):
          if tag is not _whitespace], expr_str)
 
     if pstate.is_at_end():
-        return TagQuery("home")
+        return TagQuery(u"home")
 
     result = inner_parse(pstate)
     if not pstate.is_at_end():

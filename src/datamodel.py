@@ -29,7 +29,7 @@ class DataModel(object):
 
         self.vieworderings = Table('vieworderings', self.metadata,
                 Column('id', Integer, primary_key=True),
-                Column('tagset', Text()), # ascending, comma-separated list of tag ids
+                Column('tagset', Text()), # misnomer, by now: normalized query string
                 Column('timestamp', Float, index=True),
                 ) 
 
@@ -259,3 +259,156 @@ class SQLifyQueryVisitor(object):
             return ItemVersion.timestamp < q.timestamp
         else:
             return ItemVersion.timestamp > q.timestamp
+
+
+
+
+
+# query helpers ---------------------------------------------------------------
+def get_current_itemversions_join(model, max_timestamp=None):
+    """Find the current version of all items."""
+
+    from sqlalchemy.sql import select, and_, or_, not_, func
+
+    max_timestamps_per_item = select(
+            [model.itemversions.c.item_id, 
+                func.max(model.itemversions.c.timestamp).label("max_timestamp")])
+            
+    if max_timestamp is not None:
+        max_timestamps_per_item = max_timestamps_per_item.where(
+                model.itemversions.c.timestamp <= max_timestamp+1)
+
+    max_timestamps_per_item = max_timestamps_per_item.group_by(
+            model.itemversions.c.item_id)
+    max_timestamps_per_item = max_timestamps_per_item.alias("max_ts")
+
+    return model.itemversions.join(max_timestamps_per_item,
+                and_(
+                    max_timestamps_per_item.c.item_id
+                      ==model.itemversions.c.item_id,
+                    max_timestamps_per_item.c.max_timestamp
+                      ==model.itemversions.c.timestamp,
+                    ))
+
+
+
+
+def query_itemversions(session, model, parsed_query, max_timestamp=None):
+    """Given parsed_query and max_timestamp, find the resulting ItemVersion ids,
+    in the right order."""
+
+    from sqlalchemy.sql import select, and_, or_, not_, func
+
+    # find view ordering
+    view_orderings = (session.query(ViewOrdering)
+            .filter_by(tagset=str(parsed_query))
+            .order_by(ViewOrdering.timestamp.desc())
+            .limit(1)).all()
+
+    if view_orderings:
+        have_view_ordering = len(view_orderings[0].entries) != 0
+    else:
+        have_view_ordering = False
+
+    # compose base set: the current versions of all items
+    from_obj = get_current_itemversions_join(model, max_timestamp)
+
+    if have_view_ordering:
+        # if we have an ordering, we must also join the viewordering_entries table
+        # so we can order by weight
+
+        vo_entries = (
+                select([model.viewordering_entries])
+                .where(model.viewordering_entries.c.viewordering_id
+                    ==view_orderings[0].id)).alias("vo_entries")
+
+        from_obj = from_obj.outerjoin(vo_entries,
+                model.itemversions.c.item_id==vo_entries.c.item_id)
+                    
+    from synoptic.datamodel import SQLifyQueryVisitor
+    where = and_(
+            model.itemversions.c.contents != None,
+            parsed_query.visit(SQLifyQueryVisitor(session))
+            )
+
+    result = select([model.itemversions], from_obj=[from_obj]).where(where)
+
+    if have_view_ordering:
+        # add the ordering clause
+        result = result.order_by(vo_entries.c.weight)
+    else:
+        result = result.order_by(model.itemversions.c.timestamp.desc())
+
+    return result.group_by(model.itemversions.c.item_id)
+
+
+
+
+# view ordering handler -------------------------------------------------------
+class ViewOrderingHandler:
+    def __init__(self, session, model, parsed_query):
+        self.session = session
+        self.model = model
+        self.parsed_query = parsed_query
+
+    def __len__(self):
+        return len(self.item_ids)
+
+    def has_ordering(self):
+        view_orderings = (self.session.query(ViewOrdering)
+                .filter_by(tagset=str(self.parsed_query))
+                .order_by(ViewOrdering.timestamp.desc())
+                .limit(1)).all()
+
+        if view_orderings:
+            return len(view_orderings[0].entries) != 0
+        else:
+            return False
+
+    def load(self):
+        self.item_ids = [row[self.model.itemversions.c.item_id]
+                for row in self.session.execute(
+                query_itemversions(self.session, 
+                    self.model, self.parsed_query)
+                .alias("currentversions"))]
+
+    def __contains__(self, sought_item_id):
+        return sought_item_id in self.item_ids
+
+    def index_from_id(self, sought_item_id):
+        if sought_item_id == None:
+            return len(self.item_ids)
+        for idx, item_id in enumerate(self.item_ids):
+            if item_id == sought_item_id:
+                return idx
+        raise ValueError, "invalid item id supplied"
+
+    def reorder(self, moved_idx, before_idx):
+        assert moved_idx != before_idx
+
+        if before_idx < moved_idx:
+            dragged_item = self.item_ids.pop(moved_idx)
+            self.item_ids.insert(before_idx, dragged_item)
+        else:
+            self.item_ids.insert(before_idx, self.item_ids[moved_idx])
+            self.item_ids.pop(moved_idx)
+
+    def insert(self, before_idx, new_id):
+        self.item_ids.insert(before_idx, new_id)
+
+    def delete(self):
+        from time import time
+
+        viewordering = ViewOrdering(str(self.parsed_query), time())
+        session.save(viewordering)
+        session.commit()
+
+    def save(self):
+        from time import time
+
+        viewordering = ViewOrdering(str(self.parsed_query), time())
+
+        for idx, item_id in enumerate(self.item_ids):
+            viewordering.entries.append(ViewOrderingEntry(viewordering, 
+                self.session.query(Item).get(item_id), idx))
+        self.session.save(viewordering)

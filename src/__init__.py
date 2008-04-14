@@ -1,6 +1,8 @@
 from synoptic.datamodel import \
         Item, ItemVersion, Tag, ViewOrdering, ViewOrderingEntry, \
-        store_itemversion
+        store_itemversion,  \
+        get_current_itemversions_join, \
+        query_itemversions
 
 
 
@@ -202,74 +204,6 @@ class Application(ApplicationBase):
         result['title'] = None
         return result
 
-    def get_current_itemversions_join(self, model, max_timestamp=None):
-        """Find the current version of all items."""
-
-        from sqlalchemy.sql import select, and_, or_, not_, func
-
-        max_timestamps_per_item = select(
-                [model.itemversions.c.item_id, 
-                    func.max(model.itemversions.c.timestamp).label("max_timestamp")])
-                
-        if max_timestamp is not None:
-            max_timestamps_per_item = max_timestamps_per_item.where(
-                    model.itemversions.c.timestamp <= max_timestamp+1)
-
-        max_timestamps_per_item = max_timestamps_per_item.group_by(
-                model.itemversions.c.item_id)
-        max_timestamps_per_item = max_timestamps_per_item.alias("max_ts")
-
-        return model.itemversions.join(max_timestamps_per_item,
-                    and_(
-                        max_timestamps_per_item.c.item_id
-                          ==model.itemversions.c.item_id,
-                        max_timestamps_per_item.c.max_timestamp
-                          ==model.itemversions.c.timestamp,
-                        ))
-
-    def query_itemversions(self, session, model, parsed_query, max_timestamp=None):
-        """Given parsed_query and max_timestamp, find the resulting ItemVersion ids,
-        in the right order."""
-
-        from sqlalchemy.sql import select, and_, or_, not_, func
-
-        # find view ordering
-        view_orderings = (session.query(ViewOrdering)
-                .filter_by(tagset=str(parsed_query))
-                .order_by(ViewOrdering.timestamp.desc())
-                .limit(1)).all()
-
-        # compose base set: the current versions of all items
-        from_obj = self.get_current_itemversions_join(model, max_timestamp)
-
-        if view_orderings:
-            # if we have an ordering, we must also join the viewordering_entries table
-            # so we can order by weight
-
-            vo_entries = (
-                    select([model.viewordering_entries])
-                    .where(model.viewordering_entries.c.viewordering_id
-                        ==view_orderings[0].id)).alias("vo_entries")
-
-            from_obj = from_obj.outerjoin(vo_entries,
-                    model.itemversions.c.item_id==vo_entries.c.item_id)
-                        
-        from synoptic.datamodel import SQLifyQueryVisitor
-        where = and_(
-                model.itemversions.c.contents != None,
-                parsed_query.visit(SQLifyQueryVisitor(session))
-                )
-
-        result = select([model.itemversions], from_obj=[from_obj]).where(where)
-
-        if view_orderings:
-            # add the ordering clause
-            result = result.order_by(vo_entries.c.weight)
-        else:
-            result = result.order_by(model.itemversions.c.timestamp.desc())
-
-        return result.group_by(model.itemversions.c.item_id)
-
     def get_itemversions_for_request(self, request):
         from synoptic.query import parse_query
         parsed_query = parse_query(request.GET.get("query", ""))
@@ -285,11 +219,11 @@ class Application(ApplicationBase):
         # grab the ORMed instances
         return (session
                 .query(ItemVersion)
-                .from_statement(self.query_itemversions(
+                .from_statement(query_itemversions(
                     session, model, parsed_query, max_timestamp)))
 
     def get_json_items(self, session, model, parsed_query, max_timestamp):
-        itemversions_query = self.query_itemversions(
+        itemversions_query = query_itemversions(
                 session, model, parsed_query, max_timestamp).alias("currentitemversions")
 
         # prepare eager loading of tags
@@ -350,11 +284,11 @@ class Application(ApplicationBase):
         from sqlalchemy.sql import select, and_, or_, not_, func
 
         if parsed_query is not None:
-            itemversions_q = self.query_itemversions(session, model,
+            itemversions_q = query_itemversions(session, model,
                     parsed_query, max_timestamp)
         else:
             itemversions_q = select([model.itemversions],
-                    from_obj=[self.get_current_itemversions_join(
+                    from_obj=[get_current_itemversions_join(
                         model, max_timestamp)
                         ])
                     
@@ -527,11 +461,35 @@ class Application(ApplicationBase):
         from simplejson import loads, dumps
         data = loads(request.POST["json"])
 
+        # if view ordering is present for current query,
+        # make sure this entry shows up last
+        if data["contents"] is not None:
+            # if we're not deleting
+            from synoptic.datamodel import ViewOrderingHandler
+            from synoptic.query import parse_query
+            voh = ViewOrderingHandler(
+                    request.dbsession, request.datamodel,
+                    parse_query(data["current_query"]))
+            if voh.has_ordering():
+                voh.load()
+                if data["id"] in voh:
+                    # we already have a spot in the ordering, don't bother
+                    voh = None
+            else:
+                voh = None
+        else:
+            voh = None
+
         itemversion = store_itemversion(request.dbsession, 
                 data["contents"], data["tags"], data["id"])
 
-        request.dbsession.commit() # fills in the item id
+        request.dbsession.commit() # fills in the item_id
 
+        if voh is not None:
+            voh.insert(len(voh), itemversion.item_id)
+            voh.save()
+
+        # send response
         from simplejson import dumps
         return request.respond(
                 dumps(self.item_to_json(itemversion)),
@@ -542,45 +500,17 @@ class Application(ApplicationBase):
         data = loads(request.POST["json"])
 
         from synoptic.query import parse_query
-        parsed_query = parse_query(data["current_search"])
+        from synoptic.datamodel import ViewOrderingHandler
 
-        model = request.datamodel
-        session = request.dbsession
-
-        item_ids = [row[model.itemversions.c.item_id]
-                for row in session.execute(
-                self.query_itemversions(session, model, parsed_query)
-                .alias("currentversions"))]
-
-        def item_idx(sought_item_id):
-            if sought_item_id == None:
-                return len(item_ids)
-            for idx, item_id in enumerate(item_ids):
-                if item_id == sought_item_id:
-                    return idx
-            raise ValueError, "invalid item id supplied"
-
-        dragged_item_idx = item_idx(data["dragged_item"])
-        before_item_idx = item_idx(data["before_item"])
-
-        assert dragged_item_idx != before_item_idx
-
-        if before_item_idx < dragged_item_idx:
-            dragged_item = item_ids.pop(dragged_item_idx)
-            item_ids.insert(before_item_idx, dragged_item)
-        else:
-            item_ids.insert(before_item_idx, item_ids[dragged_item_idx])
-            item_ids.pop(dragged_item_idx)
-
-        from time import time
-
-        viewordering = ViewOrdering(str(parsed_query), time())
-
-        for idx, item_id in enumerate(item_ids):
-            viewordering.entries.append(ViewOrderingEntry(viewordering, 
-                session.query(Item).get(item_id), idx))
-        session.save(viewordering)
-        session.commit()
+        voh = ViewOrderingHandler(
+                request.dbsession, request.datamodel,
+                parse_query(data["current_search"]))
+        voh.load()
+        voh.reorder(
+                voh.index_from_id(data["dragged_item"]),
+                voh.index_from_id(data["before_item"]),
+                )
+        voh.save()
 
         return request.respond("", mimetype="text/plain")
 

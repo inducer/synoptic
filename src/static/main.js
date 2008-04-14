@@ -203,7 +203,8 @@ ItemManager.method("fill_item_div", function()
             data: {json: JSON.stringify({
               id: self.id,
               tags: self.tags,
-              contents: self.contents
+              contents: self.contents,
+              current_query: $("#search").val()
             })},
             error: function(req, stat, err) { report_error("Revert failed."); },
             success: function(data, msg) { 
@@ -221,7 +222,8 @@ ItemManager.method("fill_item_div", function()
             data: {json: JSON.stringify({
               id: null,
               tags: self.tags,
-              contents: self.contents
+              contents: self.contents,
+              current_query: $("#search").val()
             })},
             error: function(req, stat, err) { report_error("Copy failed."); },
             success: function(data, msg) { 
@@ -360,7 +362,8 @@ ItemManager.method("begin_edit", function()
       data: {json: JSON.stringify({
         id: self.id,
         tags: tags,
-        contents: self.contents
+        contents: self.contents,
+        current_query: $("#search").val()
       })},
 
       error: function(req, stat, err) 
