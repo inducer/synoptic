@@ -923,7 +923,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
     },
     error: function(req, stat, err)
     {
-      var msg = "Error";
+      var msg = "Sorry, we encountered an error.";
       var longmsg = ''
       if (err != undefined)
         msg = msg + ' (' + err + ')';
