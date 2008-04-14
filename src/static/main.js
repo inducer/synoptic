@@ -871,6 +871,12 @@ ItemCollectionManager.method("update", function(force)
 
 ItemCollectionManager.method("fill", function(query, timestamp, force)
 {
+  if ($(".item .edit_div").length != 0)
+  {
+    if (confirm("You seem to be editing one or more entries. Continue loading?") == false)
+      return;
+  }
+
   var self = this;
   if (!force && query == self.last_query && timestamp == self.last_timestamp)
     return;
