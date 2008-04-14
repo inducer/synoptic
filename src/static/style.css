@@ -163,6 +163,22 @@ strike {
   color:red;
 }
 
+.error {
+  padding:5px;
+  background-color:#eee;
+  margin-bottom:10px;
+}
+
+.error .message {
+  font-family:Tahoma, sans-serif;
+  font-size:16px;
+  font-weight:bold;
+  padding-left:28px;
+  height: 22px;
+  background-image:url("error.png");
+  background-repeat:no-repeat;
+}
+
 /* dragging-related --------------------------------------------------------- */
 .dragging {
   background-color:lightgray;

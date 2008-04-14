@@ -10,6 +10,9 @@ def main():
             "-p", "--port", default=7331, type="int",
             help="Listen port", metavar="PORT")
     parser.add_option(
+            "-e", "--dbecho", action="store_true",
+            help="Echo database queries")
+    parser.add_option(
             "-b", "--bind-address", default=None,
             help="Allow remote connection")
 
@@ -31,8 +34,8 @@ def main():
     from synoptic import DBSessionInjector
     app = dbinj = DBSessionInjector(app, "sqlite:///%s" % args[0])
 
-    from paste.exceptions.errormiddleware import ErrorMiddleware
-    app = ErrorMiddleware(app, debug=True)
+    from synoptic import ErrorMiddleware
+    app = ErrorMiddleware(app)
 
     if not exists:
         from synoptic import import_file, get_static_file

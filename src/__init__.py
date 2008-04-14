@@ -69,9 +69,9 @@ def import_file(dbsession, text):
 
 
 class DBSessionInjector(object):
-    def __init__(self, sub_app, dburl):
+    def __init__(self, sub_app, dburl, echo=False):
         from sqlalchemy import create_engine
-        self.engine = create_engine(dburl, echo=True)
+        self.engine = create_engine(dburl)
         from synoptic.datamodel import DataModel
         self.datamodel = DataModel()
         self.datamodel.metadata.create_all(self.engine) 
@@ -96,6 +96,27 @@ class DBSessionInjector(object):
 
 
 
+class ErrorMiddleware(object):
+    def __init__(self, sub_app):
+        self.sub_app = sub_app
+
+    def __call__(self, environ, start_response):
+        import sys
+
+        try:
+            return list(self.sub_app(environ, start_response))
+        except:
+            status = "500 Server Error"
+            response_headers = [("content-type","text/plain")]
+            exc_info = sys.exc_info()
+            ex_type, ex_val, ex_tb = exc_info
+
+            from traceback import print_exc
+            print_exc()
+
+            start_response(status, response_headers, exc_info)
+            return ["%s: %s" % (ex_type.__name__,str(ex_val))]
+        
 from paste.wsgiwrappers import WSGIRequest, WSGIResponse
 
 

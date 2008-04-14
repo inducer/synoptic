@@ -923,7 +923,18 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
     },
     error: function(req, stat, err)
     {
-      self.div.html('<div class="error">An error occurred.</div>');
+      var msg = "Error";
+      var longmsg = ''
+      if (err != undefined)
+        msg = msg + ' (' + err + ')';
+      if (req.responseText != undefined)
+        longmsg = req.responseText;
+
+      self.div.html(('<div class="error"><div class="message">[msg]</div></div>'
+          +'<div class="errordetail">[longmsg]</div>')
+          .allreplace('[msg]', msg)
+          .allreplace('[longmsg]', longmsg)
+          );
     }
     });
 })
