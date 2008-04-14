@@ -105,8 +105,12 @@ class ErrorMiddleware(object):
     def __call__(self, environ, start_response):
         import sys
 
+        from paste.httpexceptions import HTTPException
+
         try:
             return list(self.sub_app(environ, start_response))
+        except HTTPException, e:
+            return e(environ, start_response)
         except:
             status = "500 Server Error"
             response_headers = [("content-type","text/plain")]

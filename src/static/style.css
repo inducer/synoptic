@@ -2,7 +2,7 @@
   border:0;
   margin: 0 auto;
   padding:0;
-  postion:absolute;
+  position:absolute;
 
   top:0;
   bottom:0;
@@ -150,8 +150,10 @@ body, html {
 
 .taglink {
   cursor:pointer;
+  /*
   user-select:none;
   -moz-user-select:none;
+  */
 }
 
 
@@ -208,10 +210,6 @@ strike {
 .dropzone-active {
   background-color:#ccc;
   outline:1px inset;
-  outline-top-color:#aaa;
-  outline-left-color:#aaa;
-  outline-bottom-color:#ddd;
-  outline-right-color:#ddd;
   visibility:visible;
 }
 
@@ -238,7 +236,7 @@ strike {
 
 .item .editcontrols .collapser {
   cursor:default;
-  padding-left:20px;
+  padding-left:16px;
   background-image:url("expanded.png");
   background-repeat:no-repeat;
 }

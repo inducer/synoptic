@@ -25,7 +25,7 @@
       padding: '1px',
       margin: '0px',
       backgroundColor: '#fff',
-      border: '1px solid #999',
+      border: '1px solid #999'
     },
     itemStyle: {
       margin: '0px',

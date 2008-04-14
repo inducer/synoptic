@@ -59,7 +59,7 @@ function str(val)
 
 
 
-// RegExp extension -----------------------------------------------------------
+// misc tools -----------------------------------------------------------------
 function re_escape(text) {
   if (!arguments.callee.sRE) {
     var specials = [
@@ -71,6 +71,17 @@ function re_escape(text) {
     );
   }
   return text.replace(arguments.callee.sRE, '\\$1');
+}
+
+
+
+
+function find_in_array(ary, item)
+{
+  for (var i = 0; i < ary.length; ++i)
+    if (ary[i] == item)
+      return i;
+  return -1;
 }
 
 
@@ -132,7 +143,7 @@ ItemManager.method("fill_item_div", function()
       (
       '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
       '<div class="editcontrols">'+
-      '<span id="item_cursor_[id]" class="cursorfield"></span> '+
+      '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
       '<input type="button" id="new_[id]" value="New" class="editbutton"/>'+
       '</div>'
       ).allreplace('[id]', self.id)
@@ -148,8 +159,8 @@ ItemManager.method("fill_item_div", function()
         (
         '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
         '<div class="editcontrols">'+
-        '<span id="item_cursor_[id]" class="cursorfield"></span> '+
-        '<span id="item_collapser_[id]" class="collapser"></span> '+
+        '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
+        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
         '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
         '<div id="item_draghandle_[id]" class="draghandle">'+
@@ -183,8 +194,8 @@ ItemManager.method("fill_item_div", function()
       self.div.html(
         (
         '<div class="editcontrols">'+
-        '<span id="item_cursor_[id]" class="cursorfield"></span> '+
-        '<span id="item_collapser_[id]" class="collapser"></span> '+
+        '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
+        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
         'Tags: [tags]'+
@@ -270,13 +281,14 @@ ItemManager.method("fill_item_div", function()
           type: 'POST',
           dataType: 'text',
           url: '/item/reorder',
-          data: {json: JSON.stringify({
-            dragged_item: dragged_item.id,
-            before_item: self.id,
-            current_search: $("#search").val(),
-          })},
+          data: {
+            json: JSON.stringify({
+              dragged_item: dragged_item.id,
+              before_item: self.id,
+              current_search: $("#search").val()
+            })},
           error: function(req, stat, err) 
-          { report_error("Reordering failed on server."); },
+          { report_error("Reordering failed on server."); }
         });
       }
       });
@@ -520,7 +532,7 @@ ItemCollectionManager.method("setup_history_handling", function()
             self.set_time(new_time, "slider");
           }
         },
-      startValue: 100,
+      startValue: 100
       });
 
   // setup history datepicker
@@ -552,7 +564,7 @@ ItemCollectionManager.method("add_history_item", function()
   dhtmlHistory.add(
     escape(JSON.stringify({
       query:$("#search").val(),
-      timestamp:this.view_time,
+      timestamp:this.view_time
     })));
 });
 
@@ -980,9 +992,8 @@ function make_tag_cloud(data, show_hidden, exclude)
     var tag = data[i][0];
     var usecount = data[i][1];
 
-    if (exclude != undefined)
-      if (exclude.indexOf(tag) != -1)
-        continue;
+    if (exclude != undefined && find_in_array(exclude, tag) != -1)
+      continue;
 
     if (tag[0] == "." && !show_hidden)
       continue;
@@ -996,9 +1007,8 @@ function make_tag_cloud(data, show_hidden, exclude)
   {
     var tag = data[i][0];
 
-    if (exclude != undefined)
-      if (exclude.indexOf(tag) != -1)
-        continue;
+    if (exclude != undefined && find_in_array(exclude, tag) != -1)
+      continue;
 
     if (tag[0] == "." && !show_hidden)
       continue;
@@ -1063,7 +1073,7 @@ function update_subtag_cloud()
   $.ajax({
     dataType: 'json',
     url: '/tags/get',
-    data: { query: $("#search").val(), },
+    data: { query: $("#search").val() },
     success: function(data, msg) { fill_subtag_cloud(data); }
   });
 }
@@ -1155,7 +1165,7 @@ function add_tag_behavior(jq_result)
                 url: '/tags/rename',
                 data: {json: JSON.stringify({
                   old_name: old_name,
-                  new_name: new_name,
+                  new_name: new_name
                 })},
                 error: function(req, stat, err) { report_error("Rename failed."); },
                 success: function(data, msg) { 
