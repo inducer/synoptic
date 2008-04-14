@@ -175,7 +175,7 @@ def find_tags(session, tags, create_them):
 
 
 
-def store_itemversion(dbsession, contents, tags, item_id=None):
+def store_itemversion(dbsession, contents, tags, item_id=None, timestamp=None):
     import re
     from htmlentitydefs import name2codepoint
 
@@ -195,10 +195,13 @@ def store_itemversion(dbsession, contents, tags, item_id=None):
         assert isinstance(item_id, int)
         item = dbsession.query(Item).get(item_id)
 
-    from time import time
+    if timestamp is None:
+        from time import time
+        timestamp = time()
+
     itemversion = ItemVersion(
             item,
-            time(),
+            timestamp,
             find_tags(dbsession, tags, create_them=True),
             contents,
             )

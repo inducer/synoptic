@@ -44,6 +44,9 @@ def import_file(dbsession, text):
     tags_label = "TAGS: "
     separator = 60*"-"
 
+    from time import time
+    timestamp = time()
+
     idx = 0
     while idx < len(lines):
         assert lines[idx].startswith(tags_label)
@@ -58,7 +61,7 @@ def import_file(dbsession, text):
 
         idx += 1  # skip separator
 
-        store_itemversion(dbsession, "\n".join(body), tags)
+        store_itemversion(dbsession, "\n".join(body), tags, timestamp=timestamp)
 
     dbsession.commit()
 
