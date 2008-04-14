@@ -60,6 +60,7 @@ def main():
               "Paste>=1.6",
               "SqlAlchemy>=0.4.4",
               "SimpleJSON>=1.7",
+              "parsedatetime>=0.8.4",
               ],
 
           scripts=["bin/synoptic"],

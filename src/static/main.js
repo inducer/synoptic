@@ -59,6 +59,23 @@ function str(val)
 
 
 
+// RegExp extension -----------------------------------------------------------
+function re_escape(text) {
+  if (!arguments.callee.sRE) {
+    var specials = [
+      '/', '.', '*', '+', '?', '|',
+      '(', ')', '[', ']', '{', '}', '\\'
+    ];
+    arguments.callee.sRE = new RegExp(
+      '(\\' + specials.join('|\\') + ')', 'g'
+    );
+  }
+  return text.replace(arguments.callee.sRE, '\\$1');
+}
+
+
+
+
 // ItemManager  --------------------------------------------------------------------
 function ItemManager(mgr, arg)
 {
@@ -1053,11 +1070,11 @@ function click_tag(tag)
   }
   else
   {
-    search = search.replace(RegExp("-"+tag+" ", "g"), "");
-    search = search.replace(RegExp(" -"+tag, "g"), "");
-    search = search.replace(RegExp(tag+" ", "g"), "");
-    search = search.replace(RegExp(" "+tag, "g"), "");
-    search = search.replace(RegExp(tag, "g"), "");
+    search = search.replace(RegExp(re_escape("-"+tag+" "), "g"), "");
+    search = search.replace(RegExp(re_escape(" -"+tag), "g"), "");
+    search = search.replace(RegExp(re_escape(tag+" "), "g"), "");
+    search = search.replace(RegExp(re_escape(" "+tag), "g"), "");
+    search = search.replace(RegExp(re_escape(tag), "g"), "");
   }
 
   set_search(search);

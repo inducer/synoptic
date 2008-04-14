@@ -222,6 +222,20 @@ class SQLifyQueryVisitor(object):
             from sqlalchemy.sql import literal
             return literal(False)
 
+    def visit_tag_wildcard_query(self, q):
+        tags = self.session.query(Tag).filter(
+                Tag.name.like(q.name.replace("?", "_").replace("*", "%")))
+
+        cnt = tags.count()
+        if cnt == 0:
+            return literal(True)
+        elif tags.count() == 1:
+            return ItemVersion.tags.any(id=tags[0].id)
+        else:
+            from sqlalchemy.sql import or_
+            return reduce(or_, 
+                    (ItemVersion.tags.any(id=tag.id) for tag in tags))
+
     def visit_fulltext_query(self, q):
         return ItemVersion.contents.contains(q.substr)
 
@@ -236,3 +250,9 @@ class SQLifyQueryVisitor(object):
     def visit_or_query(self, q):
         from sqlalchemy.sql import or_
         return reduce(or_, (ch.visit(self) for ch in q.children))
+
+    def visit_date_query(self, q):
+        if q.is_before:
+            return ItemVersion.timestamp < q.timestamp
+        else:
+            return ItemVersion.timestamp > q.timestamp

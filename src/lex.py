@@ -47,48 +47,26 @@ def lex(lex_table, str, debug=False):
     rule_dict = dict(lex_table)
 
     def matches_rule(rule, str, start):
-        if debug:
-            print "Trying", rule, "on", str[start:]
-        if isinstance(rule, tuple):
-            if rule[0] == "|":
-                for subrule in rule[1:]:
-                    length = matches_rule(subrule, str, start)
-                    if length:
-                        return length
-            else:
-                my_match_length = 0
-                for subrule in rule:
-                    length = matches_rule(subrule, str, start)
-                    if length:
-                        my_match_length += length
-                        start += length
-                    else:
-                        return 0
-                return my_match_length
-        elif isinstance(rule, basestring):
-            return matches_rule(rule_dict[rule], str, start)
-        elif isinstance(rule, RE):
-            match_obj = rule.RE.match(str, start)
-            if match_obj:
-                return match_obj.end()-start
-            else:
-                return 0
+        assert isinstance(rule, RE)
+        match_obj = rule.RE.match(str, start)
+        if match_obj:
+            return match_obj.end()-start, match_obj
         else:
-            raise RuleError, rule
+            return 0, None
 
     result = []
     i = 0
     while i < len(str):
         rule_matched = False
         for name, rule in lex_table:
-            length = matches_rule(rule, str, i)
+            length, match_obj = matches_rule(rule, str, i)
             if length:
-                result.append((name, str[i:i+length], i))
+                result.append((name, str[i:i+length], i, match_obj))
                 i += length
                 rule_matched = True
                 break
         if not rule_matched:
-            raise InvalidTokenError, (str, i)
+            raise InvalidTokenError(str, i)
     return result
 
 
@@ -105,6 +83,9 @@ class LexIterator:
 
     def next_str(self):
         return self.Lexed[self.Index][1]
+
+    def next_match_obj(self):
+        return self.Lexed[self.Index][3]
 
     def next_str_and_advance(self):
         result = self.next_str()
