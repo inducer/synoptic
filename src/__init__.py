@@ -192,7 +192,7 @@ class Application(ApplicationBase):
                 
         if max_timestamp is not None:
             max_timestamps_per_item = max_timestamps_per_item.where(
-                    model.itemversions.c.timestamp <= max_timestamp)
+                    model.itemversions.c.timestamp <= max_timestamp+1)
 
         max_timestamps_per_item = max_timestamps_per_item.group_by(
                 model.itemversions.c.item_id)
