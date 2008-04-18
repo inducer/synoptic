@@ -1,7 +1,27 @@
 #! /usr/bin/env python2.5
 
+class Log:
+    """file-like for writes with auto flush after each write
+    to ensure that everything is logged, even during an
+    unexpected exit."""
+
+    def __init__(self, f):
+        self.f = f
+    def write(self, s):
+        self.f.write(s)
+        self.f.flush()
+
+
+
+
 def main():
     from optparse import OptionParser
+
+    from tempfile import gettempdir
+    import os
+    import sys
+
+    mydir = os.path.join(gettempdir(), "synoptic-%d-%s" % (os.getpid(), os.getlogin()))
 
     description = "An AJAXy information/note manager"
     parser = OptionParser(description=description,
@@ -10,11 +30,22 @@ def main():
             "-p", "--port", default=7331, type="int",
             help="Listen port", metavar="PORT")
     parser.add_option(
+            "-d", "--daemon", action="store_true",
+            help="Go to background after startup")
+    parser.add_option(
             "-e", "--dbecho", action="store_true",
             help="Echo database queries")
     parser.add_option(
             "-b", "--bind-address", default=None,
             help="Allow remote connection")
+    parser.add_option(
+	    "--pidfile", dest="pidfile", 
+            default=os.path.join(mydir, "synoptic.pid"),
+	    help="PID file for daemonization", metavar="PIDFILE")
+    parser.add_option(
+	    "-l", "--logfile", dest="logfile", 
+            default=os.path.join(mydir, "synoptic.log"),
+	    help="Log file for daemonization", metavar="LOGFILE")
 
     options, args = parser.parse_args()
 
@@ -23,13 +54,12 @@ def main():
 
     if len(args) != 1:
         parser.print_usage()
-        import sys
         sys.exit(1)
 
+    os.mkdir(mydir)
     dbname = args[0]
 
-    from os import access, F_OK
-    exists = access(dbname, F_OK)
+    exists = os.access(dbname, os.F_OK)
 
     from synoptic import DBSessionInjector
     app = dbinj = DBSessionInjector(app, "sqlite:///%s" % args[0])
@@ -53,8 +83,42 @@ def main():
 
     real_app.set_quit_func(quit_func)
 
+    if options.daemon:
+        # do the UNIX double-fork magic, see Stevens' "Advanced
+        # Programming in the UNIX Environment" for details (ISBN 0201563177)
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit first parent
+                sys.exit(0)
+        except OSError, e:
+            print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror)
+            sys.exit(1)
+
+        # decouple from parent environment
+        os.chdir("/")   #don't prevent unmounting....
+        os.setsid()
+        os.umask(0)
+
+        # do second fork
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit from second parent, print eventual PID before
+                #print "Daemon PID %d" % pid
+                open(options.pidfile,'w').write("%d"%pid)
+                sys.exit(0)
+        except OSError, e:
+            print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror)
+            sys.exit(1)
+
+        sys.stdout = sys.stderr = Log(open(options.logfile, 'a+'))
+
+        sys.stderr.write("starting synoptic with pid %d\n" % os.getpid())
+
     while not quit_flag[0]:
         server.handle_request()
+    print>>sys.stderr, "quitting..."
 
 if __name__ == "__main__":
     main()

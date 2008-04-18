@@ -519,7 +519,9 @@ class Application(ApplicationBase):
     def http_quit(self, request):
         if self.quit_func is not None:
             self.quit_func()
-            return request.respond("quitting", mimetype="text/plain")
+            return request.respond(
+                    "Thanks for using synoptic.", 
+                    mimetype="text/plain")
         else:
             raise HTTPForbidden()
 

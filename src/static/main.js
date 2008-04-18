@@ -749,11 +749,7 @@ ItemCollectionManager.method("setup_toolbar", function()
     });
   $("#btn_quit").click(function()
     { 
-      $.ajax({
-        data: data,
-        url: '/app/quit',
-        dataType:"text",
-        });
+      location.href = "/app/quit";
     });
 });
 
