@@ -195,10 +195,15 @@ class Application(ApplicationBase):
                     (r'^/item/reorder$', self.http_reorder_item),
                     (r'^/tags/get$', self.http_get_tags),
                     (r'^/tags/rename$', self.http_rename_tag),
+                    (r'^/app/quit$', self.http_quit),
                     (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ])
 
         WSGIRequest.defaults["charset"] = "utf-8"
+        self.quit_func = None
+
+    def set_quit_func(self, quit_func):
+        self.quit_func = quit_func
 
     # tools -------------------------------------------------------------------
     def item_to_json(self, item):
@@ -498,6 +503,13 @@ class Application(ApplicationBase):
         return request.respond(
                 dumps(self.item_to_json(itemversion)),
                 mimetype="text/plain")
+
+    def http_quit(self, request):
+        if self.quit_func is not None:
+            self.quit_func()
+            return request.respond("quitting", mimetype="text/plain")
+        else:
+            raise HTTPForbidden()
 
     def http_reorder_item(self, request):
         from simplejson import loads

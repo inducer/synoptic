@@ -118,6 +118,7 @@ def mainpane(context):
           <img src="/static/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
           <img src="/static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
           <img src="/static/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
+          <img src="/static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
         </div>
         <div id="items">
         </div>

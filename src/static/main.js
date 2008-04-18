@@ -747,6 +747,14 @@ ItemCollectionManager.method("setup_toolbar", function()
     { 
       $(".item").addClass("collapsed");
     });
+  $("#btn_quit").click(function()
+    { 
+      $.ajax({
+        data: data,
+        url: '/app/quit',
+        dataType:"text",
+        });
+    });
 });
 
 

@@ -19,7 +19,7 @@ def main():
     options, args = parser.parse_args()
 
     from synoptic import Application
-    app = Application()
+    real_app = app = Application()
 
     if len(args) != 1:
         parser.print_usage()
@@ -42,8 +42,19 @@ def main():
         import_file(dbinj.sessionmaker(), 
                 get_static_file("initial-content.txt")[0])
 
-    from paste.httpserver import serve
-    serve(app, port=options.port, host=options.bind_address)
+    from wsgiref.simple_server import make_server
+    server = make_server(
+        options.bind_address or "127.0.0.1", options.port, app)
+
+    quit_flag = [False]
+
+    def quit_func():
+        quit_flag[0] = True
+
+    real_app.set_quit_func(quit_func)
+
+    while not quit_flag[0]:
+        server.handle_request()
 
 if __name__ == "__main__":
     main()
