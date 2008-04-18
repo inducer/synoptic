@@ -14,12 +14,14 @@ def printpage(context):
     return """
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+    <html>
     <head>
       <title>%(title)s</title>
+      <link rel="stylesheet" type="text/css" href="/static/content.css">
     </head>
-      <body>
+    <body>
         %(body)s
-      </body>
+    </body>
     </html>
     """ % context
 
@@ -31,6 +33,7 @@ def page(context):
     return """
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+    <html>
     <head>
       <title>%(title)s</title>
       <script type="text/javascript" src="/static/jquery.js"></script>
@@ -51,12 +54,13 @@ def page(context):
       <script type="text/javascript" src="/static/json2.js"></script>
       <script type="text/javascript" src="/static/rsh.js"></script>
       <script type="text/javascript" src="/static/main.js"></script>
+      <link rel="stylesheet" type="text/css" href="/static/content.css">
       <link rel="stylesheet" type="text/css" href="/static/style.css">
       <link rel="stylesheet" href="/static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
     </head>
-      <body>
+    <body>
         %(body)s
-      </body>
+    </body>
     </html>
     """ % context
 

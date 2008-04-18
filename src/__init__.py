@@ -444,7 +444,9 @@ class Application(ApplicationBase):
         return request.respond(
                 printpage({
                     "title": "Synoptic Printout",
-                    "body": "<hr/>".join(v.contents_html() for v in versions),
+                    "body": "<hr/>".join(
+                        '<div class="itemcontents">%s</div>' % v.contents_html() 
+                        for v in versions),
                     }))
 
     def http_export_items(self, request):
