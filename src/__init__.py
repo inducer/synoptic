@@ -372,6 +372,15 @@ class Application(ApplicationBase):
 
         tag.name = new_name
 
+        import re
+
+        old_re = re.compile(r"\b%s\b" % re.escape(old_name))
+
+        for v_ord in request.dbsession.query(ViewOrdering).filter(
+                ViewOrdering.tagset.contains(old_name)):
+            v_ord.tagset = old_re.sub(new_name, v_ord.tagset)
+            print v_ord.tagset
+
         return request.respond("", mimetype="text/plain")
 
     def http_get_item_by_id(self, request):
