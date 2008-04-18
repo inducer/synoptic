@@ -118,7 +118,10 @@ class ErrorMiddleware(object):
             ex_type, ex_val, ex_tb = exc_info
 
             from traceback import print_exc
-            print_exc()
+            try:
+                print_exc()
+            except:
+                pass
 
             start_response(status, response_headers, exc_info)
             return ["%s: %s" % (ex_type.__name__,str(ex_val))]
