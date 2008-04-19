@@ -765,7 +765,7 @@ ItemCollectionManager.method("redraw_cursor", function()
 
 
 
-ItemCollectionManager.method("set_cursor_to", function(div, is_up)
+ItemCollectionManager.method("set_cursor_to", function(div, is_up, noscroll)
 {
   if (this.cursor_at != null)
   {
@@ -773,7 +773,8 @@ ItemCollectionManager.method("set_cursor_to", function(div, is_up)
   }
 
   div.find(".editcontrols").addClass("hascursor");
-  div.get(0).scrollIntoView(is_up);
+  if (!noscroll)
+    div.get(0).scrollIntoView(is_up);
   this.cursor_at = div;
 });
 
@@ -806,7 +807,7 @@ ItemCollectionManager.method("note_list_emptied", function(item)
 
 ItemCollectionManager.method("note_new_first_item", function(item)
 {
-  this.set_cursor_to(item.div);
+  this.set_cursor_to(item.div, /* is_up */ true, /*noscroll*/ true);
 });
 
 
