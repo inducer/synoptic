@@ -1,27 +1,55 @@
-TAGS: welcome
+TAGS: home
 #Welcome to Synoptic!
 
-Synoptic is "GMail for your notes". It gives you an efficient and friendly interface that makes it possible to keep and categorize a *large* number of small-ish notes and tidbits of information.
+Synoptic is "GMail for your notes". It gives you an efficient and friendly
+interface that makes it possible to keep and categorize a *large* number of
+small-ish notes and tidbits of information.
 
 The following features set it apart:
 
-* **Fully versioned:** Never deletes *anything*, *ever*. If you want to go back to a previous version of something, just drag that slider up there in the top-left corner.
+* **Fully versioned.** Never deletes *anything*, *ever*. If you want to go back
+to a previous version of something, just drag that slider up there in the
+top-left corner.
 
-* **Efficient keyboard control.** Never take your hands of the keyboard while you're working with Synoptic. All every-day functions are keyboard-accessible.
+* **[Super-simple Navigation](#navigation).** Adaptive tag clouds, 
+support for the forward/back button on your browser, 
+[query links](#link), support for browser bookmarks. All to make sure
+you can find that note when you need it.
 
-* **Tags.** Synoptic is meant to scale to *large* note collections. Tags provide easy categorization, plus the Web 2.0 goodness of that tag cloud over there on the left.
+* **[Powerful searching](#search).** Synoptic is meant to keep *large*
+note collections manageable and accessible. You can search for items
+based on tags, their creation time, or even search through their *full
+text*. Plus arbitrary logical combinations of them, using the 
+logical operatos `and`, `or`, and `not`.
 
-* **Easy Syntax.** Synoptic uses [Markdown](http://daringfireball.net/projects/markdown/basics) to allow you to type formatted notes easily and quickly.
+* **[Easy Markup](#markup).** Synoptic uses
+[Markdown](http://daringfireball.net/projects/markdown/basics) to allow you to
+type formatted notes easily and quickly. Plus, there are a few 
+[extensions](#markup extension) to facilitate typing math.
+
+* **[Advanced Features](#advanced).** A lot of refinement work has gone into
+making Synoptic work as seamlessly as possible. You may never notice
+many of these refinements, because they're meant to make stuff work like
+it's supposed to. If you're curious nonetheless, take a [peek](#advanced).
+
+You can also see what's [changed since the last release](#changes) or browse
+the [Frequently Asked Questions](#faq). Curious who cooked this up?
+Check the [credits](#credits). Also make sure you understand the
+[licensing](#license).
 ---------------------------------------------------------------------------
-TAGS: keyboard,navigation,welcome
-## Keyboard Navigation
+TAGS: keyboard,navigation
+# Keyboard Navigation
 
 When navigating:
 
 * **J**, **K**: move down/up.
 * **E**, **D**: edit/delete.
-* **S**: jump to the search bar.
+* **S**, **/**: jump to the search bar.
 * **N**: create a new note.
+* **C**: toggle collapsed state.
+
+When your cursor is in the search field, just hit **Enter** to return
+to the usual navigation mode.
 
 When editing:
 
@@ -30,23 +58,45 @@ When editing:
 
 (those are valid for Firefox, other browsers treat access keys differently.)
 ---------------------------------------------------------------------------
-TAGS: advanced,wsgi
-## Advanced Features
+TAGS: advanced,ordering
+# Reordering Items
 
-* **Reordering**: You can sort notes by dragging the \[&uarr; &darr;\] box in their edit bar. Synoptic will remember the order and show the items in the same order the next time you use the presently active set of search tags.
+You can sort notes by dragging the up/down arrows in their edit bar. 
 
-* **Use your notes from anywhere**: Synoptic is, at its core, just a [WSGI](http://wsgi.org) application. Install it on your web server, put some form of authentication in front of it, and *cha-ching*: you have worldwide notes.
-
-* **Printing**: Just in case you missed it: There's a print button up there by the search bar that will turn your current view into a simple HTML page.
-
-* **Dealing with history**: Once you travel away from the "present" view of your notes, all the editing features go away. The past is immutable, you might say. :) However, each item gets two new buttons: *Revert* and *Copy to present*. Upon clicking either of these, you will find a copy of that note once you return to the present. In the case of "Revert", it will have replaced whatever state the same note was in in the "present", and with "Copy", there will simply be another copy of it, leaving the current state of the note well alone.
+Synoptic will remember the order and show the items in the same order
+the next time you use the same search query. In fact, it doesn't have
+to be literally the same search query. If, within limits, synoptic can
+infer that your queries are logically equivalent, synoptic will use
+the existing ordering.
 ---------------------------------------------------------------------------
-TAGS: welcome,credits,wsgi
+TAGS: advanced,wsgi
+# Use your notes from anywhere
+
+Synoptic is, at its core, just a [WSGI](http://wsgi.org) application.
+Install it on your web server, put some form of authentication in front
+of it, and *cha-ching*: you have worldwide notes.
+---------------------------------------------------------------------------
+TAGS: advanced,history
+# Dealing with History
+
+Once you travel away from the "present" view of your notes, all the
+editing features go away. The past is immutable, you might say. :)
+
+However, each item gets two new buttons: *Revert* and *Copy to
+present*. Upon clicking either of these, you will find a copy of that
+note once you return to the present. In the case of "Revert", it will
+have replaced whatever state the same note was in in the "present", and
+with "Copy", there will simply be another copy of it, leaving the
+current state of the note well alone.
+---------------------------------------------------------------------------
+TAGS: credits
 # Credits
 
-Synoptic was cooked up by [Andreas Klöckner](http://news.tiker.net) while procrastinating from his PhD. (Well, I needed a better note taking tool for my research. :-)
+Synoptic was cooked up by [Andreas Klöckner](http://mathema.tician.de) while
+procrastinating from his PhD. (Well, I needed a better note taking tool for my
+research. :-)
 
-It's not all that big a piece of software, just shy of 2000 lines. It stands on the shoulders of the following giants:
+It stands on the shoulders of the following giants:
 
 * [Python](http://www.python.org), the programming language.
 * [SQLite](http://www.sqlite.org), the storage engine. Comes with Python nowadays.
@@ -55,20 +105,25 @@ It's not all that big a piece of software, just shy of 2000 lines. It stands on 
 * [jQuery](http://jquery.com/), makes hacking Javascript fun again. *[included, with several plugins]*
 * [Python Markdown](http://www.freewisdom.org/projects/python-markdown/), the Wiki syntax *[included]*
 * [SimpleJSON](http://www.undefined.org/python/), a Python/JSON interface.
+* [Parsedatetime](http://pypi.python.org/pypi/parsedatetime/), a natural-language date parser.
 * [Setuptools](http://peak.telecommunity.com/DevCenter/setuptools) automatically pulls together all these dependencies so alll you have to type to install synoptic is `easy_install synoptic`.
 
 and lastly:
 
-* Synoptic needs a decent, compliant browser. I test and develop with [Firefox](http://getfirefox.org). Other browsers may or may not work.
+* Synoptic needs a decent, compliant browser.
+[Firefox](http://getfirefox.org) is my main target, but [other
+browsers](#faq browsers) also work, at least to some extent.
 
-In part to say thank you to the people who wrote these amazing pieces of software and everybody supporting Open Source, Synoptic is released under an unrestrictive MIT license.
+In part to say thank you to the people who wrote these amazing pieces
+of software and everybody supporting Open Source, Synoptic is released
+under an unrestrictive [MIT license](#license).
 
-Synoptic's home page is at <http://news.tiker.net/software/synoptic>.
+Synoptic's home page is at <http://mathema.tician.de/software/synoptic>.
 ---------------------------------------------------------------------------
 TAGS: license
 Synoptic is licensed under the [MIT license](http://opensource.org/licenses/mit-license.html):
 
-Copyright (c) 2008 Andreas Klöckner
+Copyright \copy 2008 Andreas Klöckner
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -88,29 +143,251 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ---------------------------------------------------------------------------
-TAGS: bugs
-# Bugs and known issues
-
-* The slider in the history pane sometimes ends up in the wrong spot. But it's fine when you drag it.
----------------------------------------------------------------------------
-TAGS: welcome
+TAGS: home
 # Getting Started
 
-You can get started right here! Just delete all these startup notes that are already here, and start your own set of notes. Should you want to come back to these notes, just slide the history slider to the somewhere near the left edge. *Remember:* They're not gone when you delete them!
+You can get started right here! Just delete all these startup notes that are
+already here, and start your own set of notes. Should you want to come back to
+these notes, just slide the history slider to the somewhere near the left edge.
+
+*Remember:* They're not gone when you delete them!
+
+(If you'd rather start from a clean slate, remove this database,
+and start synoptic with the `--start-empty` command line option.)
 ---------------------------------------------------------------------------
 TAGS: tags,navigation,advanced
-## Navigating with Tags
+# Navigating with Tags
 
-* **Two ways of tag navigation**: There are two modes of tag navigation, "All tags" and "Sub-Tags". Each has their own tab on the left. Try them out!
+Perhaps the most convenient way of navigating within synoptic is 
+the adaptive tag cloud on the left. Given your current search, it shows
+you the tags that you can "drill down" to, i.e. tags that are used
+in the items in your current view. Click on them, and your view will
+restrict to only the items using the tag you clicked.
 
-* **Hidden tags**: You can create hidden tags. If a tag starts with a dot ("."), it won't show up in the tag cloud by default, unless you click the "show hidden" checkbox.
+In addition, the tags you are currently searching for are shown in
+red. Click those, and that tag will be taken out of your search.
 
-* **Clicking in the tag cloud**: A single click on a tag adds and removes this tag from the current search. A double click makes this tag the *only* current search term.
+If you need access to a tag that's not in your current query, you may
+use the "All tags" tab on the left.
+
+Also try right-clicking on those tags. (Caution: Some Firefox mouse
+gesture extensions break right-clicks in web applications.)
 ---------------------------------------------------------------------------
-TAGS: syntax,editing
-## Note syntax (and Markdown extensions)
+TAGS: tags,navigation,advanced
+# Using Hidden Tags
 
-In addition to everything described in the [Markdown syntax specification](http://daringfireball.net/projects/markdown/basics), Synoptic supports the following extensions:
+You can create hidden tags. If a tag starts with a dot ("."), it won't
+show up in the tag cloud by default. (If you've used UNIX file systems
+before, this should sound familiar.) Unless you click the "show hidden"
+checkbox, that is.
 
-* If you surround some text with double tildes, it will appear in ~~strike trough~~.
+The purpose of this feature is to maintain the usefulness of the tag
+cloud even if you want a *lot* of different tags (such as tagging stuff
+by the date it happened).
+---------------------------------------------------------------------------
+TAGS: tags,navigation,advanced
+# The `home` tag
 
+When you enter an empty search query, synoptic will show you everything
+tagged with `home`. You'll tend to see this screen quite a bit, so you
+can use it for stuff you would like to keep in view prominently, such
+as your main to-do list, or links to different views that you use
+frequently.
+---------------------------------------------------------------------------
+TAGS: markup
+# Basics of Markup Syntax
+
+Markdown's basic idea is to turn plain-text email conventions into real
+HTML markup.
+---------------------------------------------------------------------------
+TAGS: markup, character
+# Markdown Character Formats
+You can *emphasize* text by surrounding it with `*asterisks*`.
+
+You can **strongly emphasize** text by surrounding it with `**double asterisks**`.
+
+You can show text `verbatim` by surrounding it with backticks.
+---------------------------------------------------------------------------
+TAGS: markup, character, link, faq
+# How do I link to the web? Or to synoptic search results?
+
+To create a link, simply enter `[title](http://url/)`. You may also 
+link to a synoptic [search result](#search), by entering `#my search query`
+for the URL. This documentation is full of examples of this technique.
+---------------------------------------------------------------------------
+TAGS: markup,extension
+# Extra Character Formats
+
+If you surround some text with \~\~`double tildes`\~\~, it will appear
+~~like this~~.
+---------------------------------------------------------------------------
+TAGS: markup, paragraph
+# Markdown Paragraph Formats
+Unordered lists are produced like this:
+
+    * Apples
+    * Oranges
+    * Bananas
+
+To quote a block of literal text, simply indent it by four spaces:
+
+    int main(int argc, char **argv)
+    {
+      return 0;
+    }
+
+A heading (or subheading) is produced like this:
+
+    # My Page title
+    ## My Section Title
+    ### My Subsection Title
+
+For the full story, check out the [Markdown syntax
+basics][mdbasics] and the [full specification][mdspec]. In addition,
+Markdown is HTML-transparent. If something is not represented within
+its syntax (such as tables), just enter the corresponding HTML.
+
+[mdbasics]: http://daringfireball.net/projects/markdown/basics
+[mdspec]: http://daringfireball.net/projects/markdown/syntax
+---------------------------------------------------------------------------
+TAGS: markup,extension,advanced
+# Magic HTML Entities
+
+If you need a special symbol, you can of course type out the
+HTML `&entity;`, and it will show up as you want. There's a better
+way, though: If you type the same entity as \\`entity`, then synoptic
+will replace that with the corresponding Unicode character when saving
+your note item. That way, the symbol will not only show up "right" 
+when viewed as HTML, but also when editing.
+
+Here are some examples:
+
+* \sum is \\`sum`.
+* \int is \\`int`.
+* \alpha is \\`alpha`.
+
+Also check out the [complete list][entlist]. [\pi](#.hidden)
+
+[entlist]: http://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
+---------------------------------------------------------------------------
+TAGS: faq, browsers
+# What Browsers are supported?
+
+You'll likely have most fun with [Firefox](http://getfirefox.com). However,
+synoptic is usable to some extent in most browsers. Here's a list of
+them, with a list of problems:
+
+* Opera 9: works, no keyboard shortcuts.
+* Konqueror: works, but scrolling the note by anything other
+than the scroll bar is broken.
+* IE: Not tried.
+
+I'd be happy to take patches that fix these compatibility issues.
+---------------------------------------------------------------------------
+TAGS: .hidden
+# You found the hidden note!
+
+Congratulations, you found the hidden note! Here's your [pony][pony]. :)
+
+[pony]: http://en.wikipedia.org/wiki/Image:MyLittlePony-RunawayRainbow.jpg
+---------------------------------------------------------------------------
+TAGS: changes
+# Changes in 0.91
+
+* Tag renaming.
+* \\htmlentity parsing.
+* Proper content formatting when printing.
+* Tags must be alphanumeric now.
+* Advanced [Search syntax](#search)
+* Prettier edit bar.
+* Support browser back/forward and bookmarks.
+* Make adaptive tag cloud default, fix its issues.
+* Nicer error reporting.
+* Quit command.
+* Daemon mode.
+
+Plus tons more little, less user-visible improvements. The full 
+change log is available from [synoptic's version control][git].
+
+[git]: http://git.tiker.net/?p=synoptic.git;a=summary
+---------------------------------------------------------------------------
+TAGS: search,syntax,primitives,tags
+# Searching for Tags
+
+A search for a tag is entered simply as `mytag`, without quotes.
+You may combine several such searches simply by stringing them 
+together, as you do in Google. Examples:
+
+* `research ideas`
+* `todo life`
+
+Prefixing a tag with a minus sign (`-mytag`) searches for all notes
+*not* having that tag. Examples:
+
+* `research ideas -todo`
+* `python2.5 -issues`
+
+You can search for all tags matching a wildcard, by typing `my*tag` 
+or `my???tag`. An asterisk (`*`) can stand for an arbitrary number
+of characters (including zero), while a question mark (`?`) may
+be replaced by exactly one character. Here are some examples:
+search for date-tagged objects:
+
+* .meeting.2008.04.??
+* .meeting.2008.*
+* python2.?
+---------------------------------------------------------------------------
+TAGS: search,syntax,primitives,fulltext
+# Searching for Full Text
+
+Searching for text contained in an item's body is achieved by 
+typing (`"query string"`) If you would like to search for multiple 
+words, but not necessarily in sequence, enclose them in quotes
+individually.
+
+Examples:
+
+* `"heat transfer"`
+* `"andreas" "weird"`
+
+Full-text search is not case sensitive.
+---------------------------------------------------------------------------
+TAGS: search,syntax,primitives,date
+# Searching by Time and Date of Last Modification
+
+You may restrict your view to items modified before or after a
+specific point in time, by using `before(...)` and `after(...)`, 
+where `...` is a natural-language representation of the desired
+date.
+
+Examples:
+
+* `after(yesterday 5pm)`
+* `before(Apr 5 2008)`
+
+Check out the [parsedatetime](http://code.google.com/p/parsedatetime/)
+page for the many different ways you can specify a point in time.
+---------------------------------------------------------------------------
+TAGS: search,syntax,operators,advanced
+# Advanced Searching with Logical Operators
+
+You may combine [simple searches](#search primitives) into more
+advanced queries by combining them using the logical operators `and`,
+`or` and `not`. Parentheses are supported, too.
+
+If no operator is specified between separate simple searches,
+`and` is silently added.
+
+Examples:
+
+* `tag1 and tag2`
+* `tag1 tag2`
+* `tag1 and (tag2 or tag3)`
+* `-tag3 and "fulltext"`
+* `not tag3 and "fulltext"`
+---------------------------------------------------------------------------
+TAGS: faq, search
+# How do I search for all my notes?
+
+Enter a tautological query, such as `"blah or -blah"`. If you have many notes,
+rendering all of them might take a while, so be patient.
