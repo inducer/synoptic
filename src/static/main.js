@@ -638,6 +638,7 @@ ItemCollectionManager.method("setup_search", function()
     {
       self.div.stopTime("search_changewatch");
       self.add_history_item();
+      self.update(); 
       --self.search_focused;
     });
   /*
