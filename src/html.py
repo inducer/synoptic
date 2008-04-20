@@ -36,10 +36,10 @@ def page(context):
     <html>
     <head>
       <title>%(title)s</title>
-      <script type="text/javascript" src="/app/get_all_js"></script>
       <link rel="stylesheet" type="text/css" href="/static/content.css">
       <link rel="stylesheet" type="text/css" href="/static/style.css">
       <link rel="stylesheet" href="/static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
+      <script type="text/javascript" src="/app/get_all_js"></script>
     </head>
     <body>
         %(body)s
