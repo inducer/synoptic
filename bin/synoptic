@@ -41,8 +41,8 @@ def main():
             "--start-empty", action="store_true",
             help="Start with an empty database, if creating")
     parser.add_option(
-            "--no-browser", default=None,
-            help="Do not try to automatically launch a web browser")
+            "--browser", default="default",
+            help="Type of web browser to launch (or 'none')")
     parser.add_option(
             "-b", "--bind-address", default=None,
             help="Allow remote connection")
@@ -127,9 +127,18 @@ def main():
 
         sys.stderr.write("starting synoptic with pid %d\n" % os.getpid())
 
-    if not options.no_browser:
-        import webbrowser
-        webbrowser.open(url)
+    browser = options.browser.lower()
+    if browser != "none":
+        def start_browser():
+            import webbrowser
+            if browser == "default":
+                browser_ctlr = webbrowser.get()
+            else:
+                browser_ctlr = webbrowser.get(browser)
+            browser_ctlr.open(url)
+
+        from thread import start_new_thread
+        start_new_thread(start_browser, ())
         
     while not quit_flag[0]:
         server.handle_request()
