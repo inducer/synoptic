@@ -10,6 +10,8 @@ class Log:
     def write(self, s):
         self.f.write(s)
         self.f.flush()
+    def flush(self):
+        self.f.flush()
 
 
 
@@ -106,7 +108,6 @@ def main():
             sys.exit(1)
 
         # decouple from parent environment
-        os.chdir("/")   #don't prevent unmounting....
         os.setsid()
         os.umask(0)
 
