@@ -36,24 +36,7 @@ def page(context):
     <html>
     <head>
       <title>%(title)s</title>
-      <script type="text/javascript" src="/static/jquery.js"></script>
-      <script type="text/javascript" src="/static/jquery.timers.js"></script>
-      <script type="text/javascript" src="/static/jquery.bgiframe.js"></script>
-      <script type="text/javascript" src="/static/jquery.dimensions.js"></script>
-      <script type="text/javascript" src="/static/jquery.contextmenu.r2.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.base.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.mouse.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.slider.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.tabs.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.draggable.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.draggable.ext.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.droppable.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/ui.droppable.ext.js"></script>
-      <script type="text/javascript" src="/static/jquery-ui/datepicker/core/ui.datepicker.js"></script>
-      <script type="text/javascript" src="/static/inheritance.js"></script>
-      <script type="text/javascript" src="/static/json2.js"></script>
-      <script type="text/javascript" src="/static/rsh.js"></script>
-      <script type="text/javascript" src="/static/main.js"></script>
+      <script type="text/javascript" src="/app/get_all_js"></script>
       <link rel="stylesheet" type="text/css" href="/static/content.css">
       <link rel="stylesheet" type="text/css" href="/static/style.css">
       <link rel="stylesheet" href="/static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">

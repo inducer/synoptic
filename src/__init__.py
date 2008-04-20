@@ -198,6 +198,7 @@ class Application(ApplicationBase):
                     (r'^/item/reorder$', self.http_reorder_item),
                     (r'^/tags/get$', self.http_get_tags),
                     (r'^/tags/rename$', self.http_rename_tag),
+                    (r'^/app/get_all_js$', self.http_get_all_js),
                     (r'^/app/quit$', self.http_quit),
                     (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ])
@@ -516,15 +517,6 @@ class Application(ApplicationBase):
                 dumps(self.item_to_json(itemversion)),
                 mimetype="text/plain")
 
-    def http_quit(self, request):
-        if self.quit_func is not None:
-            self.quit_func()
-            return request.respond(
-                    "Thanks for using synoptic.", 
-                    mimetype="text/plain")
-        else:
-            raise HTTPForbidden()
-
     def http_reorder_item(self, request):
         from simplejson import loads
         data = loads(request.POST["json"])
@@ -543,6 +535,44 @@ class Application(ApplicationBase):
         voh.save()
 
         return request.respond("", mimetype="text/plain")
+
+    def http_get_all_js(self, request):
+        all_js_filenames = [
+          "jquery.js",
+          "jquery.timers.js",
+          "jquery.bgiframe.js",
+          "jquery.dimensions.js",
+          "jquery.contextmenu.r2.js",
+          "jquery-ui/ui.base.js",
+          "jquery-ui/ui.mouse.js",
+          "jquery-ui/ui.slider.js",
+          "jquery-ui/ui.tabs.js",
+          "jquery-ui/ui.draggable.js",
+          "jquery-ui/ui.draggable.ext.js",
+          "jquery-ui/ui.droppable.js",
+          "jquery-ui/ui.droppable.ext.js",
+          "jquery-ui/datepicker/core/ui.datepicker.js",
+          "inheritance.js",
+          "json2.js",
+          "rsh.js",
+          "main.js",
+          ]
+        sep = "/* %s */\n" % (75*"-")
+        all_js_files = [
+                ]
+        return request.respond("".join(
+            "%s/* %s */\n%s%s" % (sep, fn, sep, get_static_file(fn)[0])
+            for fn in all_js_filenames), 
+            mimetype="text/javascript")
+
+    def http_quit(self, request):
+        if self.quit_func is not None:
+            self.quit_func()
+            return request.respond(
+                    "Thanks for using synoptic.", 
+                    mimetype="text/plain")
+        else:
+            raise HTTPForbidden()
 
     def serve_static(self, request, filename):
         try:
