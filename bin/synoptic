@@ -62,7 +62,6 @@ def main():
         parser.print_usage()
         sys.exit(1)
 
-    os.mkdir(mydir)
     dbname = args[0]
 
     exists = os.access(dbname, os.F_OK)
@@ -78,10 +77,9 @@ def main():
         import_file(dbinj.sessionmaker(), 
                 get_static_file("initial-content.txt")[0])
 
-    from wsgiref.simple_server import make_server
+    from paste.httpserver import WSGIServer, WSGIHandler
     host = options.bind_address or "127.0.0.1"
-    server = make_server(
-        host, options.port, app)
+    server = WSGIServer(app, (host, options.port), WSGIHandler)
 
     url = "http://%s:%d/" % (host, options.port)
     print "serving at %s..." % url
@@ -94,6 +92,8 @@ def main():
     real_app.set_quit_func(quit_func)
 
     if options.daemon:
+        os.mkdir(mydir)
+
         # do the UNIX double-fork magic, see Stevens' "Advanced
         # Programming in the UNIX Environment" for details (ISBN 0201563177)
         try:
