@@ -1,39 +1,51 @@
+MAPPERS_DEFINED = [False]
+
+
+
+
 class DataModel(object):
     def __init__(self):
+        if MAPPERS_DEFINED[0]:
+            return 
+
+        MAPPERS_DEFINED[0] = True
+
         from sqlalchemy import Table, Column, \
                 Integer, Float, Text, UnicodeText, Unicode, ForeignKey, \
                 MetaData
 
-        self.metadata = MetaData()
+        cls = DataModel
 
-        self.items = Table('items', self.metadata,
+        cls.metadata = MetaData()
+
+        cls.items = Table('items', self.metadata,
                 Column('id', Integer, primary_key=True)
                 )
 
-        self.tags = Table('tags', self.metadata,
+        cls.tags = Table('tags', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('name', Unicode(100)),
                 ) 
 
-        self.itemversions = Table('itemversions', self.metadata,
+        cls.itemversions = Table('itemversions', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('item_id', Integer, ForeignKey('items.id')),
                 Column('timestamp', Float, index=True),
                 Column('contents', UnicodeText())
                 )
 
-        self.itemversions_tags = Table('itemversions_tags', self.metadata,
+        cls.itemversions_tags = Table('itemversions_tags', self.metadata,
                 Column('itemversion_id', Integer, ForeignKey('itemversions.id'), index=True),
                 Column('tag_id', Integer, ForeignKey('tags.id'), index=True),
                 ) 
 
-        self.vieworderings = Table('vieworderings', self.metadata,
+        cls.vieworderings = Table('vieworderings', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('tagset', Text()), # misnomer, by now: normalized query string
                 Column('timestamp', Float, index=True),
                 ) 
 
-        self.viewordering_entries = Table('viewordering_entries', self.metadata,
+        cls.viewordering_entries = Table('viewordering_entries', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('viewordering_id', Integer, ForeignKey('vieworderings.id')),
                 Column('item_id', Integer, ForeignKey('items.id')),
@@ -56,6 +68,7 @@ class DataModel(object):
         mapper(ViewOrderingEntry, self.viewordering_entries, properties={
             'item': relation(Item),
             })
+
 
 
 

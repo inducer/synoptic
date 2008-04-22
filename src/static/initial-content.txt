@@ -75,6 +75,12 @@ TAGS: advanced,wsgi
 Synoptic is, at its core, just a [WSGI](http://wsgi.org) application.
 Install it on your web server, put some form of authentication in front
 of it, and *cha-ching*: you have worldwide notes.
+
+To make your integration job easier, a sample WSGI wrapper script that
+should be usable with `mod_wsgi` is included as `doc/sample.wsgi`.
+
+For now, synoptic must run in the root directory of its web server.
+I will gladly accept patches to fix that, it shouldn't be hard.
 ---------------------------------------------------------------------------
 TAGS: advanced,history
 # Dealing with History

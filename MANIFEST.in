@@ -1,3 +1,4 @@
+include doc/*.wsgi
 include ez_setup.py
 include src/static/*.js
 include src/static/*.gif
