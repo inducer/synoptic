@@ -185,23 +185,26 @@ class ApplicationBase(object):
 
 
 class Application(ApplicationBase):
-    def __init__(self):
+    def __init__(self, urlprefix="/"):
+        import re
+        re_prefix = "^"+re.escape(urlprefix)
+
         ApplicationBase.__init__(self,
-                [
-                    (r'^/$', self.index),
-                    (r'^/timestamp/get_range$', self.http_get_tsrange),
-                    (r'^/item/get_by_id$', self.http_get_item_by_id),
-                    (r'^/items/get$', self.http_get_items),
-                    (r'^/items/print$', self.http_print_items),
-                    (r'^/items/export$', self.http_export_items),
-                    (r'^/item/store$', self.http_store_item),
-                    (r'^/item/reorder$', self.http_reorder_item),
-                    (r'^/tags/get$', self.http_get_tags),
-                    (r'^/tags/rename$', self.http_rename_tag),
-                    (r'^/app/get_all_js$', self.http_get_all_js),
-                    (r'^/app/quit$', self.http_quit),
-                    (r'^/static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
-                    ])
+                [(re_prefix+pattern, handler) for pattern, handler in [
+                    (r'$', self.index),
+                    (r'timestamp/get_range$', self.http_get_tsrange),
+                    (r'item/get_by_id$', self.http_get_item_by_id),
+                    (r'items/get$', self.http_get_items),
+                    (r'items/print$', self.http_print_items),
+                    (r'items/export$', self.http_export_items),
+                    (r'item/store$', self.http_store_item),
+                    (r'item/reorder$', self.http_reorder_item),
+                    (r'tags/get$', self.http_get_tags),
+                    (r'tags/rename$', self.http_rename_tag),
+                    (r'app/get_all_js$', self.http_get_all_js),
+                    (r'app/quit$', self.http_quit),
+                    (r'static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
+                    ]])
 
         WSGIRequest.defaults["charset"] = "utf-8"
         self.quit_func = None
@@ -383,7 +386,6 @@ class Application(ApplicationBase):
         for v_ord in request.dbsession.query(ViewOrdering).filter(
                 ViewOrdering.tagset.contains(old_name)):
             v_ord.tagset = old_re.sub(new_name, v_ord.tagset)
-            print v_ord.tagset
 
         return request.respond("", mimetype="text/plain")
 

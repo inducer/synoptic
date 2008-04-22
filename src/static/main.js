@@ -210,7 +210,7 @@ ItemManager.method("fill_item_div", function()
           $.ajax({
             type: 'POST',
             dataType: 'json',
-            url: '/item/store',
+            url: 'item/store',
             data: {json: JSON.stringify({
               id: self.id,
               tags: self.tags,
@@ -229,7 +229,7 @@ ItemManager.method("fill_item_div", function()
           $.ajax({
             type: 'POST',
             dataType: 'json',
-            url: '/item/store',
+            url: 'item/store',
             data: {json: JSON.stringify({
               id: null,
               tags: self.tags,
@@ -280,7 +280,7 @@ ItemManager.method("fill_item_div", function()
         $.ajax({
           type: 'POST',
           dataType: 'text',
-          url: '/item/reorder',
+          url: 'item/reorder',
           data: {
             json: JSON.stringify({
               dragged_item: dragged_item.id,
@@ -350,7 +350,7 @@ ItemManager.method("begin_edit", function()
 
   self.manager.install_focus_handlers($("#edit_tags_"+self.id));
   /*
-  $("#edit_tags_"+self.id).autocomplete("/tags/get",
+  $("#edit_tags_"+self.id).autocomplete("tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
       */
 
@@ -370,7 +370,7 @@ ItemManager.method("begin_edit", function()
     $.ajax({
       type: 'POST',
       dataType: 'json',
-      url: '/item/store',
+      url: 'item/store',
       data: {json: JSON.stringify({
         id: self.id,
         tags: tags,
@@ -419,7 +419,7 @@ ItemManager.method("do_delete", function()
   $.ajax({
     type: 'POST',
     dataType: 'json',
-    url: '/item/store',
+    url: 'item/store',
     data: {json: JSON.stringify({
       id: self.id,
       tags: [],
@@ -436,7 +436,7 @@ ItemManager.method("load_from_server", function(when_done)
 {
   var self = this;
   $.ajax({
-    url: "/item/get_by_id", 
+    url: "item/get_by_id", 
     data: {id: self.id},
     dataType:"json",
     success: function(obj, status)
@@ -494,7 +494,7 @@ ItemCollectionManager.method("setup_history_handling", function()
   var self = this;
 
   self.tsrange = null;
-  $.getJSON("/timestamp/get_range", function (json)
+  $.getJSON("timestamp/get_range", function (json)
     { 
       self.tsrange = json; 
       self.set_history_slider(self.view_time);
@@ -642,7 +642,7 @@ ItemCollectionManager.method("setup_search", function()
       --self.search_focused;
     });
   /*
-  $("#search").autocomplete("/tags/get",
+  $("#search").autocomplete("tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
       */
   $("#btn_search_clear").click(function()
@@ -726,7 +726,7 @@ ItemCollectionManager.method("setup_toolbar", function()
 {
   $("#btn_print").click(function()
     {
-      var printurl = "/items/print?query="+escape($("#search").val());
+      var printurl = "items/print?query="+escape($("#search").val());
       if (self.view_time != null)
         printurl += "&max_timestamp="+escape(self.view_time.toString());
 
@@ -734,7 +734,7 @@ ItemCollectionManager.method("setup_toolbar", function()
     });
   $("#btn_export").click(function()
     {
-      var exporturl = "/items/export?query="+escape($("#search").val());
+      var exporturl = "items/export?query="+escape($("#search").val());
       if (self.view_time != null)
         exporturl += "&max_timestamp="+escape(self.view_time.toString());
 
@@ -750,7 +750,7 @@ ItemCollectionManager.method("setup_toolbar", function()
     });
   $("#btn_quit").click(function()
     { 
-      location.href = "/app/quit";
+      location.href = "app/quit";
     });
 });
 
@@ -924,7 +924,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
 
   $.ajax({
     data: data,
-    url: '/items/get',
+    url: 'items/get',
     dataType:"json",
     success: function(json, status)
     {
@@ -1046,7 +1046,7 @@ function update_tag_clouds()
 
 function update_main_tag_cloud()
 {
-  $.getJSON("/tags/get", function (json)
+  $.getJSON("tags/get", function (json)
     {  
       $("#tagcloud").html(make_tag_cloud(
           json.tags, $("#chk_tagcloud_show_hidden").get(0).checked));
@@ -1078,7 +1078,7 @@ function update_subtag_cloud()
 {
   $.ajax({
     dataType: 'json',
-    url: '/tags/get',
+    url: 'tags/get',
     data: { query: $("#search").val() },
     success: function(data, msg) { fill_subtag_cloud(data); }
   });
@@ -1168,7 +1168,7 @@ function add_tag_behavior(jq_result)
               $.ajax({
                 type: 'POST',
                 dataType: 'text',
-                url: '/tags/rename',
+                url: 'tags/rename',
                 data: {json: JSON.stringify({
                   old_name: old_name,
                   new_name: new_name

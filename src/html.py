@@ -17,7 +17,7 @@ def printpage(context):
     <html>
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" type="text/css" href="/static/content.css">
+      <link rel="stylesheet" type="text/css" href="../static/content.css">
     </head>
     <body>
         %(body)s
@@ -36,10 +36,10 @@ def page(context):
     <html>
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" type="text/css" href="/static/content.css">
-      <link rel="stylesheet" type="text/css" href="/static/style.css">
-      <link rel="stylesheet" href="/static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
-      <script type="text/javascript" src="/app/get_all_js"></script>
+      <link rel="stylesheet" type="text/css" href="static/content.css">
+      <link rel="stylesheet" type="text/css" href="static/style.css">
+      <link rel="stylesheet" href="static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
+      <script type="text/javascript" src="app/get_all_js"></script>
     </head>
     <body>
         %(body)s
@@ -54,10 +54,10 @@ def navpane(context):
         <div id="logo">Synoptic</div>
         <div id="history_nav">
           <div style="white-space:nowrap;">
-            <label for="edit_date" accesskey="t"><img src="/static/time.png" alt="Time" class="inlineimg"/></label>
+            <label for="edit_date" accesskey="t"><img src="static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
             <span id="history_time"></span>
-            <img src="/static/go-last.png" id="btn_go_present" class="imagebutton"/>
+            <img src="static/go-last.png" id="btn_go_present" class="imagebutton"/>
           </div>
           <div id="slider_container">
             <div id="history_slider" class="ui-slider-1" style="margin:10px;">
@@ -96,12 +96,12 @@ def mainpane(context):
       <div id="innermainpane">
         <div style="white-space:nowrap;">
           <input type="text" size="50" id="search"/>
-          <img src="/static/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
-          <img src="/static/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>
-          <img src="/static/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
-          <img src="/static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
-          <img src="/static/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
-          <img src="/static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
+          <img src="static/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
+          <img src="static/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>
+          <img src="static/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
+          <img src="static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
+          <img src="static/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
+          <img src="static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
         </div>
         <div id="items">
         </div>

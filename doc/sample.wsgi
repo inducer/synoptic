@@ -5,6 +5,7 @@
 
 DATABASE_FILE = '/home/andreas/synoptic.db'
 DATABASE_URL = 'sqlite:///%s' % DATABASE_FILE
+URL_PREFIX = '/'
 ADD_STARTUP_CONTENT = False
 
 
@@ -15,7 +16,7 @@ def application(environ, start_response):
     import sys
 
     from synoptic import Application
-    real_app = app = Application()
+    real_app = app = Application(URL_PREFIX)
 
     from synoptic import DBSessionInjector
     app = dbinj = DBSessionInjector(app, DATABASE_URL)
