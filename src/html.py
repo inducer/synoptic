@@ -102,6 +102,10 @@ def mainpane(context):
           <img src="static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
           <img src="static/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
           <img src="static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
+          <img src="static/copy.png" alt="Copy (relative) link URL" title="Copy (relative) link URL" id="btn_copy" class="imagebutton"/>
+          <div id="linkurl">
+            <input type="text" readonly id="linkurl_edit"/>
+          </div>
         </div>
         <div id="items">
         </div>

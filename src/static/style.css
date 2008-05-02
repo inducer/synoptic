@@ -177,6 +177,27 @@ body, html {
   background-repeat:no-repeat;
 }
 
+div#linkurl {
+  position:relative;
+  display:inline;
+  top:29px;
+  padding:5px;
+  background-color:orange;
+  border:1px solid brown;
+  z-index:100;
+  right:300px;
+  width:300px;
+  visibility:hidden;
+}
+
+div#linkurl.shown {
+  visibility:visible;
+}
+
+#linkurl_edit {
+  width:280px;
+}
+
 /* dragging-related --------------------------------------------------------- */
 .dragging {
   background-color:lightgray;

@@ -559,13 +559,20 @@ ItemCollectionManager.method("setup_history_handling", function()
 
 
 
-ItemCollectionManager.method("add_history_item", function()
+ItemCollectionManager.method("get_current_fragment", function()
 {
-  dhtmlHistory.add(
-    escape(JSON.stringify({
+  return escape(JSON.stringify({
       query:$("#search").val(),
       timestamp:this.view_time
-    })));
+    }));
+});
+
+
+
+
+ItemCollectionManager.method("add_history_item", function()
+{
+  dhtmlHistory.add(this.get_current_fragment());
 });
 
 
@@ -752,6 +759,22 @@ ItemCollectionManager.method("setup_toolbar", function()
     { 
       location.href = "app/quit";
     });
+  $("#btn_copy").click(function()
+    { 
+      var linkurl = $("#linkurl");
+      if (linkurl.hasClass("shown"))
+      {
+        linkurl.removeClass("shown");
+      }
+      else
+      {
+        linkurl.addClass("shown");
+        var linkurl_edit = $("#linkurl_edit").get(0);
+        linkurl_edit.select();
+        linkurl_edit.focus();
+      }
+    });
+  this.install_focus_handlers($("#linkurl_edit"));
 });
 
 
@@ -890,6 +913,8 @@ ItemCollectionManager.method("empty_was_filled", function()
 
 ItemCollectionManager.method("update", function(force)
 {
+  $("#linkurl_edit").val("#"+this.get_current_fragment());
+
   this.fill($("#search").val(), this.view_time, force);
 })
 
