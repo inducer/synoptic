@@ -381,10 +381,11 @@ class Application(ApplicationBase):
 
         import re
 
-        old_re = re.compile(r"\b%s\b" % re.escape(old_name))
+        old_re = re.compile(r"(?:\b|^)%s(?:\b|$)" % re.escape(old_name))
 
         for v_ord in request.dbsession.query(ViewOrdering).filter(
                 ViewOrdering.tagset.contains(old_name)):
+            before = v_ord.tagset
             v_ord.tagset = old_re.sub(new_name, v_ord.tagset)
 
         return request.respond("", mimetype="text/plain")
