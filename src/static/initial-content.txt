@@ -113,11 +113,13 @@ It stands on the shoulders of the following giants:
 * [SimpleJSON](http://www.undefined.org/python/), a Python/JSON interface.
 * [Parsedatetime](http://pypi.python.org/pypi/parsedatetime/), a natural-language date parser.
 * [Setuptools](http://peak.telecommunity.com/DevCenter/setuptools) automatically pulls together all these dependencies so alll you have to type to install synoptic is `easy_install synoptic`.
+* [Tango Icon Theme](http://tango.freedesktop.org), the pretty pictures you click on.
+* [reallysimplehistory](http://code.google.com/p/reallysimplehistory/), browser history management from Javascript.
 
 and lastly:
 
 * Synoptic needs a decent, compliant browser.
-[Firefox](http://getfirefox.org) is my main target, but [other
+[Firefox](http://getfirefox.com) is my main target, but [other
 browsers](#faq browsers) also work, at least to some extent.
 
 In part to say thank you to the people who wrote these amazing pieces
