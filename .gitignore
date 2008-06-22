@@ -6,3 +6,4 @@ dist
 *egg-info
 .svn
 *.pyc
+*.orig

@@ -285,13 +285,15 @@ class Application(ApplicationBase):
         now = time()
 
         from simplejson import dumps
+        from sqlalchemy import asc, desc
         return request.respond(
                 dumps({
-                    "min": request.dbsession.query(ItemVersion)
-                    .min(ItemVersion.timestamp),
-                    "max": max(now, request.dbsession.query(ItemVersion)
-                    .max(ItemVersion.timestamp)),
-                    "now": time(),
+                    "min": request.dbsession.query(ItemVersion).
+                           order_by(asc(ItemVersion.timestamp))[0].timestamp,
+                    "max": max(now,
+                           request.dbsession.query(ItemVersion).
+                           order_by(desc(ItemVersion.timestamp))[0].timestamp),
+                    "now": now,
                     }),
                 mimetype="text/plain")
 
