@@ -333,11 +333,13 @@ ItemManager.method("begin_edit", function()
   // default to current search tags
   if (self.id == null)
   {
-    var search_val = $("#search").val();
-    if (search_val == "")
+    var default_tags = self.manager.query_tags.join(",");
+    if (default_tags == "")
       $("#edit_tags_"+self.id).val("home");
     else
-      $("#edit_tags_"+self.id).val(search_val);
+    {
+      $("#edit_tags_"+self.id).val(default_tags);
+    }
   }
   else
     $("#edit_tags_"+self.id).val(self.tags);
@@ -467,6 +469,8 @@ function ItemCollectionManager()
   self.setup_search();
   self.setup_keyboard_nav();
   self.setup_toolbar();
+
+  self.query_tags = [];
 }
 
 
@@ -966,6 +970,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
       self.realize_items(items);
 
       fill_subtag_cloud(json);
+      self.query_tags = json.query_tags;
     },
     error: function(req, stat, err)
     {
