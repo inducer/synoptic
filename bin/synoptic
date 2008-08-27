@@ -23,7 +23,7 @@ def main():
     import os
     import sys
 
-    mydir = os.path.join(gettempdir(), "synoptic-%d-%s" % (os.getpid(), os.getlogin()))
+    mydir = os.path.join(gettempdir(), "synoptic-%d-%s" % (os.getpid(), os.getuid()))
 
     description = "An AJAXy information/note manager"
     parser = OptionParser(description=description,
