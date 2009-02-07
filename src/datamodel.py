@@ -406,6 +406,9 @@ class ViewOrderingHandler:
             self.item_ids.insert(before_idx, self.item_ids[moved_idx])
             self.item_ids.pop(moved_idx)
 
+    def set_order(self, item_ids):
+        self.item_ids = item_ids
+
     def insert(self, before_idx, new_id):
         self.item_ids.insert(before_idx, new_id)
 

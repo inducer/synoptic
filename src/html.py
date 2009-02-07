@@ -106,6 +106,8 @@ def mainpane(context):
         </div>
         <div id="items">
         </div>
+        <div id="hiddenitems">
+        </div>
       </div>
     </div>
     """

@@ -61,7 +61,7 @@ When editing:
 TAGS: advanced,ordering
 # Reordering Items
 
-You can sort notes by dragging the up/down arrows in their edit bar. 
+You can sort notes by dragging their header bar. 
 
 Synoptic will remember the order and show the items in the same order
 the next time you use the same search query. In fact, it doesn't have

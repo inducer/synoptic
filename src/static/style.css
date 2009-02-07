@@ -41,11 +41,6 @@ body, html {
   right:0;
 }
 
-#innermainpane {
-  padding-left:10px;
-}
-
-
 #items {
   margin-top:5px;
   position:absolute;
@@ -54,6 +49,10 @@ body, html {
   top:3em;
   left:0;
   bottom:0;
+}
+
+#hiddenitems {
+  display:none;
 }
 
 .item {
@@ -118,6 +117,7 @@ body, html {
 .editcontrols {
   background-color:#bbb;
   padding:2px;
+  font-family: Verdana,Arial,sans-serif ;
 }
 
 #history_nav {
@@ -208,43 +208,6 @@ div#linkurl.shown {
 
 .ui-datepicker {
   z-index: 3;
-}
-
-/* dragging-related --------------------------------------------------------- */
-.dragging {
-  background-color:lightgray;
-}
-
-.dragging .editcontrols {
-  background-color:lightgray;
-}
-
-.draghandle {
-  display:inline;
-  cursor:default;
-  position:relative;
-  top:0.2em;
-  cursor:move;
-}
-
-.dropzone {
-  position:absolute;
-  min-height:9px;
-  left:25%;
-  width:50%;
-  visibility:hidden;
-  text-align:center;
-}
-
-.dropzone-active {
-  background-color:#ccc;
-  outline:1px inset;
-  visibility:visible;
-}
-
-.dropzone-hover {
-  background-color:#eee;
-  outline:1px outset;
 }
 
 /* cursor-related ----------------------------------------------------------- */

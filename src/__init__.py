@@ -528,15 +528,13 @@ class Application(ApplicationBase):
         from synoptic.query import parse_query
         from synoptic.datamodel import ViewOrderingHandler
 
-        voh = ViewOrderingHandler(
-                request.dbsession, request.datamodel,
-                parse_query(data["current_search"]))
-        voh.load()
-        voh.reorder(
-                voh.index_from_id(data["dragged_item"]),
-                voh.index_from_id(data["before_item"]),
-                )
-        voh.save()
+        if data["new_order"]:
+            voh = ViewOrderingHandler(
+                    request.dbsession, request.datamodel,
+                    parse_query(data["current_search"]))
+            voh.load()
+            voh.set_order([int(x) for x in data["new_order"].split(",")])
+            voh.save()
 
         return request.respond("", mimetype="text/plain")
 
@@ -550,8 +548,7 @@ class Application(ApplicationBase):
           "jquery-ui/ui.core.js",
           "jquery-ui/ui.slider.js",
           "jquery-ui/ui.tabs.js",
-          "jquery-ui/ui.draggable.js",
-          "jquery-ui/ui.droppable.js",
+          "jquery-ui/ui.sortable.js",
           "jquery-ui/ui.datepicker.js",
           "inheritance.js",
           "json2.js",

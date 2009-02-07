@@ -135,13 +135,10 @@ ItemManager.method("fill_item_div", function()
 {
   var self = this;
 
-  var have_dropzone = false;
   if (self.id == null)
   {
-    have_dropzone = true;
     self.div.html(
       (
-      '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
       '<div class="editcontrols">'+
       '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
       '<input type="button" id="new_[id]" value="New" class="editbutton"/>'+
@@ -154,20 +151,14 @@ ItemManager.method("fill_item_div", function()
   {
     if (self.manager.view_time == null)
     {
-      have_dropzone = true;
       self.div.html(
         (
-        '<div id="item_dropzone_[id]" class="dropzone">Drop here</div>'+
-        '<div class="editcontrols">'+
+        '<div class="editcontrols item-drag-handle">'+
         '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
         '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
         '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
-        '<div id="item_draghandle_[id]" class="draghandle">'+
-          '<img src="/static/dragger.png" alt="drag handle" '+
-          'title="Drag this handle to change display order"/>'+
-        '</div> '+
-        'Tags: [tags]'+
+        ' [tags]'+
         '</div>'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
@@ -176,18 +167,6 @@ ItemManager.method("fill_item_div", function()
         );
       $('#edit_'+self.id).click(function(){ self.begin_edit() });
       $('#delete_'+self.id).click(function(){ self.do_delete() });
-      $('#item_draghandle_'+self.id).draggable({
-          helper: "clone",
-          start: function() 
-          { 
-            self.manager.dragging_item = self; 
-            self.div.addClass("dragging");
-          },
-          stop: function() 
-          { 
-            self.div.removeClass("dragging");
-          }
-          });
     }
     else
     {
@@ -251,47 +230,6 @@ ItemManager.method("fill_item_div", function()
     $("#item_collapser_"+self.id).click(
         function() { item_toggle_collapsed(self.div); }
         );
-  }
-
-  if (have_dropzone)
-  {
-    $("#item_dropzone_"+self.id).droppable({
-      accept: ".draghandle",
-      activeClass: 'dropzone-active',
-      hoverClass:  'dropzone-hover',
-      tolerance: 'pointer',
-      drop: function(ev, ui) {
-        var dragged_item = self.manager.dragging_item;
-        if (self == dragged_item)
-          return;
-
-        // move dragged item's div in front of ours
-        dragged_item.div.hide("slow",
-          function()
-          {
-            dragged_item.div.remove();
-            dragged_item.call_with_item_div(
-              function(html) { self.div.before(html); } /* creator */
-              );
-            self.manager.set_cursor_to(dragged_item.div);
-          });
-
-        // report drag to server
-        $.ajax({
-          type: 'POST',
-          dataType: 'text',
-          url: 'item/reorder',
-          data: {
-            json: JSON.stringify({
-              dragged_item: dragged_item.id,
-              before_item: self.id,
-              current_search: $("#search").val()
-            })},
-          error: function(req, stat, err) 
-          { report_error("Reordering failed on server."); }
-        });
-      }
-      });
   }
 });
 
@@ -1233,6 +1171,34 @@ $(document).ready(function()
   document.collection_manager = collection_manager;
 
   $("#navtabs").tabs();
+
+  $("#items").sortable({ 
+    handle: ".item-drag-handle",
+    start: function(event, ui) 
+      { $("#item_null").appendTo("#hiddenitems"); },
+    stop: function(event, ui) 
+      { $("#item_null").appendTo("#items"); },
+    update: function(event, ui)
+      {
+        var items = $("#items").children()
+        var item_ids = [];
+        for (var i = 0; i < items.length; ++i)
+          item_ids.push(items[i].id.replace("item_", ""));
+
+        $.ajax({
+          type: 'POST',
+          dataType: 'text',
+          url: 'item/reorder',
+          data: {
+            json: JSON.stringify({
+              new_order: item_ids.join(","),
+              current_search: $("#search").val()
+            })},
+          error: function(req, stat, err) 
+          { report_error("Reordering failed on server."); }
+        });
+      }
+    });
 
   update_main_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_main_tag_cloud);
