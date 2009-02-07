@@ -486,7 +486,7 @@ ItemCollectionManager.method("set_history_slider", function(time)
       / (this.tsrange.max-this.tsrange.min)* 100.;
 
   ++this.slider_update_inhibitions;
-  $("#history_slider").slider("moveTo", new_percentage);
+  $("#history_slider").slider("value", new_percentage);
   --this.slider_update_inhibitions;
 });
 

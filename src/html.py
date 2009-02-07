@@ -52,7 +52,7 @@ def navpane(context):
     <div id="navpane">
       <div id="innernavpane">
         <div id="logo"><a href="http://mathema.tician.de/software/synoptic">Synoptic</a></div>
-        <div id="history_nav">
+        <div id="history_nav" class="ui-corner-all">
           <div style="white-space:nowrap;">
             <label for="edit_date" accesskey="t"><img src="static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
@@ -62,12 +62,11 @@ def navpane(context):
           <div id="slider_container">
             <div id="history_slider"> </div>
           </div>
+
+          <span id="messagearea"></span>
         </div>
 
-        <div id="messagearea">
-        </div>
-
-        <div id="navtabs" class="flora">
+        <div id="navtabs">
           <ul>
             <li><a href="#fragment-1">Tags</a></li>
             <li><a href="#fragment-2">All Tags</a></li>

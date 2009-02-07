@@ -4,6 +4,8 @@
   padding:0;
   position:absolute;
 
+  background-color:#eee;
+
   top:0;
   bottom:0;
   left:0;
@@ -17,12 +19,13 @@ body, html {
 }
 
 #navpane {
-  background-color: #ddf;
+  background-image: url("navbar-bg.png");
   position:absolute;
   top:0;
   bottom:0;
   left:0;
   width:250px;
+
 }
 
 #innernavpane {
@@ -53,30 +56,22 @@ body, html {
   bottom:0;
 }
 
+.item {
+  background-color:white;
+  /*border: 1px solid #ddd;*/
+}
+
+.itemcontents {
+  padding-left:5px;
+  padding-right:5px;
+}
+
 .editbuttons {
   vertical-align:top;
 }
 
 .ac_results {
   background-color:#eef;
-}
-
-.ac_results ul{
-  list-style-type:none;
-  padding:5px;
-  margin:0;
-  border:0;
-  border-style:solid;
-  border-color:#000;
-  border-left-width:1px;
-  border-bottom-width:1px;
-  border-right-width:1px;
-  font-family:sans-serif;
-}
-
-.ac_results ul li.ac_over{
-  background-color:#00e;
-  color:#fff;
 }
 
 .inlineimg
@@ -91,9 +86,8 @@ body, html {
   top:0.7em;
 
   padding:2px;
-  border-width:1px;
-  border-style:solid;
-  border-color:white;
+  border:1px solid #ddd;
+  background-color:white;
 }
 
 .imagebutton:hover
@@ -122,12 +116,15 @@ body, html {
 }
 
 .editcontrols {
-  background-color:#ddf;
+  background-color:#bbb;
   padding:2px;
 }
 
 #history_nav {
   padding:10px;
+  padding-bottom:5px;
+  padding-top:5px;
+  margin-bottom:10px;
   background-color:white;
 }
 
@@ -141,11 +138,14 @@ body, html {
   font-size:24pt;
   font-weight:bold;
   font-family:sans-serif;
-  padding-bottom:3px;
+  padding:10px;
+  padding-top:5px;
+  padding-bottom:5px;
+  margin-bottom:5px;
 }
 
 #logo a {
-  color:black;
+  color:white;
   text-decoration:none;
 
 }
@@ -254,7 +254,7 @@ div#linkurl.shown {
 }
 
 .editcontrols.hascursor {
-  background-color:#bbe;
+  background-color:yellow;
 }
 
 .editcontrols.hascursor .cursorfield {

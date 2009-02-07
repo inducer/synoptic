@@ -6,11 +6,7 @@ include src/static/*.png
 include src/static/*.txt
 include src/static/*.css
 include src/static/jquery-ui/*.js
-include src/static/jquery-ui/themes/flora/*.css
-include src/static/jquery-ui/themes/flora/i/*.gif
-include src/static/jquery-ui/themes/flora/i/*.png
-include src/static/jquery-ui/datepicker/core/*.js
-include src/static/jquery-ui/datepicker/core/*.css
-include src/static/jquery-ui/datepicker/img/*.gif
+include src/static/jquery-ui/themes/base/*.css
+include src/static/jquery-ui/themes/base/images/*.png
 
 include COPYING
