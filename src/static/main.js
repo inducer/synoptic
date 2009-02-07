@@ -536,7 +536,7 @@ ItemCollectionManager.method("setup_history_handling", function()
             self.set_time(new_time, "slider");
           }
         },
-      startValue: 100
+      value: 100
       });
 
   // setup history datepicker
@@ -1232,7 +1232,7 @@ $(document).ready(function()
   var collection_manager = new ItemCollectionManager()
   document.collection_manager = collection_manager;
 
-  $("#navtabs > ul").tabs();
+  $("#navtabs").tabs();
 
   update_main_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_main_tag_cloud);

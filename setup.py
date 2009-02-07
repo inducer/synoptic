@@ -84,12 +84,8 @@ def main():
               'static/*.txt',
               'static/*.css',
               'static/jquery-ui/*.js',
-              'static/jquery-ui/themes/flora/*.css',
-              'static/jquery-ui/themes/flora/i/*.gif',
-              'static/jquery-ui/themes/flora/i/*.png',
-              'static/jquery-ui/datepicker/core/*.js',
-              'static/jquery-ui/datepicker/core/*.css',
-              'static/jquery-ui/datepicker/img/*.gif',
+              'static/jquery-ui/themes/base/*.css',
+              'static/jquery-ui/themes/base/images/*.png',
               ]}
          )
 

@@ -38,7 +38,7 @@ def page(context):
       <title>%(title)s</title>
       <link rel="stylesheet" type="text/css" href="static/content.css">
       <link rel="stylesheet" type="text/css" href="static/style.css">
-      <link rel="stylesheet" href="static/jquery-ui/themes/flora/flora.all.css" type="text/css" media="screen">
+      <link rel="stylesheet" href="static/jquery-ui/themes/base/ui.all.css" type="text/css" media="screen">
       <script type="text/javascript" src="app/get_all_js"></script>
     </head>
     <body>
@@ -51,7 +51,7 @@ def navpane(context):
     return """
     <div id="navpane">
       <div id="innernavpane">
-        <div id="logo">Synoptic</div>
+        <div id="logo"><a href="http://mathema.tician.de/software/synoptic">Synoptic</a></div>
         <div id="history_nav">
           <div style="white-space:nowrap;">
             <label for="edit_date" accesskey="t"><img src="static/time.png" alt="Time" class="inlineimg"/></label>
@@ -60,9 +60,7 @@ def navpane(context):
             <img src="static/go-last.png" id="btn_go_present" class="imagebutton"/>
           </div>
           <div id="slider_container">
-            <div id="history_slider" class="ui-slider-1" style="margin:10px;">
-              <div class="ui-slider-handle"></div>
-            </div>
+            <div id="history_slider"> </div>
           </div>
         </div>
 
@@ -71,8 +69,8 @@ def navpane(context):
 
         <div id="navtabs" class="flora">
           <ul>
-            <li><a href="#fragment-1"><span>Tags</span></a></li>
-            <li><a href="#fragment-2"><span>All Tags</span></a></li>
+            <li><a href="#fragment-1">Tags</a></li>
+            <li><a href="#fragment-2">All Tags</a></li>
           </ul>
           <div id="fragment-1">
             <div id="subtagcloud_search_tags"> </div>
