@@ -4,7 +4,7 @@
   padding:0;
   position:absolute;
 
-  background-color:#eee;
+  background-color:#ddd;
 
   top:0;
   bottom:0;
@@ -43,6 +43,7 @@ body, html {
 
 #items {
   margin-top:5px;
+  padding-right:10px;
   position:absolute;
   overflow:scroll;
   right:0;
@@ -57,20 +58,25 @@ body, html {
 
 .item {
   background-color:white;
-  /*border: 1px solid #ddd;*/
+  margin-bottom:5px;
+}
+
+.item.collapsed {
+  background-color:transparent;
+  margin-bottom:5px;
 }
 
 .itemcontents {
-  padding-left:5px;
-  padding-right:5px;
+  padding:5px;
+}
+
+.itemcontents p {
+  margin-top:0;
+  margin-bottom:0.3em;
 }
 
 .editbuttons {
   vertical-align:top;
-}
-
-.ac_results {
-  background-color:#eef;
 }
 
 .inlineimg
@@ -85,7 +91,7 @@ body, html {
   top:0.7em;
 
   padding:2px;
-  border:1px solid #ddd;
+  border:1px solid #888;
   background-color:white;
 }
 
@@ -106,17 +112,10 @@ body, html {
   border-right-color:#ddd;
 }
 
-.edit_div {
-  background-color:#ddf;
-  border-width:0;
-  border-bottom-width:5px;
-  border-style:solid;
-  border-color:white;
-}
-
 .editcontrols {
-  background-color:#bbb;
   padding:2px;
+  padding-left:5px;
+  background-color:#bbb;
   font-family: Verdana,Arial,sans-serif ;
 }
 
@@ -171,7 +170,7 @@ body, html {
 
 .error {
   padding:5px;
-  background-color:#ddd;
+  background-color:#ccc;
   margin-bottom:10px;
 }
 
@@ -210,17 +209,23 @@ div#linkurl.shown {
   z-index: 3;
 }
 
+.item.focused .editcontrols {
+  background-color:#ace;
+}
+
+.item.editing .editcontrols {
+  background-image:url("construction.png");
+}
+
 /* cursor-related ----------------------------------------------------------- */
 .cursorfield {
-  padding-left:14px;
+  margin-top:3px;
+  padding-left:10px;
   background-repeat:no-repeat;
+  background-position:left bottom;
 }
 
-.editcontrols.hascursor {
-  background-color:yellow;
-}
-
-.editcontrols.hascursor .cursorfield {
+.item.focused .editcontrols .cursorfield {
   background-image:url("cursor.png");
 }
 
@@ -231,6 +236,7 @@ div#linkurl.shown {
   padding-left:16px;
   background-image:url("expanded.png");
   background-repeat:no-repeat;
+  background-position:left bottom;
 }
 
 .item .editcontrols .collapser:hover {

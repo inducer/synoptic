@@ -120,7 +120,7 @@ ItemManager.method("set_from_obj", function(arg)
 
 ItemManager.method("call_with_item_div", function(inserter, when_created)
 {
-  inserter('<div id="item_[id]" class="item"></div>'.replace('[id]', this.id));
+  inserter('<div id="item_[id]" class="item ui-corner-all"></div>'.replace('[id]', this.id));
   this.div = $("#item_"+this.id);
 
   if (when_created != undefined)
@@ -139,7 +139,7 @@ ItemManager.method("fill_item_div", function()
   {
     self.div.html(
       (
-      '<div class="editcontrols">'+
+      '<div class="editcontrols ui-corner-all">'+
       '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
       '<input type="button" id="new_[id]" value="New" class="editbutton"/>'+
       '</div>'
@@ -153,7 +153,7 @@ ItemManager.method("fill_item_div", function()
     {
       self.div.html(
         (
-        '<div class="editcontrols item-drag-handle">'+
+        '<div class="editcontrols ui-corner-all item-drag-handle">'+
         '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
         '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
@@ -253,20 +253,17 @@ ItemManager.method("begin_edit", function()
 
   self.div.html(
     (
-    '<div id="edit_div_[id]" class="edit_div">'+
-    '<table>'+
-    '<tr><td>'+
+    '<div class="editcontrols ui-corner-all">'+
     '<input type="button"  id="edit_ok_[id]"  value="OK"  accesskey="o">&nbsp;'+
     '<input type="button" id="edit_cancel_[id]" value="Cancel" accesskey="c">&nbsp;'+
-    '<label for="edit_tags_[id]" accesskey="t">Tags: </label><input id="edit_tags_[id]" type="text" size="50"/>'+
-    '</td></tr>'+
-    '<tr><td>'+
+    '<input id="edit_tags_[id]" type="text" size="50"/>'+
+    '</div>'+
+    '<div class="itemcontents">'+
     '<textarea id="editor_[id]" cols="80"></textarea>'+
-    '</td></tr>'+
-    '</tr></table>'+
     '</div>'
     ).allreplace("[id]",  self.id)
     );
+  self.div.addClass("editing");
 
   // default to current search tags
   if (self.id == null)
@@ -295,7 +292,8 @@ ItemManager.method("begin_edit", function()
       */
 
   $("#edit_ok_"+self.id).click(function(){
-    $("edit_div_"+self.id).html(busy('Saving...'));
+    self.div.removeClass("editing");
+
     var tags = parse_tags($("#edit_tags_"+self.id).val());
 
     for (var i = 0; i<tags.length; ++i)
@@ -341,6 +339,8 @@ ItemManager.method("begin_edit", function()
   });
 
   $("#edit_cancel_"+self.id).click(function(){
+    self.div.removeClass("editing");
+
     self.fill_item_div();
     self.manager.redraw_cursor();
   });
@@ -735,10 +735,10 @@ ItemCollectionManager.method("set_cursor_to", function(div, is_up, noscroll)
 {
   if (this.cursor_at != null)
   {
-    this.cursor_at.find(".editcontrols").removeClass("hascursor");
+    this.cursor_at.removeClass("focused");
   }
 
-  div.find(".editcontrols").addClass("hascursor");
+  div.addClass("focused");
   if (!noscroll)
     div.get(0).scrollIntoView(is_up);
   this.cursor_at = div;
@@ -865,7 +865,7 @@ ItemCollectionManager.method("update", function(force)
 
 ItemCollectionManager.method("fill", function(query, timestamp, force)
 {
-  if ($(".item .edit_div").length != 0)
+  if ($(".item .editing").length != 0)
   {
     if (confirm("You seem to be editing one or more entries. Continue loading?") == false)
       return;

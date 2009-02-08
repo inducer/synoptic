@@ -1,18 +1,18 @@
 .itemcontents h1 {
   font-size:1.5em;
-  margin-top:0.2em;
+  margin-top:0;
 }
 .itemcontents h2 {
   font-size:1.3em;
-  margin-top:0.1em;
+  margin-top:0;
 }
 .itemcontents h3 {
   font-size:1.2em;
-  margin-top:0.1em;
+  margin-top:0;
 }
 .itemcontents h4 {
   font-size:1.1em;
-  margin-top:0.1em;
+  margin-top:0;
 }
 
 strike {

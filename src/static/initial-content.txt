@@ -16,7 +16,7 @@ support for the forward/back button on your browser,
 [query links](#link), support for browser bookmarks. All to make sure
 you can find that note when you need it.
 
-* **[Powerful searching](#search).** Synoptic is meant to keep *large*
+* **[Powerful search](#search).** Synoptic is meant to keep *large*
 note collections manageable and accessible. You can search for items
 based on tags, their creation time, or even search through their *full
 text*. Plus arbitrary logical combinations of them, using the 
