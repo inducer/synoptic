@@ -651,7 +651,7 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
         }
         else if (key == "e")
           self.cursor_at.find(".editcontrols .editbutton").click();
-        else if (key == "d")
+        else if (key == "D")
           self.cursor_at.find(".editcontrols .deletebutton").click();
         else if (key == "n")
         {

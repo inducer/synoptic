@@ -43,7 +43,7 @@ TAGS: keyboard,navigation
 When navigating:
 
 * **J**, **K**: move down/up.
-* **E**, **D**: edit/delete.
+* **E**, **Shift-D**: edit/delete.
 * **S**, **/**: jump to the search bar.
 * **N**: create a new note.
 * **C**: toggle collapsed state.
