@@ -80,7 +80,7 @@ class DBSessionInjector(object):
 
         from sqlalchemy.orm import sessionmaker
         self.sessionmaker = sessionmaker(bind=self.engine, autoflush=True, 
-                transactional=True)
+                autocommit=False)
 
         self.sub_app = sub_app
 
@@ -556,8 +556,6 @@ class Application(ApplicationBase):
           "main.js",
           ]
         sep = "/* %s */\n" % (75*"-")
-        all_js_files = [
-                ]
         return request.respond("".join(
             "%s/* %s */\n%s%s" % (sep, fn, sep, get_static_file(fn)[0])
             for fn in all_js_filenames), 
