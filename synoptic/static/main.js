@@ -641,7 +641,10 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
         $("#search").get(0).focus();
 
       if (key == "c")
+      {
         self.cursor_at.find(".editcontrols .collapser").click();
+        handled = true;
+      }
 
       if (self.cursor_at != null)
       {
