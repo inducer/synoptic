@@ -36,9 +36,9 @@ def page(context):
     <html>
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" type="text/css" href="static/content.css">
-      <link rel="stylesheet" type="text/css" href="static/style.css">
       <link rel="stylesheet" href="static/jquery-ui/themes/base/ui.all.css" type="text/css" media="screen">
+      <link rel="stylesheet" type="text/css" href="static/style.css">
+      <link rel="stylesheet" type="text/css" href="static/content.css">
       <script type="text/javascript" src="app/get_all_js"></script>
     </head>
     <body>
@@ -56,9 +56,10 @@ def navpane(context):
           <div style="white-space:nowrap;">
             <label for="edit_date" accesskey="t"><img src="static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
-            <span id="history_time"></span>
+            
             <img src="static/go-last.png" id="btn_go_present" class="imagebutton"/>
           </div>
+          <div id="history_time" class="ui-widget"></div>
           <div id="slider_container">
             <div id="history_slider"> </div>
           </div>
@@ -67,22 +68,25 @@ def navpane(context):
         </div>
 
         <div id="navtabs">
-          <ul>
+          <ul id="tagtab_header">
             <li><a href="#fragment-1">Tags</a></li>
             <li><a href="#fragment-2">All Tags</a></li>
           </ul>
           <div id="fragment-1">
             <div id="subtagcloud_search_tags"> </div>
-            <div id="subtagcloud"> </div>
+            <div id="subtagcloud" class="tagcloud"> </div>
             <input type="checkbox" id="chk_subtagcloud_show_hidden"/>
+            <span id="navtab_size_helper_top_1"></span>
             <label for="chk_subtagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
           </div>
           <div id="fragment-2">
-            <div id="tagcloud"> </div>
+            <div id="tagcloud" class="tagcloud"> </div>
             <input type="checkbox" id="chk_tagcloud_show_hidden"/>
+            <span id="navtab_size_helper_top_2"></span>
             <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
           </div>
         </div>
+        <span id="navtab_size_helper_bottom"></span>
       </div>
     </div>
     """
@@ -91,7 +95,7 @@ def mainpane(context):
     return """
     <div id="mainpane">
       <div id="innermainpane">
-        <div style="white-space:nowrap;">
+        <div>
           <input type="text" size="50" id="search"/>
           <img src="static/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
           <img src="static/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>

@@ -127,6 +127,11 @@ body, html {
   background-color:white;
 }
 
+#history_time {
+  padding-top:3px;
+  padding-left:25px;
+}
+
 #slider_container {
   width:200px;
   padding:10px;
@@ -163,6 +168,10 @@ body, html {
   */
 }
 
+.tagcloud {
+  overflow-y:auto;
+  overflow-x:hidden;
+}
 
 #subtagcloud_search_tags a.taglink {
   color:red;
@@ -215,6 +224,10 @@ div#linkurl.shown {
 
 .item.editing .editcontrols {
   background-image:url("construction.png");
+}
+
+.ui-tabs .ui-tabs-panel {
+  padding:0.5em;
 }
 
 /* cursor-related ----------------------------------------------------------- */

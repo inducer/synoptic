@@ -30,6 +30,16 @@ function report_error(what)
 
 
 
+function zero_pad(s, min_length) 
+{
+  while (s.length < min_length)
+    s = "0"+s;
+  return s
+}
+
+
+
+
 // String extension  -----------------------------------------------------------
 String.method("allreplace", function(from, to)
 {
@@ -785,7 +795,10 @@ ItemCollectionManager.method("show_time", function(new_time, origin)
   if (new_time != null)
   {
     dt = new Date(new_time*1000);
-    $("#history_time").html(dt.getHours()+":"+dt.getMinutes()+":"+dt.getSeconds());
+    $("#history_time").html(
+      dt.getHours()
+      +":"+zero_pad(dt.getMinutes().toFixed(0), 2)
+      +":"+zero_pad(dt.getSeconds().toFixed(0), 2));
   }
   else
     $("#history_time").html('present');
@@ -1165,12 +1178,37 @@ function add_tag_behavior(jq_result)
 
 
 // functions  ------------------------------------------------------------------
+function update_tag_cloud_height()
+{
+  var cloud_bottom_offset;
+  if ($("#navtabs").tabs("option", "selected") == 0)
+    cloud_bottom_offset = $("#navtab_size_helper_top_1").offset().top;
+  else
+    cloud_bottom_offset = $("#navtab_size_helper_top_2").offset().top;
+
+  var bottom_size = (
+      $("#navtab_size_helper_bottom").offset().top
+      - cloud_bottom_offset);
+
+  var tc_height = (
+      $(window).height()
+      - $("#subtagcloud").offset().top
+      - bottom_size
+      - 20
+      );
+
+  $(".tagcloud").css("max-height", tc_height+"px");
+}
+
+
+
+
 $(document).ready(function()
 {
   var collection_manager = new ItemCollectionManager()
   document.collection_manager = collection_manager;
 
-  $("#navtabs").tabs();
+  tag_tabs = $("#navtabs").tabs();
 
   $("#items").sortable({ 
     handle: ".item-drag-handle",
@@ -1212,6 +1250,9 @@ $(document).ready(function()
     });
   if (dhtmlHistory.isFirstLoad())
     collection_manager.handle_history_event(dhtmlHistory.getCurrentLocation(), null);
+
+  $(window).resize(update_tag_cloud_height);
+  update_tag_cloud_height();
 });
 
 
