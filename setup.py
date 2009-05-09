@@ -8,7 +8,7 @@ def main():
     import os.path
 
     setup(name="synoptic",
-          version="0.91.6",
+          version="0.91.7",
           description="An AJAXy notes manager",
           long_description="""
           Synoptic is "GMail for your notes". It gives you an efficient and friendly
@@ -67,15 +67,14 @@ def main():
           zip_safe=False,
 
           install_requires=[
-              "Paste>=1.6",
-              "SqlAlchemy>=0.4.4",
-              "SimpleJSON>=1.7",
-              "parsedatetime>=0.8.4",
+              "Paste>=1.7",
+              "SqlAlchemy>=0.5.1",
+              "SimpleJSON==1.7",
+              "parsedatetime==0.8.6",
               ],
 
           scripts=["bin/synoptic"],
           packages=["synoptic"],
-          package_dir={'synoptic': "src"},
           include_package_data=True,
           package_data={'synoptic': [
               'static/*.js',
