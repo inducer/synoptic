@@ -1,12 +1,12 @@
 include doc/*.wsgi
 include ez_setup.py
-include src/static/*.js
-include src/static/*.gif
-include src/static/*.png
-include src/static/*.txt
-include src/static/*.css
-include src/static/jquery-ui/*.js
-include src/static/jquery-ui/themes/base/*.css
-include src/static/jquery-ui/themes/base/images/*.png
+include synoptic/static/*.js
+include synoptic/static/*.gif
+include synoptic/static/*.png
+include synoptic/static/*.txt
+include synoptic/static/*.css
+include synoptic/static/jquery-ui/*.js
+include synoptic/static/jquery-ui/themes/base/*.css
+include synoptic/static/jquery-ui/themes/base/images/*.png
 
 include COPYING
