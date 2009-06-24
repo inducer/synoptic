@@ -8,7 +8,7 @@ def main():
     import os.path
 
     setup(name="synoptic",
-          version="0.91.7",
+          version="0.91.8",
           description="An AJAXy notes manager",
           long_description="""
           Synoptic is "GMail for your notes". It gives you an efficient and friendly
