@@ -25,7 +25,10 @@ def main():
 
     mydir = os.path.join(gettempdir(), "synoptic-%d-%s" % (os.getpid(), os.getuid()))
 
-    description = "An AJAXy information/note manager"
+    description = ("An AJAXy information/note manager * "
+            "To start a new database file, simply pick a file name and start synoptic "
+            "with it. That file will be created and will contain your set of notes.")
+
     parser = OptionParser(description=description,
             usage="%prog [options] dbfile")
     parser.add_option(
@@ -61,7 +64,7 @@ def main():
     real_app = app = Application()
 
     if len(args) != 1:
-        parser.print_usage()
+        parser.print_help()
         sys.exit(1)
 
     dbname = args[0]
