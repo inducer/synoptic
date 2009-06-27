@@ -95,7 +95,7 @@ def mainpane(context):
     return """
     <div id="mainpane">
       <div id="innermainpane">
-        <div>
+        <div id="searchbar">
           <input type="text" size="50" id="search"/>
           <img src="static/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
           <img src="static/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>
