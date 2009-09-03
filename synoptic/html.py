@@ -39,6 +39,7 @@ def page(context):
       <link rel="stylesheet" href="static/jquery-ui/themes/base/ui.all.css" type="text/css" media="screen">
       <link rel="stylesheet" type="text/css" href="static/style.css">
       <link rel="stylesheet" type="text/css" href="static/content.css">
+      <link rel="icon" type="image/png" href="static/synoptic.png">
       <script type="text/javascript" src="app/get_all_js"></script>
     </head>
     <body>
