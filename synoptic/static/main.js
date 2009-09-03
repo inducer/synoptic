@@ -1136,7 +1136,7 @@ function add_tag_behavior(jq_result)
     { set_search($(this).html()); });
   jq_result.contextMenu("tag_context_menu", {
       bindings: {
-        'rename': function(tag_html) 
+        'tag-menu-rename': function(tag_html) 
         {
           var old_name = $(tag_html).html();
           var new_name = prompt(
@@ -1167,10 +1167,10 @@ function add_tag_behavior(jq_result)
             }
           }
         },
-        'restrict': function(tag_html) {
+        'tag-menu-restrict': function(tag_html) {
           click_tag($(tag_html).html());
         },
-        'search': function(tag_html) {
+        'tag-menu-search': function(tag_html) {
           set_search($(tag_html).html());
         }
       }

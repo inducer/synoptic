@@ -33,13 +33,13 @@ def page(context):
     return """
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-    <html>
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" href="static/jquery-ui/themes/base/ui.all.css" type="text/css" media="screen">
-      <link rel="stylesheet" type="text/css" href="static/style.css">
-      <link rel="stylesheet" type="text/css" href="static/content.css">
-      <link rel="icon" type="image/png" href="static/synoptic.png">
+      <link rel="stylesheet" href="static/jquery-ui/themes/base/ui.all.css" type="text/css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/style.css"/>
+      <link rel="stylesheet" type="text/css" href="static/content.css"/>
+      <link rel="icon" type="image/png" href="static/synoptic.png"/>
       <script type="text/javascript" src="app/get_all_js"></script>
     </head>
     <body>
@@ -58,7 +58,7 @@ def navpane(context):
             <label for="edit_date" accesskey="t"><img src="static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
             
-            <img src="static/go-last.png" id="btn_go_present" class="imagebutton"/>
+            <img src="static/go-last.png" id="btn_go_present" class="imagebutton" alt="Go to present"/>
           </div>
           <div id="history_time" class="ui-widget"></div>
           <div id="slider_container">
@@ -106,7 +106,7 @@ def mainpane(context):
           <img src="static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
           <img src="static/copy.png" alt="Copy (relative) link URL" title="Copy (relative) link URL" id="btn_copy" class="imagebutton"/>
           <div id="linkurl">
-            <input type="text" readonly id="linkurl_edit"/>
+            <input type="text" readonly="readonly" id="linkurl_edit"/>
           </div>
         </div>
         <div id="items">
@@ -121,9 +121,9 @@ def context_menus():
     return """
     <div id="tag_context_menu">
       <ul>
-        <li id="rename">Rename</li>
-        <li id="restrict">Restrict search</li>
-        <li id="search">Search for only this tag</li>
+        <li id="tag-menu-rename">Rename</li>
+        <li id="tag-menu-restrict">Restrict search</li>
+        <li id="tag-menu-search">Search for only this tag</li>
       </ul>
     </div>
     """
