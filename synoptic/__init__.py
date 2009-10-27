@@ -161,14 +161,37 @@ class Request(WSGIRequest):
 
         
 class ApplicationBase(object):
-    def __init__(self, table):
+    def __init__(self, table, allowed_networks=[]):
         import re
         self.table = [
                 (re.compile(match), dest)
                 for match, dest in table
                 ]
 
+        self.allowed_networks = allowed_networks
+
     def __call__(self, environ, start_response):
+        if self.allowed_networks:
+            from paste.httpexceptions import HTTPForbidden
+            try:
+                remote_addr_str = environ["REMOTE_ADDR"]
+            except KeyError:
+                raise HTTPForbidden("REMOTE_ADDR not found, "
+                        "but allowed_networks was specified")
+
+            from ipaddr import IPAddress
+            remote_addr = IPAddress(remote_addr_str)
+
+            allowed = False
+
+            for an in self.allowed_networks:
+                if remote_addr in an:
+                    allowed = True
+                    break
+
+            if not allowed:
+                raise HTTPForbidden("Requests from your address aren't allowed")
+
         for compiled_re, dest in self.table:
             match = compiled_re.search(environ["PATH_INFO"])
             if match is not None:
@@ -185,7 +208,7 @@ class ApplicationBase(object):
 
 
 class Application(ApplicationBase):
-    def __init__(self, urlprefix="/"):
+    def __init__(self, urlprefix="/", allowed_networks=[]):
         import re
         re_prefix = "^"+re.escape(urlprefix)
 
@@ -204,7 +227,8 @@ class Application(ApplicationBase):
                     (r'app/get_all_js$', self.http_get_all_js),
                     (r'app/quit$', self.http_quit),
                     (r'static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
-                    ]])
+                    ]],
+                allowed_networks=allowed_networks)
 
         WSGIRequest.defaults["charset"] = "utf-8"
         self.quit_func = None

@@ -69,8 +69,9 @@ def main():
           install_requires=[
               "Paste>=1.7",
               "SqlAlchemy>=0.5.1",
-              "SimpleJSON==1.7",
+              "SimpleJSON>=1.7",
               "parsedatetime==0.8.6",
+              "ipaddr",
               ],
 
           scripts=["bin/synoptic"],

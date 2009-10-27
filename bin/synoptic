@@ -50,6 +50,10 @@ def main():
             "-b", "--bind-address", default=None,
             help="Allow remote connection")
     parser.add_option(
+            "-a", "--allow-ip", 
+            help="Allow a given set of hosts and or networks "
+            "(CIDR notation), separated by commas", metavar="NETWORK")
+    parser.add_option(
 	    "--pidfile", dest="pidfile", 
             default=os.path.join(mydir, "synoptic.pid"),
 	    help="PID file for daemonization", metavar="PIDFILE")
@@ -60,8 +64,15 @@ def main():
 
     options, args = parser.parse_args()
 
+    allowed_networks = []
+    if options.allow_ip is not None:
+        from ipaddr import IPNetwork
+        for net_str in options.allow_ip.split(","):
+            if net_str:
+                allowed_networks.append(IPNetwork(net_str))
+
     from synoptic import Application
-    real_app = app = Application()
+    real_app = app = Application(allowed_networks=allowed_networks)
 
     if len(args) != 1:
         parser.print_help()
