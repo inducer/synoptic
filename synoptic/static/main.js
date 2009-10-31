@@ -165,9 +165,9 @@ ItemManager.method("fill_item_div", function()
         (
         '<div class="editcontrols ui-corner-all item-drag-handle">'+
         '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
-        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
         '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
+        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         ' [tags]'+
         '</div>'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
@@ -184,9 +184,9 @@ ItemManager.method("fill_item_div", function()
         (
         '<div class="editcontrols">'+
         '<span id="item_cursor_[id]" class="cursorfield">&nbsp;</span> '+
-        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
+        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
         'Tags: [tags]'+
         '</div>'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'

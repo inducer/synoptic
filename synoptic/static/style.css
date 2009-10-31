@@ -64,12 +64,7 @@ body, html {
 
 .item {
   background-color:white;
-  margin-bottom:5px;
-}
-
-.item.collapsed {
-  background-color:transparent;
-  margin-bottom:5px;
+  margin-bottom:3px;
 }
 
 .itemcontents {
@@ -79,6 +74,10 @@ body, html {
 .itemcontents p {
   margin-top:0;
   margin-bottom:0.3em;
+}
+
+.itemcontents p:last-child {
+  margin-bottom:0em;
 }
 
 .editbuttons {
@@ -116,13 +115,6 @@ body, html {
   border-left-color:#bbb;
   border-bottom-color:#ddd;
   border-right-color:#ddd;
-}
-
-.editcontrols {
-  padding:2px;
-  padding-left:5px;
-  background-color:#bbb;
-  font-family: Verdana,Arial,sans-serif ;
 }
 
 #history_nav {
@@ -224,12 +216,50 @@ div#linkurl.shown {
   z-index: 3;
 }
 
+.editcontrols {
+  padding:2px;
+  padding-left:5px;
+  background-color:#bbb;
+  font-family: Verdana,Arial,sans-serif ;
+  float:right;
+  min-height:22px;
+}
+
+.item .editcontrols input {
+  display:none;
+}
+
+.item .editcontrols:hover input {
+  display:inline;
+}
+
+.item#item_null .editcontrols input {
+  display:inline;
+}
+.item.editing .editcontrols input {
+  display:inline;
+}
+
+.item.editing .editcontrols {
+  background-image:url("construction.png");
+  float:none;
+}
+
+.item#item_null .editcontrols {
+  float:none;
+}
+
 .item.focused .editcontrols {
   background-color:#ace;
 }
 
 .item.editing .editcontrols {
   background-image:url("construction.png");
+  float:none;
+}
+
+.item.focused .editcontrols {
+  background-color:#ace;
 }
 
 .ui-tabs .ui-tabs-panel {
@@ -269,6 +299,8 @@ div#linkurl.shown {
 }
 
 .item.collapsed .itemcontents {
-  display:none;
+  height:2ex;
+  max-height:2ex;
+  overflow:hidden;
 }
 
