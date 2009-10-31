@@ -301,6 +301,7 @@ ItemManager.method("begin_edit", function()
   $("#edit_tags_"+self.id).autocomplete("tags/get",
       { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
       */
+  self.div.get(0).scrollIntoView(false);
 
   $("#edit_ok_"+self.id).click(function(){
     self.div.removeClass("editing");
