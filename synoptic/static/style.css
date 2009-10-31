@@ -234,12 +234,12 @@ div#linkurl.shown {
 .item-drag-handle:hover .handle-img {
   vertical-align:text-top;
   display:inline;
+  position:relative;
+  bottom:-2px;
 }
 
 .item .editcontrols input {
   display:none;
-  /* position:relative; */
-  bottom:2px;
 }
 
 .item .editcontrols:hover input {
