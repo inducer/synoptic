@@ -178,7 +178,7 @@ def find_tags(session, tags, create_them):
         else: 
             if create_them:
                 new_tag = Tag(tag_str)
-                session.save(new_tag)
+                session.add(new_tag)
                 result.append(new_tag)
             else:
                 result.append(Tag(tag_str))
@@ -203,7 +203,7 @@ def store_itemversion(dbsession, contents, tags, item_id=None, timestamp=None):
 
     if item_id is None:
         item = Item()
-        dbsession.save(item)
+        dbsession.add(item)
     else:
         assert isinstance(item_id, int)
         item = dbsession.query(Item).get(item_id)
@@ -218,7 +218,7 @@ def store_itemversion(dbsession, contents, tags, item_id=None, timestamp=None):
             find_tags(dbsession, tags, create_them=True),
             contents,
             )
-    dbsession.save(itemversion)
+    dbsession.add(itemversion)
 
     return itemversion
 
@@ -416,7 +416,7 @@ class ViewOrderingHandler:
         from time import time
 
         viewordering = ViewOrdering(str(self.parsed_query), time())
-        session.save(viewordering)
+        session.add(viewordering)
         session.commit()
 
     def save(self):
@@ -427,4 +427,4 @@ class ViewOrderingHandler:
         for idx, item_id in enumerate(self.item_ids):
             viewordering.entries.append(ViewOrderingEntry(viewordering, 
                 self.session.query(Item).get(item_id), idx))
-        self.session.save(viewordering)
+        self.session.add(viewordering)
