@@ -69,6 +69,7 @@ body, html {
 
 .itemcontents {
   padding:5px;
+  margin-left:20px;
 }
 
 .itemcontents p {
@@ -218,15 +219,27 @@ div#linkurl.shown {
 
 .editcontrols {
   padding:2px;
-  padding-left:5px;
+  padding-left:15px;
+  padding-right:15px;
   background-color:#bbb;
   font-family: Verdana,Arial,sans-serif ;
   float:right;
   min-height:22px;
 }
 
+.handle-img {
+  display:none;
+}
+
+.item-drag-handle:hover .handle-img {
+  vertical-align:text-top;
+  display:inline;
+}
+
 .item .editcontrols input {
   display:none;
+  /* position:relative; */
+  bottom:2px;
 }
 
 .item .editcontrols:hover input {
@@ -236,6 +249,7 @@ div#linkurl.shown {
 .item#item_null .editcontrols input {
   display:inline;
 }
+
 .item.editing .editcontrols input {
   display:inline;
 }
@@ -243,6 +257,10 @@ div#linkurl.shown {
 .item.editing .editcontrols {
   background-image:url("construction.png");
   float:none;
+}
+
+.item#item_null .editcontrols {
+  padding-left:25px;
 }
 
 .item#item_null .editcontrols {
@@ -269,23 +287,34 @@ div#linkurl.shown {
 /* cursor-related ----------------------------------------------------------- */
 .cursorfield {
   margin-top:3px;
-  padding-left:10px;
+  padding-left:15px;
+  padding-top:2px;
   background-repeat:no-repeat;
   background-position:left bottom;
+  position:absolute;
 }
 
-.item.focused .editcontrols .cursorfield {
+.item.focused .cursorfield {
   background-image:url("cursor.png");
+  background-position:5px 2px;
+}
+
+.item.focused {
+  background-color:#ececff;
 }
 
 /* collapsing-related ------------------------------------------------------- */
 
 .item .editcontrols .collapser {
+  display:none;
   cursor:default;
-  padding-left:16px;
+  padding-left:12px;
   background-image:url("expanded.png");
   background-repeat:no-repeat;
   background-position:left bottom;
+}
+.item .editcontrols:hover .collapser {
+  display:inline;
 }
 
 .item .editcontrols .collapser:hover {
