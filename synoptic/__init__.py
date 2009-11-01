@@ -76,10 +76,10 @@ class DBSessionInjector(object):
         self.engine = create_engine(dburl)
         from synoptic.datamodel import DataModel
         self.datamodel = DataModel()
-        self.datamodel.metadata.create_all(self.engine) 
+        self.datamodel.metadata.create_all(self.engine)
 
         from sqlalchemy.orm import sessionmaker
-        self.sessionmaker = sessionmaker(bind=self.engine, autoflush=True, 
+        self.sessionmaker = sessionmaker(bind=self.engine, autoflush=True,
                 autocommit=False)
 
         self.sub_app = sub_app
@@ -125,7 +125,7 @@ class ErrorMiddleware(object):
 
             start_response(status, response_headers, exc_info)
             return ["%s: %s" % (ex_type.__name__,str(ex_val))]
-        
+
 from paste.wsgiwrappers import WSGIRequest, WSGIResponse
 
 
@@ -159,7 +159,7 @@ class Request(WSGIRequest):
 
 
 
-        
+
 class ApplicationBase(object):
     def __init__(self, table, allowed_networks=[]):
         import re
@@ -217,9 +217,11 @@ class Application(ApplicationBase):
                     (r'$', self.index),
                     (r'timestamp/get_range$', self.http_get_tsrange),
                     (r'item/get_by_id$', self.http_get_item_by_id),
+                    (r'item/get_version_by_id$', self.http_get_item_version_by_id),
                     (r'items/get$', self.http_get_items),
                     (r'items/print$', self.http_print_items),
                     (r'items/export$', self.http_export_items),
+                    (r'item/history/get$', self.http_get_item_history),
                     (r'item/store$', self.http_store_item),
                     (r'item/reorder$', self.http_reorder_item),
                     (r'tags/get$', self.http_get_tags),
@@ -239,9 +241,7 @@ class Application(ApplicationBase):
     # tools -------------------------------------------------------------------
     def item_to_json(self, item):
         result = item.as_json()
-
         result['contents_html'] = item.contents_html()
-        result['title'] = None
         return result
 
     def get_itemversions_for_request(self, request):
@@ -270,10 +270,10 @@ class Application(ApplicationBase):
         from sqlalchemy.sql import select
         iv_and_t_query = select([itemversions_query, model.tags],
                 from_obj=[itemversions_query
-                    .outerjoin(model.itemversions_tags, 
+                    .outerjoin(model.itemversions_tags,
                         itemversions_query.c.id
                         ==model.itemversions_tags.c.itemversion_id)
-                    .outerjoin(model.tags, 
+                    .outerjoin(model.tags,
                         model.itemversions_tags.c.tag_id
                         ==model.tags.c.id)
                     ],
@@ -286,7 +286,7 @@ class Application(ApplicationBase):
                 last_id = row[itemversions_query.c.id]
                 result.append(
                         {"id": row[itemversions_query.c.item_id],
-                            "title": None,
+                            "version_id": row[itemversions_query.c.id],
                             "contents": row[itemversions_query.c.contents],
                             "contents_html": ItemVersion.htmlize(
                                 row[itemversions_query.c.contents]),
@@ -321,7 +321,7 @@ class Application(ApplicationBase):
                     }),
                 mimetype="text/plain")
 
-    def get_tags_with_usecounts(self, session, model, parsed_query=None, 
+    def get_tags_with_usecounts(self, session, model, parsed_query=None,
             max_timestamp=None):
         from sqlalchemy.sql import select, and_, or_, not_, func
 
@@ -333,17 +333,17 @@ class Application(ApplicationBase):
                     from_obj=[get_current_itemversions_join(
                         model, max_timestamp)
                         ])
-                    
+
         itemversions_q = itemversions_q.alias("currentversions")
 
         # twuc_q stands for tags_with_usecount_query
         twuc_q = (
                 select([
-                    model.tags.c.name, 
+                    model.tags.c.name,
                     func.count(itemversions_q.c.id).label("use_count"),
                         ],
                     from_obj=[model.itemversions_tags
-                        .join(itemversions_q, 
+                        .join(itemversions_q,
                             itemversions_q.c.id==model.itemversions_tags.c.itemversion_id)
                         .join(model.tags)
                         ])
@@ -384,7 +384,7 @@ class Application(ApplicationBase):
         tags = [list(row) for row in result]
 
         return request.respond(
-                dumps({ 
+                dumps({
                 "tags": tags,
                 "query_tags": query_tags,
                 }),
@@ -399,7 +399,7 @@ class Application(ApplicationBase):
 
         tag = request.dbsession.query(Tag).filter_by(name=old_name).one()
         new_tag_query = request.dbsession.query(Tag).filter_by(name=new_name)
-        
+
         if new_tag_query.count():
             raise ValueError, "tag already exsits"
 
@@ -432,6 +432,20 @@ class Application(ApplicationBase):
         return request.respond(dumps(self.item_to_json(query.first())),
                 mimetype="text/plain")
 
+    def http_get_item_version_by_id(self, request):
+        query = (
+                request.dbsession.query(ItemVersion)
+                .filter_by(id=int(request.GET["version_id"]))
+                .limit(1))
+
+        if query.count() == 0:
+            from paste.httpexceptions import HTTPNotFound
+            raise HTTPNotFound()
+
+        from simplejson import dumps
+        return request.respond(dumps(self.item_to_json(query.first())),
+                mimetype="text/plain")
+
     def http_get_items(self, request):
         qry = request.GET.get("query", "")
 
@@ -444,7 +458,7 @@ class Application(ApplicationBase):
             max_timestamp = None
 
         json_items = self.get_json_items(
-                request.dbsession, request.datamodel, 
+                request.dbsession, request.datamodel,
                 parsed_query, max_timestamp)
 
         if qry != "":
@@ -467,7 +481,7 @@ class Application(ApplicationBase):
             else:
                 max_timestamp = None
 
-            tags = [list(row) 
+            tags = [list(row)
                     for row in self.get_tags_with_usecounts(
                         request.dbsession, request.datamodel,
                         max_timestamp=max_timestamp)]
@@ -491,7 +505,7 @@ class Application(ApplicationBase):
                 printpage({
                     "title": "Synoptic Printout",
                     "body": "<hr/>".join(
-                        '<div class="itemcontents">%s</div>' % v.contents_html() 
+                        '<div class="itemcontents">%s</div>' % v.contents_html()
                         for v in versions),
                     }))
 
@@ -506,6 +520,25 @@ class Application(ApplicationBase):
                         v.contents)
                     for v in versions),
                 mimetype="text/plain;charset=utf-8")
+
+    def http_get_item_history(self, request):
+        item_id = int(request.GET["item_id"])
+
+        json = [
+                {
+                    "version_id": iv.id, 
+                    "timestamp":iv.timestamp,
+                    "is_current":False,
+                    "contents":iv.contents,
+                    }
+                for iv in request.dbsession.query(ItemVersion)
+                .filter_by(item_id=item_id)
+                .order_by(ItemVersion.timestamp.desc())]
+        json[0]["is_current"] = True
+
+        from simplejson import dumps
+        return request.respond(dumps(json),
+                mimetype="text/plain")
 
     def http_store_item(self, request):
         from simplejson import loads, dumps
@@ -530,7 +563,7 @@ class Application(ApplicationBase):
         else:
             voh = None
 
-        itemversion = store_itemversion(request.dbsession, 
+        itemversion = store_itemversion(request.dbsession,
                 data["contents"], data["tags"], data["id"])
 
         request.dbsession.commit() # fills in the item_id
@@ -582,14 +615,14 @@ class Application(ApplicationBase):
         sep = "/* %s */\n" % (75*"-")
         return request.respond("".join(
             "%s/* %s */\n%s%s" % (sep, fn, sep, get_static_file(fn)[0])
-            for fn in all_js_filenames), 
+            for fn in all_js_filenames),
             mimetype="text/javascript")
 
     def http_quit(self, request):
         if self.quit_func is not None:
             self.quit_func()
             return request.respond(
-                    "Thanks for using synoptic.", 
+                    "Thanks for using synoptic.",
                     mimetype="text/plain")
         else:
             raise HTTPForbidden()

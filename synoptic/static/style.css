@@ -25,7 +25,6 @@ body, html {
   bottom:0;
   left:0;
   width:250px;
-
 }
 
 #innernavpane {
@@ -63,8 +62,10 @@ body, html {
 }
 
 .item {
+  clear:right;
   background-color:white;
   margin-bottom:3px;
+  min-height:28px;
 }
 
 .itemcontents {
@@ -218,39 +219,67 @@ div#linkurl.shown {
 }
 
 .editcontrols {
-  padding:2px;
-  padding-left:15px;
-  padding-right:15px;
+  text-align:right;
+  padding:3px;
   background-color:#bbb;
   font-family: Verdana,Arial,sans-serif ;
   float:right;
   min-height:22px;
+  margin-bottom:3px;
 }
 
-.handle-img {
+.item.editing .editcontrols {
+  text-align:left;
+}
+
+.item.history_shown .editcontrols .editcontrols_top {
+  min-height:25px;
+}
+
+.item_history_button {
+  display:none;
+  padding-left:18px;
+  background-image:url("history.png");
+  background-repeat:no-repeat;
+  background-position:left bottom;
+}
+
+.item.history_shown .editcontrols .editcontrols_top .item_history_button {
+  background-image:url("history-active.png");
+  display:inline;
+}
+
+div.item_history {
+  display:none;
+  background-color:#888;
+  padding:3px;
+}
+
+.item.focused .editcontrols .item_history {
+  background-color:#8ac;
+}
+
+.item.history_shown div.item_history {
+  display:block;
+}
+
+.editcontrols .editcontrols_top input {
   display:none;
 }
 
-.item-drag-handle:hover .handle-img {
-  vertical-align:text-top;
-  display:inline;
-  position:relative;
-  bottom:-2px;
-}
-
-.item .editcontrols input {
-  display:none;
-}
-
-.item .editcontrols:hover input {
+.editcontrols:hover .editcontrols_top input {
   display:inline;
 }
 
-.item#item_null .editcontrols input {
+.editcontrols:hover .editcontrols_top .item_history_button {
   display:inline;
 }
 
-.item.editing .editcontrols input {
+.item#item_null .editcontrols .editcontrols_top input {
+  display:inline;
+}
+
+.item.editing .editcontrols .editcontrols_top input {
   display:inline;
 }
 
@@ -265,6 +294,7 @@ div#linkurl.shown {
 
 .item#item_null .editcontrols {
   float:none;
+  text-align:left;
 }
 
 .item.focused .editcontrols {
@@ -276,12 +306,16 @@ div#linkurl.shown {
   float:none;
 }
 
-.item.focused .editcontrols {
-  background-color:#ace;
-}
-
 .ui-tabs .ui-tabs-panel {
   padding:0.5em;
+}
+
+.item_history {
+  text-align:right;
+}
+
+.itemcontents textarea {
+  width: 95%;
 }
 
 /* cursor-related ----------------------------------------------------------- */
@@ -303,27 +337,27 @@ div#linkurl.shown {
   background-color:#ececff;
 }
 
-/* collapsing-related ------------------------------------------------------- */
+/* collapser ---------------------------------------------------------------- */
 
-.item .editcontrols .collapser {
+.item .editcontrols .editcontrols_top .collapser {
   display:none;
   cursor:default;
-  padding-left:12px;
+  padding-left:18px;
   background-image:url("expanded.png");
   background-repeat:no-repeat;
   background-position:left bottom;
 }
-.item .editcontrols:hover .collapser {
+.item .editcontrols:hover .editcontrols_top .collapser {
   display:inline;
 }
 
 .item .editcontrols .collapser:hover {
   background-image:url("expanded-hover.png");
 }
-.item.collapsed .editcontrols .collapser {
+.item.collapsed .editcontrols .editcontrols_top .collapser {
   background-image:url("collapsed.png");
 }
-.item.collapsed .editcontrols .collapser:hover {
+.item.collapsed .editcontrols .editcontrols_top .collapser:hover {
   background-image:url("collapsed-hover.png");
 }
 
@@ -333,3 +367,37 @@ div#linkurl.shown {
   overflow:hidden;
 }
 
+/* item handle -------------------------------------------------------------- */
+
+.item_handle {
+  display:none;
+  padding-left:18px;
+  background-image:url("dragger.png");
+  background-repeat:no-repeat;
+  background-position:left bottom;
+}
+
+.item .editcontrols:hover .editcontrols_top .item_handle {
+  display:inline;
+}
+
+/* history ------------------------------------------------------------------ */
+.item_history {
+  text-align:left;
+}
+
+.item_history ul {
+  list-style-type:none;
+  padding-left:0;
+  margin-top:0;
+  margin-bottom:0;
+}
+
+.item_history ul li.current_version {
+  font-weight:bold;
+}
+
+.item_history ul li a:hover {
+  text-decoration:underline;
+  cursor:pointer;
+}

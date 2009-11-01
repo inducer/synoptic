@@ -6,7 +6,7 @@ MAPPERS_DEFINED = [False]
 class DataModel(object):
     def __init__(self):
         if MAPPERS_DEFINED[0]:
-            return 
+            return
 
         MAPPERS_DEFINED[0] = True
 
@@ -25,7 +25,7 @@ class DataModel(object):
         cls.tags = Table('tags', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('name', Unicode(100)),
-                ) 
+                )
 
         cls.itemversions = Table('itemversions', self.metadata,
                 Column('id', Integer, primary_key=True),
@@ -37,20 +37,20 @@ class DataModel(object):
         cls.itemversions_tags = Table('itemversions_tags', self.metadata,
                 Column('itemversion_id', Integer, ForeignKey('itemversions.id'), index=True),
                 Column('tag_id', Integer, ForeignKey('tags.id'), index=True),
-                ) 
+                )
 
         cls.vieworderings = Table('vieworderings', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('tagset', Text()), # misnomer, by now: normalized query string
                 Column('timestamp', Float, index=True),
-                ) 
+                )
 
         cls.viewordering_entries = Table('viewordering_entries', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('viewordering_id', Integer, ForeignKey('vieworderings.id')),
                 Column('item_id', Integer, ForeignKey('items.id')),
                 Column('weight', Integer),
-                ) 
+                )
 
         from sqlalchemy.orm import mapper, relation
 
@@ -105,7 +105,9 @@ class ItemVersion(object):
         self.contents = contents
 
     def as_json(self):
-        return {"id": self.item.id, 
+        return {"id": self.item.id,
+                "version_id": self.id,
+                "timestamp": self.timestamp,
                 "tags": [tag.name for tag in self.tags],
                 "contents": self.contents,
                 }
@@ -175,7 +177,7 @@ def find_tags(session, tags, create_them):
         tags = session.query(Tag).filter_by(name=tag_str)
         if tags.count():
             result.append(tags.one())
-        else: 
+        else:
             if create_them:
                 new_tag = Tag(tag_str)
                 session.add(new_tag)
@@ -249,7 +251,7 @@ class SQLifyQueryVisitor(object):
             return ItemVersion.tags.any(id=tags[0].id)
         else:
             from sqlalchemy.sql import or_
-            return reduce(or_, 
+            return reduce(or_,
                     (ItemVersion.tags.any(id=tag.id) for tag in tags))
 
     def visit_fulltext_query(self, q):
@@ -284,9 +286,9 @@ def get_current_itemversions_join(model, max_timestamp=None):
     from sqlalchemy.sql import select, and_, or_, not_, func
 
     max_timestamps_per_item = select(
-            [model.itemversions.c.item_id, 
+            [model.itemversions.c.item_id,
                 func.max(model.itemversions.c.timestamp).label("max_timestamp")])
-            
+
     if max_timestamp is not None:
         max_timestamps_per_item = max_timestamps_per_item.where(
                 model.itemversions.c.timestamp <= max_timestamp+1)
@@ -337,7 +339,7 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
 
         from_obj = from_obj.outerjoin(vo_entries,
                 model.itemversions.c.item_id==vo_entries.c.item_id)
-                    
+
     from synoptic.datamodel import SQLifyQueryVisitor
     where = and_(
             model.itemversions.c.contents != None,
@@ -381,7 +383,7 @@ class ViewOrderingHandler:
     def load(self):
         self.item_ids = [row[self.model.itemversions.c.item_id]
                 for row in self.session.execute(
-                query_itemversions(self.session, 
+                query_itemversions(self.session,
                     self.model, self.parsed_query)
                 .alias("currentversions"))]
 
@@ -425,6 +427,6 @@ class ViewOrderingHandler:
         viewordering = ViewOrdering(str(self.parsed_query), time())
 
         for idx, item_id in enumerate(self.item_ids):
-            viewordering.entries.append(ViewOrderingEntry(viewordering, 
+            viewordering.entries.append(ViewOrderingEntry(viewordering,
                 self.session.query(Item).get(item_id), idx))
         self.session.add(viewordering)

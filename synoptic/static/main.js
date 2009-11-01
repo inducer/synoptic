@@ -98,10 +98,10 @@ function find_in_array(ary, item)
 
 
 // ItemManager  --------------------------------------------------------------------
-function ItemManager(mgr, arg)
+function ItemManager(mgr, arg, is_historic)
 {
   this.manager = mgr;
-  
+
   if (typeof(arg) == "number")
   {
     this.id = id;
@@ -110,19 +110,22 @@ function ItemManager(mgr, arg)
   else if (arg == null)
     this.id = null;
   else
-    this.set_from_obj(arg);
+    this.set_from_obj(arg, is_historic);
 }
 
 
 
 
-ItemManager.method("set_from_obj", function(arg)
+ItemManager.method("set_from_obj", function(arg, is_historic)
 {
   this.id = arg.id;
+  this.version_id = arg.version_id;
   this.tags = arg.tags;
-  this.title = arg.title;
+  this.timestamp = arg.timestamp;
   this.contents = arg.contents;
   this.contents_html = arg.contents_html;
+
+  this.is_historic = is_historic;
 });
 
 
@@ -141,7 +144,7 @@ ItemManager.method("call_with_item_div", function(inserter, when_created)
 
 
 
-ItemManager.method("fill_item_div", function() 
+ItemManager.method("fill_item_div", function(history)
 {
   var self = this;
 
@@ -151,7 +154,9 @@ ItemManager.method("fill_item_div", function()
       (
       '<div id="item_cursor_[id]" class="cursorfield">&nbsp;</div> '+
       '<div class="editcontrols ui-corner-all">'+
+      '<div class="editcontrols_top">'+
       '<input type="button" id="new_[id]" value="New" class="editbutton"/>'+
+      '</div>'+
       '</div>'
       ).allreplace('[id]', self.id)
       );
@@ -159,22 +164,60 @@ ItemManager.method("fill_item_div", function()
   }
   else 
   {
-    if (self.manager.view_time == null)
+    // generate history html, if requested
+    if (history != null)
+    {
+      var hist_html = "";
+
+      var hist_format = '<li class="[class]"><a id="hist_itemversion_[itemversion]">[date]</a> ([summary])</li>';
+      for (var i = 0; i < history.length; ++i)
+      {
+        var hist_date = new Date(history[i].timestamp*1000);
+        var itemcls = "";
+        if (history[i].version_id == self.version_id)
+          itemcls = "current_version";
+
+        var summary;
+        if (history[i].contents == null)
+          summary = "deleted";
+        else
+          summary = history[i].contents.length + " characters";
+        hist_html += (hist_format
+        .allreplace("[itemversion]", history[i].version_id)
+        .allreplace("[date]", hist_date.toLocaleString())
+        .allreplace("[summary]", summary)
+        .allreplace("[class]", itemcls)
+        );
+      }
+      hist_html = '<ul>'+hist_html+"</ul>";
+    }
+
+    var contents_html = self.contents_html;
+    if (contents_html == null)
+      contents_html = "(deleted)";
+
+
+    // generate item html
+    if (!self.is_historic)
     {
       self.div.html(
         (
         '<div id="item_cursor_[id]" class="cursorfield">&nbsp;</div> '+
         '<div class="editcontrols ui-corner-all item-drag-handle">'+
+        '<div class="editcontrols_top">'+
         '<input type="button" id="edit_[id]" value="Edit" class="editbutton"/> '+
         '<input type="button" id="delete_[id]" value="Delete" class="deletebutton"/> '+
-        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
-        '<img src="/static/dragger.png" class="handle-img">'+
+        '<span id="item_collapser_[id]" class="collapser"/> '+
+        '<span class="item_handle"/> '+
+        '<span id="item_history_button_[id]" class="item_history_button"/> '+
         ' [tags]'+
+        '</div>'+
+        '<div id="item_history_[id]" class="item_history ui-corner-all">'+hist_html+'</div>'+
         '</div>'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
         .allreplace('[tags]', format_tag_links(self.tags))
-        .allreplace('[contents]', self.contents_html)
+        .allreplace('[contents]', contents_html)
         );
       $('#edit_'+self.id).click(function(){ self.begin_edit() });
       $('#delete_'+self.id).click(function(){ self.do_delete() });
@@ -185,15 +228,19 @@ ItemManager.method("fill_item_div", function()
         (
         '<div id="item_cursor_[id]" class="cursorfield">&nbsp;</div> '+
         '<div class="editcontrols ui-corner-all">'+
+        '<div class="editcontrols_top">'+
         '<input type="button" id="btn_revert_[id]" value="Revert"/> '+
         '<input type="button" id="btn_copy_to_present_[id]" value="Copy to Present"/> '+
-        '<span id="item_collapser_[id]" class="collapser">&nbsp;</span> '+
+        '<span id="item_collapser_[id]" class="collapser"/>'+
+        '<span id="item_history_button_[id]" class="item_history_button"/> '+
         '[tags]'+
+        '</div>'+
+        '<div id="item_history_[id]" class="item_history ui-corner-all">'+hist_html+'</div>'+
         '</div>'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
         .allreplace('[tags]', format_tag_links(self.tags))
-        .allreplace('[contents]', self.contents_html)
+        .allreplace('[contents]', contents_html)
         );
       $('#btn_revert_'+self.id).click(function()
         { 
@@ -235,23 +282,86 @@ ItemManager.method("fill_item_div", function()
         });
     }
 
-    var query = "#item_[id] div.editcontrols a.taglink".replace("[id]", self.id);
+    var query = "#item_[id] div.editcontrols .editcontrols_top a.taglink".replace("[id]", self.id);
     add_tag_behavior($(query));
 
     $("#item_collapser_"+self.id).click(
         function() { item_toggle_collapsed(self.div); }
         );
+    $("#item_history_button_"+self.id).click(
+        function() { self.toggle_history(); }
+        );
+
+    if (history != null)
+    {
+      var histdiv = $(self.div).find(".item_history");
+
+      function bind_version_click_handler(ver_data, is_historic)
+      {
+        var ver_id = ver_data.version_id;
+        $(histdiv).find("a#hist_itemversion_"+ver_id).click(
+            function() {
+              $.ajax({
+                data: { version_id: ver_id },
+                url: 'item/get_version_by_id',
+                dataType:"json",
+                success: function(data, status)
+                {
+                  self.set_from_obj(data, is_historic);
+                  self.fill_item_div(history);
+                },
+                error: function(req, stat, err) 
+                { report_error("Error retrieving version."); },
+            });
+          });
+      }
+
+      for (var i = 0; i < history.length; ++i)
+        bind_version_click_handler(history[i], i != 0);
+    }
   }
 });
 
 
 function item_toggle_collapsed(div)
 {
-  if ($(div).hasClass("collapsed"))
-    $(div).removeClass("collapsed");
-  else
-    $(div).addClass("collapsed");
+  $(div).toggleClass("collapsed");
 }
+
+
+ItemManager.method("toggle_history", function() 
+{
+  var self = this;
+
+  if ($(self.div).hasClass("history_shown"))
+  {
+    $(self.div).removeClass("history_shown");
+    // make sure we're showing the current version
+    self.load_from_server(
+      function() { self.fill_item_div(); }
+      ); 
+  }
+  else 
+  {
+    var histdiv = $(self.div).find(".item_history");
+
+    histdiv.html(busy('Loading...'));
+    $(self.div).addClass("history_shown");
+
+    $.ajax({
+      data: { item_id: self.id },
+      url: 'item/history/get',
+      dataType:"json",
+      success: function(history, status)
+      {
+        self.fill_item_div(history);
+      },
+      error: function(req, stat, err)
+      { histdiv.html('(Error retrieving history)'); }
+      });
+
+  }
+})
 
 
 ItemManager.method("begin_edit", function() 
@@ -665,16 +775,18 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
           handled = true;
         }
         else if (key == "e")
-          self.cursor_at.find(".editcontrols .editbutton").click();
+          self.cursor_at.find(".editcontrols .editcontrols_top .editbutton").click();
+        else if (key == "h")
+          self.cursor_at.find(".editcontrols .editcontrols_top .item_history_button").click();
         else if (key == "D")
-          self.cursor_at.find(".editcontrols .deletebutton").click();
+          self.cursor_at.find(".editcontrols .editcontrols_top .deletebutton").click();
         else if (key == "n")
         {
           var new_item_div = $("#item_null");
           if (new_item_div.length)
           {
             self.set_cursor_to(new_item_div);
-            self.cursor_at.find(".editcontrols .editbutton").click();
+            self.cursor_at.find(".editcontrols .editcontrols_top .editbutton").click();
           }
         }
       }
@@ -921,7 +1033,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
       var items = [];
       for (var i = 0; i < json.items.length; ++i)
       {
-        items.push(new ItemManager(self, json.items[i]));
+        items.push(new ItemManager(self, json.items[i], self.view_time != null));
       }
       self.realize_items(items);
 
