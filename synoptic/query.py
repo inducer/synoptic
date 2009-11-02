@@ -371,7 +371,7 @@ _LEX_TABLE = [
     (_after, RE(r"after\(([-:, A-Za-z0-9]+)\)")),
     (_tag, RE(r"[.a-zA-Z0-9?*]+")),
     (_negtag, RE(r"-[.a-zA-Z0-9?*]+")),
-    (_fulltext, RE(r'".*(?!\\\\)"')),
+    (_fulltext, RE(r'".*?(?!\\\\)"')),
     (_whitespace, RE("[ \t]+")),
     ]
 
@@ -472,3 +472,5 @@ if __name__ == "__main__":
     print v
     v2 = parse_query(str(v))
     print v2
+    v = parse_query('pic ("test" or "validation")')
+    print repr(v)
