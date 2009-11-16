@@ -407,10 +407,14 @@ ItemManager.method("begin_edit", function()
   $("#editor_"+self.id).height(text_height);
 
   self.manager.install_focus_handlers($("#edit_tags_"+self.id));
-  /*
-  $("#edit_tags_"+self.id).autocomplete("tags/get",
-      { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
-      */
+  $("#edit_tags_"+self.id).autocomplete("tags/get_filter",
+      { 
+        delay: 100, 
+        multiple:true, 
+        // autoFill: true, 
+        cacheLength:1,
+        multipleSeparator:","
+      });
   self.div.get(0).scrollIntoView(false);
 
   $("#edit_ok_"+self.id).click(function(){
@@ -712,10 +716,6 @@ ItemCollectionManager.method("setup_search", function()
       self.update(); 
       --self.search_focused;
     });
-  /*
-  $("#search").autocomplete("tags/get",
-      { delay: 100, multiple:true, autoFill: true, cacheLength:1 });
-      */
   $("#btn_search_clear").click(function()
     {
       set_search("");
@@ -1144,7 +1144,7 @@ function update_tag_clouds()
 
 function update_main_tag_cloud()
 {
-  $.getJSON("tags/get", function (json)
+  $.getJSON("tags/get_for_query", function (json)
     {  
       $("#tagcloud").html(make_tag_cloud(
           json.tags, $("#chk_tagcloud_show_hidden").get(0).checked));
@@ -1176,7 +1176,7 @@ function update_subtag_cloud()
 {
   $.ajax({
     dataType: 'json',
-    url: 'tags/get',
+    url: 'tags/get_for_query',
     data: { query: $("#search").val() },
     success: function(data, msg) { fill_subtag_cloud(data); }
   });

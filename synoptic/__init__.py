@@ -224,7 +224,8 @@ class Application(ApplicationBase):
                     (r'item/history/get$', self.http_get_item_history),
                     (r'item/store$', self.http_store_item),
                     (r'item/reorder$', self.http_reorder_item),
-                    (r'tags/get$', self.http_get_tags),
+                    (r'tags/get_filter$', self.http_get_tags),
+                    (r'tags/get_for_query$', self.http_get_tags_for_query),
                     (r'tags/rename$', self.http_rename_tag),
                     (r'app/get_all_js$', self.http_get_all_js),
                     (r'app/quit$', self.http_quit),
@@ -322,7 +323,7 @@ class Application(ApplicationBase):
                 mimetype="text/plain")
 
     def get_tags_with_usecounts(self, session, model, parsed_query=None,
-            max_timestamp=None):
+            max_timestamp=None, startswith=None, limit=None):
         from sqlalchemy.sql import select, and_, or_, not_, func
 
         if parsed_query is not None:
@@ -349,15 +350,36 @@ class Application(ApplicationBase):
                         ])
                 )
 
+        if startswith is None or not startswith.startswith("."):
+            twuc_q = twuc_q.where(~model.tags.c.name.startswith("."))
+
+        if startswith:
+            twuc_q = twuc_q.where(model.tags.c.name.startswith(startswith))
+
         twuc_q = (twuc_q
                 .group_by(model.tags.c.id)
                 .having(func.count(itemversions_q.c.id)>0)
                 .order_by(model.tags.c.name)
                 )
 
+        if limit is not None:
+            twuc_q = twuc_q.limit(limit)
+
         return session.execute(twuc_q)
 
     def http_get_tags(self, request):
+        query = request.GET.get("q", "")
+        limit = request.GET.get("limit", None)
+
+        q = self.get_tags_with_usecounts(
+                request.dbsession, request.datamodel,
+                startswith=query, limit=limit)
+
+        return request.respond(
+                "\n".join(row.name for row in q)+"\n",
+                mimetype="text/plain")
+
+    def http_get_tags_for_query(self, request):
         if "max_timestamp" in request.GET:
             max_timestamp = float(request.GET["max_timestamp"])
         else:
@@ -602,6 +624,7 @@ class Application(ApplicationBase):
           "jquery.bgiframe.js",
           "jquery.dimensions.js",
           "jquery.contextmenu.r2.js",
+          "jquery.autocomplete.js",
           "jquery-ui/ui.core.js",
           "jquery-ui/ui.slider.js",
           "jquery-ui/ui.tabs.js",
