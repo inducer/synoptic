@@ -1,5 +1,22 @@
 #! /usr/bin/env python2.5
 
+def get_data_path():
+    import os.path
+
+    home = os.environ.get('HOME', '/')
+    xdg_data_home = os.environ.get('XDG_DATA_HOME',
+            os.path.join(home, '.local', 'share'))
+
+    synoptic_path = os.path.join(xdg_data_home, "synoptic")
+    if os.path.isdir(synoptic_path):
+        return synoptic_path
+    else:
+        os.makedirs(synoptic_path)
+        return synoptic_path
+
+
+
+
 class Log:
     """file-like for writes with auto flush after each write
     to ensure that everything is logged, even during an
@@ -19,11 +36,10 @@ class Log:
 def main():
     from optparse import OptionParser
 
-    from tempfile import gettempdir
     import os
     import sys
 
-    mydir = os.path.join(gettempdir(), "synoptic-%d-%s" % (os.getpid(), os.getuid()))
+    mydir = get_data_path()
 
     description = ("An AJAXy information/note manager * "
             "To start a new database file, simply pick a file name and start synoptic "
@@ -108,8 +124,6 @@ def main():
     real_app.set_quit_func(quit_func)
 
     if options.daemon:
-        os.mkdir(mydir)
-
         # do the UNIX double-fork magic, see Stevens' "Advanced
         # Programming in the UNIX Environment" for details (ISBN 0201563177)
         try:
