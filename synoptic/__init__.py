@@ -350,9 +350,6 @@ class Application(ApplicationBase):
                         ])
                 )
 
-        #if startswith is None or not startswith.startswith("."):
-            #twuc_q = twuc_q.where(~model.tags.c.name.startswith("."))
-
         if startswith:
             twuc_q = twuc_q.where(model.tags.c.name.startswith(startswith))
 
