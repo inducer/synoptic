@@ -364,8 +364,10 @@ ItemManager.method("toggle_history", function()
 })
 
 
+var edit_count = 0;
 ItemManager.method("begin_edit", function() 
 {
+  ++edit_count;
   var self = this;
 
   var text_height = self.div.find(".itemcontents").height();
@@ -444,12 +446,14 @@ ItemManager.method("begin_edit", function()
 
       error: function(req, stat, err) 
       {
+        --edit_count;
         set_message("Saving failed.");
         self.begin_edit();
       },
 
       success: function(data, msg) 
       {
+        --edit_count;
         var prev_id = self.id;
         self.set_from_obj(data);
         self.id = data.id;
@@ -465,6 +469,7 @@ ItemManager.method("begin_edit", function()
   });
 
   $("#edit_cancel_"+self.id).click(function(){
+    --edit_count;
     self.div.removeClass("editing");
 
     self.fill_item_div();
@@ -638,9 +643,12 @@ ItemCollectionManager.method("get_current_fragment", function()
 
 
 
+var nav_warning_inhibitor = 0;
 ItemCollectionManager.method("add_history_item", function()
 {
+  ++nav_warning_inhibitor;
   dhtmlHistory.add(this.get_current_fragment());
+  --nav_warning_inhibitor;
 });
 
 
@@ -1370,6 +1378,17 @@ $(document).ready(function()
 
   $(window).resize(update_tag_cloud_height);
   update_tag_cloud_height();
+
+  window.onbeforeunload = function(evt) { 
+    var e = e || window.event;
+
+    if (nav_warning_inhibitor == 0 && edit_count)
+    {
+      var warning = "You seem to be editing one or more entries."
+      evt.returnValue = warning;
+      return warning
+    }
+  }
 });
 
 
