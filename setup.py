@@ -68,7 +68,7 @@ def main():
 
           install_requires=[
               "Paste>=1.7",
-              "SqlAlchemy>=0.5.1",
+              "SQLAlchemy>=0.5.1,<=0.5.99",
               "SimpleJSON>=1.7",
               "parsedatetime==0.8.6",
               "ipaddr",
