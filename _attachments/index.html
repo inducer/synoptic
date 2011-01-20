@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Synoptic</title>
+    <link rel="stylesheet" href="style/style.css" type="text/css">
+    <link rel="stylesheet" href="style/content.css" type="text/css">
+  </head>
+  <body>
+    <div id="navpane">
+      <div id="innernavpane">
+        <div id="logo"><a href="http://mathema.tician.de/software/synoptic">Synoptic</a></div>
+        <div id="history_nav" class="ui-corner-all">
+          <div style="white-space:nowrap;">
+            <label for="edit_date" accesskey="t"><img src="images/time.png" alt="Time" class="inlineimg"/></label>
+            <input type="text" id="edit_date" size="10"/>
+
+            <img src="images/go-last.png" id="btn_go_present" class="imagebutton" alt="Go to present"/>
+          </div>
+          <div id="history_time" class="ui-widget"></div>
+          <div id="slider_container">
+            <div id="history_slider"> </div>
+          </div>
+
+          <span id="messagearea"></span>
+        </div>
+
+        <div id="navtabs">
+          <ul id="tagtab_header">
+            <li><a href="#fragment-1">Tags</a></li>
+            <li><a href="#fragment-2">All Tags</a></li>
+          </ul>
+          <div id="fragment-1">
+            <div id="subtagcloud_search_tags"> </div>
+            <div id="subtagcloud" class="tagcloud"> </div>
+            <input type="checkbox" id="chk_subtagcloud_show_hidden"/>
+            <span id="navtab_size_helper_top_1"></span>
+            <label for="chk_subtagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
+          </div>
+          <div id="fragment-2">
+            <div id="tagcloud" class="tagcloud"> </div>
+            <input type="checkbox" id="chk_tagcloud_show_hidden"/>
+            <span id="navtab_size_helper_top_2"></span>
+            <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
+          </div>
+        </div>
+        <span id="navtab_size_helper_bottom"></span>
+      </div>
+    </div>
+    <div id="mainpane">
+      <div id="innermainpane">
+        <div id="searchbar">
+          <input type="text" size="50" id="search"/>
+          <img src="images/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
+          <img src="images/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>
+          <img src="images/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
+          <img src="images/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
+          <img src="images/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
+          <img src="images/copy.png" alt="Copy (relative) link URL" title="Copy (relative) link URL" id="btn_copy" class="imagebutton"/>
+          <div id="linkurl">
+            <input type="text" readonly="readonly" id="linkurl_edit"/>
+          </div>
+        </div>
+        <div id="items">
+        </div>
+        <div id="hiddenitems">
+        </div>
+      </div>
+    </div>
+    <div id="tag_context_menu">
+      <ul>
+        <li id="tag-menu-rename">Rename</li>
+        <li id="tag-menu-restrict">Restrict search</li>
+        <li id="tag-menu-search">Search for only this tag</li>
+      </ul>
+    </div>
+  </body>
+  <script src="vendor/couchapp/loader.js"></script>
+  <script src="/_utils/script/jquery.couch.js"></script>
+  <script src="js/jquery.timers.js"></script>
+  <script src="js/jquery.bgiframe.js"></script>
+  <script src="js/jquery.dimensions.js"></script>
+  <script src="js/jquery.contextmenu.r2.js"></script>
+  <script src="js/jquery.autocomplete.js"></script>
+  <script src="js/jquery-ui/ui.core.js"></script>
+  <script src="js/jquery-ui/ui.slider.js"></script>
+  <script src="js/jquery-ui/ui.tabs.js"></script>
+  <script src="js/jquery-ui/ui.sortable.js"></script>
+  <script src="js/jquery-ui/ui.datepicker.js"></script>
+  <script src="js/inheritance.js"></script>
+  <script src="js/rsh.js"></script>
+  <script src="js/main.js"></script>
+
+  <script type="text/javascript" charset="utf-8">
+    $.couch.app(function(app) {
+      //$("#account").evently("account", app);
+      //$("#profile").evently("profile", app);
+      //$.evently.connect("#account","#profile", ["loggedIn","loggedOut"]);
+      //$("#items").evently("items", app);
+    });
+  </script>
+</html>

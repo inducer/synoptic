@@ -19,7 +19,7 @@ body, html {
 }
 
 #navpane {
-  background-image: url("navbar-bg.png");
+  background-image: url("../images/navbar-bg.png");
   position:absolute;
   top:0;
   bottom:0;
@@ -189,7 +189,7 @@ body, html {
   font-weight:bold;
   padding-left:28px;
   height: 22px;
-  background-image:url("error.png");
+  background-image:url("../images/error.png");
   background-repeat:no-repeat;
 }
 
@@ -239,13 +239,13 @@ div#linkurl.shown {
 .item_history_button {
   display:none;
   padding-left:18px;
-  background-image:url("history.png");
+  background-image:url("../images/history.png");
   background-repeat:no-repeat;
   background-position:left bottom;
 }
 
 .item.history_shown .editcontrols .editcontrols_top .item_history_button {
-  background-image:url("history-active.png");
+  background-image:url("../images/history-active.png");
   display:inline;
 }
 
@@ -284,7 +284,7 @@ div.item_history {
 }
 
 .item.editing .editcontrols {
-  background-image:url("construction.png");
+  background-image:url("../images/construction.png");
   float:none;
 }
 
@@ -302,7 +302,7 @@ div.item_history {
 }
 
 .item.editing .editcontrols {
-  background-image:url("construction.png");
+  background-image:url("../images/construction.png");
   float:none;
 }
 
@@ -329,7 +329,7 @@ div.item_history {
 }
 
 .item.focused .cursorfield {
-  background-image:url("cursor.png");
+  background-image:url("../images/cursor.png");
   background-position:5px 2px;
 }
 
@@ -343,7 +343,7 @@ div.item_history {
   display:none;
   cursor:default;
   padding-left:18px;
-  background-image:url("expanded.png");
+  background-image:url("../images/expanded.png");
   background-repeat:no-repeat;
   background-position:left bottom;
 }
@@ -352,13 +352,13 @@ div.item_history {
 }
 
 .item .editcontrols .collapser:hover {
-  background-image:url("expanded-hover.png");
+  background-image:url("../images/expanded-hover.png");
 }
 .item.collapsed .editcontrols .editcontrols_top .collapser {
-  background-image:url("collapsed.png");
+  background-image:url("../images/collapsed.png");
 }
 .item.collapsed .editcontrols .editcontrols_top .collapser:hover {
-  background-image:url("collapsed-hover.png");
+  background-image:url("../images/collapsed-hover.png");
 }
 
 .item.collapsed .itemcontents {
@@ -372,7 +372,7 @@ div.item_history {
 .item_handle {
   display:none;
   padding-left:18px;
-  background-image:url("dragger.png");
+  background-image:url("../images/dragger.png");
   background-repeat:no-repeat;
   background-position:left bottom;
 }
@@ -441,7 +441,7 @@ div.item_history {
 }
 
 .ac_loading {
-        background: white url('busy.gif') right center no-repeat;
+        background: white url('../images/busy.gif') right center no-repeat;
 }
 
 .ac_odd {

@@ -1,0 +1,8 @@
+{
+  "env" : {
+    "default" : {
+      "db" : "desktopcouch://synoptic"
+    }
+  }
+}
+

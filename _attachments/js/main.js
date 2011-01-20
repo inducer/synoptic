@@ -1,4 +1,5 @@
 var msgnum = 0;
+var db = $.couch.db("synoptic");
 
 function busy(what)
 {
@@ -566,12 +567,16 @@ ItemCollectionManager.method("setup_history_handling", function()
 {
   var self = this;
 
-  self.tsrange = null;
-  $.getJSON("timestamp/get_range", function (json)
-    { 
-      self.tsrange = json; 
-      self.set_history_slider(self.view_time);
-    });
+  self.tsrange = { min: null, max: null }
+  db.view("synoptic/timestamps", { limit: 1, descending:false, success: function (json)
+    {
+      self.tsrange.min = json.rows[0].key[0]
+      db.view("synoptic/timestamps", { limit: 1, descending:false, success: function (json)
+        {
+          self.tsrange.max = json.rows[0].key[0]
+          self.set_history_slider(self.view_time)
+        }});
+    }});
 
   self.view_time = null;
 
@@ -1019,7 +1024,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
   self.last_query = query;
   self.last_timestamp = timestamp;
 
-  data = { query: query };
+  data = { key: query };
 
   if (!(timestamp == null || timestamp == undefined))
     data.max_timestamp = timestamp;
@@ -1027,12 +1032,11 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
   ++self.fill_sequence_number;
   var seq_no = self.fill_sequence_number;
 
-  $.ajax({
-    data: data,
-    url: 'items/get',
-    dataType:"json",
+  db.view("synoptic/newest-item-versions-by-tag", { 
+    key: query,
     success: function(json, status)
     {
+      json = json.rows
       if (seq_no != self.fill_sequence_number)
         return; // another fill was initiated before we completed, bail out.
 
@@ -1045,7 +1049,7 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
       }
       self.realize_items(items);
 
-      fill_subtag_cloud(json);
+      // fill_subtag_cloud(json);
       self.query_tags = json.query_tags;
     },
     error: function(req, stat, err)
@@ -1330,10 +1334,10 @@ function update_tag_cloud_height()
 
 $(document).ready(function()
 {
+  $("#navtabs").tabs();
+
   var collection_manager = new ItemCollectionManager()
   document.collection_manager = collection_manager;
-
-  tag_tabs = $("#navtabs").tabs();
 
   $("#items").sortable({ 
     handle: ".item-drag-handle",
@@ -1363,7 +1367,7 @@ $(document).ready(function()
       }
     });
 
-  update_main_tag_cloud();
+  //update_main_tag_cloud();
   $("#chk_tagcloud_show_hidden").change(update_main_tag_cloud);
   $("#chk_subtagcloud_show_hidden").change(update_subtag_cloud);
 
