@@ -71,12 +71,44 @@ def import_file(dbsession, text):
 
 
 class DBSessionInjector(object):
-    def __init__(self, sub_app, dburl, echo=False):
+    def __init__(self, sub_app, dburl, exists, echo=False):
+        # {{{ schema upgrade
+
+        import migrate.versioning.api as mig_api
+        import synoptic.schema_ver_repo as svr
+        from os.path import dirname
+        versioning_repo = dirname(svr.__file__)
+
+        latest_ver = mig_api.version(versioning_repo)
+
+        if exists:
+            from migrate.versioning.exceptions import DatabaseNotControlledError
+            try:
+                db_ver = mig_api.db_version(dburl, versioning_repo)
+            except DatabaseNotControlledError:
+                print "adding version control to db"
+                mig_api.version_control(dburl, versioning_repo)
+                db_ver = mig_api.db_version(dburl, versioning_repo)
+
+
+            print "found database version %d, code uses version %d" % (db_ver, latest_ver)
+
+            if db_ver < latest_ver:
+                print "upgrading..."
+                mig_api.upgrade(dburl, versioning_repo)
+        else:
+            # we're only just creating the db, thus using the latest available version
+            mig_api.version_control(dburl, versioning_repo, version=latest_ver)
+
+        # }}}
+
         from sqlalchemy import create_engine
         self.engine = create_engine(dburl)
+
         from synoptic.datamodel import DataModel
         self.datamodel = DataModel()
-        self.datamodel.metadata.create_all(self.engine)
+        if not exists:
+            self.datamodel.metadata.create_all(self.engine)
 
         from sqlalchemy.orm import sessionmaker
         self.sessionmaker = sessionmaker(bind=self.engine, autoflush=True,
@@ -429,8 +461,8 @@ class Application(ApplicationBase):
         old_re = re.compile(r"(?:\b|^)%s(?:\b|$)" % re.escape(old_name))
 
         for v_ord in request.dbsession.query(ViewOrdering).filter(
-                ViewOrdering.tagset.contains(old_name)):
-            v_ord.tagset = old_re.sub(new_name, v_ord.tagset)
+                ViewOrdering.norm_query.contains(old_name)):
+            v_ord.norm_query = old_re.sub(new_name, v_ord.norm_query)
 
         return request.respond("", mimetype="text/plain")
 
@@ -645,6 +677,7 @@ class Application(ApplicationBase):
                     "Thanks for using synoptic.",
                     mimetype="text/plain")
         else:
+            from paste.httpexceptions import HTTPForbidden
             raise HTTPForbidden()
 
     def serve_static(self, request, filename):
@@ -656,3 +689,5 @@ class Application(ApplicationBase):
             raise HTTPNotFound()
 
         return request.respond(data, mimetype=mimetype)
+
+# vim: foldmethod=marker

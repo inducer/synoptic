@@ -13,6 +13,7 @@ class DataModel(object):
         from sqlalchemy import Table, Column, \
                 Integer, Float, Text, UnicodeText, Unicode, ForeignKey, \
                 MetaData
+        from sqlalchemy.types import Enum
 
         cls = DataModel
 
@@ -31,7 +32,13 @@ class DataModel(object):
                 Column('id', Integer, primary_key=True),
                 Column('item_id', Integer, ForeignKey('items.id')),
                 Column('timestamp', Float, index=True),
-                Column('contents', UnicodeText())
+                Column('contents', UnicodeText()),
+                Column('start_date', Float()),
+                Column('end_date', Float()),
+                Column('bump_interval', 
+                    Enum("hour", "day", "week", "2week", "month", "year")),
+                Column('hide_until', Float()),
+                Column('highlight_at', Float()),
                 )
 
         cls.itemversions_tags = Table('itemversions_tags', self.metadata,
@@ -41,7 +48,7 @@ class DataModel(object):
 
         cls.vieworderings = Table('vieworderings', self.metadata,
                 Column('id', Integer, primary_key=True),
-                Column('tagset', Text()), # misnomer, by now: normalized query string
+                Column('norm_query', Text()),
                 Column('timestamp', Float, index=True),
                 )
 
@@ -145,8 +152,8 @@ class ItemVersion(object):
 
 
 class ViewOrdering(object):
-    def __init__(self, tagset, timestamp):
-        self.tagset = tagset
+    def __init__(self, norm_query, timestamp):
+        self.norm_query = norm_query
         self.timestamp = timestamp
 
 
@@ -316,7 +323,7 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
 
     # find view ordering
     view_orderings = (session.query(ViewOrdering)
-            .filter_by(tagset=str(parsed_query))
+            .filter_by(norm_query=str(parsed_query))
             .order_by(ViewOrdering.timestamp.desc())
             .limit(1)).all()
 
@@ -371,7 +378,7 @@ class ViewOrderingHandler:
 
     def has_ordering(self):
         view_orderings = (self.session.query(ViewOrdering)
-                .filter_by(tagset=str(self.parsed_query))
+                .filter_by(norm_query=str(self.parsed_query))
                 .order_by(ViewOrdering.timestamp.desc())
                 .limit(1)).all()
 

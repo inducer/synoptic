@@ -66,17 +66,17 @@ def main():
             "-b", "--bind-address", default=None,
             help="Allow remote connection")
     parser.add_option(
-            "-a", "--allow-ip", 
+            "-a", "--allow-ip",
             help="Allow a given set of hosts and or networks "
             "(CIDR notation), separated by commas", metavar="NETWORK")
     parser.add_option(
-	    "--pidfile", dest="pidfile", 
+            "--pidfile", dest="pidfile",
             default=os.path.join(mydir, "synoptic.pid"),
-	    help="PID file for daemonization", metavar="PIDFILE")
+            help="PID file for daemonization", metavar="PIDFILE")
     parser.add_option(
-	    "-l", "--logfile", dest="logfile", 
+            "-l", "--logfile", dest="logfile",
             default=os.path.join(mydir, "synoptic.log"),
-	    help="Log file for daemonization", metavar="LOGFILE")
+            help="Log file for daemonization", metavar="LOGFILE")
 
     options, args = parser.parse_args()
 
@@ -99,14 +99,14 @@ def main():
     exists = os.access(dbname, os.F_OK)
 
     from synoptic import DBSessionInjector
-    app = dbinj = DBSessionInjector(app, "sqlite:///%s" % args[0])
+    app = dbinj = DBSessionInjector(app, "sqlite:///%s" % args[0], exists)
 
     from synoptic import ErrorMiddleware
     app = ErrorMiddleware(app)
 
     if not exists and not options.start_empty:
         from synoptic import import_file, get_static_file
-        import_file(dbinj.sessionmaker(), 
+        import_file(dbinj.sessionmaker(),
                 get_static_file("initial-content.txt")[0])
 
     from paste.httpserver import WSGIServer, WSGIHandler
@@ -167,7 +167,7 @@ def main():
 
         from thread import start_new_thread
         start_new_thread(start_browser, ())
-        
+
     while not quit_flag[0]:
         server.handle_request()
     print>>sys.stderr, "quitting..."
