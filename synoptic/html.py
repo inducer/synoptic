@@ -117,7 +117,7 @@ def mainpane(context):
     </div>
     """
 
-def context_menus():
+def popups():
     return """
     <div id="tag_context_menu">
       <ul>
@@ -126,6 +126,12 @@ def context_menus():
         <li id="tag-menu-search">Search for only this tag</li>
       </ul>
     </div>
+    <div id="out_of_date_notifier" class="ood_hidden">
+      <img src="static/warning.png" alt="Warning"/>
+      <p>Currently displayed results are out of date.</p>
+
+      <input type="button" id="ood_reload_btn" value="Reload"/>
+    </div>
     """
 
 def mainpage(context):
@@ -133,5 +139,5 @@ def mainpage(context):
         title="Synoptic",
         body='<div id="main_container">%s</div>%s' % (
             navpane(context)+mainpane(context),
-            context_menus())
+            popups())
         ))

@@ -251,6 +251,7 @@ class Application(ApplicationBase):
                     (r'item/get_by_id$', self.http_get_item_by_id),
                     (r'item/get_version_by_id$', self.http_get_item_version_by_id),
                     (r'items/get$', self.http_get_items),
+                    (r'items/get_result_hash$', self.http_get_result_hash),
                     (r'items/print$', self.http_print_items),
                     (r'items/export$', self.http_export_items),
                     (r'item/history/get$', self.http_get_item_history),
@@ -539,13 +540,40 @@ class Application(ApplicationBase):
 
             query_tags = []
 
-        # and ship them out by JSON
         from simplejson import dumps
+
+        # kind of silly to do two JSON encodes, but what the heck
+        result_hash = hash(dumps(json_items))
+
+        # and ship them out by JSON
         return request.respond(dumps({
             "items": json_items,
+            "result_hash": result_hash,
             "tags": tags,
             "query_tags": query_tags,
             }),
+                mimetype="text/plain")
+
+    def http_get_result_hash(self, request):
+        qry = request.GET.get("query", "")
+
+        from synoptic.query import parse_query
+        parsed_query = parse_query(qry)
+
+        if "max_timestamp" in request.GET:
+            max_timestamp = float(request.GET["max_timestamp"])
+        else:
+            max_timestamp = None
+
+        json_items = self.get_json_items(
+                request.dbsession, request.datamodel,
+                parsed_query, max_timestamp)
+
+        from simplejson import dumps
+        result_hash = hash(dumps(json_items))
+
+        # and ship them out by JSON
+        return request.respond(dumps(result_hash),
                 mimetype="text/plain")
 
     def http_print_items(self, request):

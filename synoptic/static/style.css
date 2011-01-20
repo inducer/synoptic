@@ -318,6 +318,21 @@ div.item_history {
   width: 95%;
 }
 
+#out_of_date_notifier {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #eee;
+  width: 10%;
+  padding:1em;
+  border:1px solid #aaa;
+  font: menu;
+}
+
+.ood_hidden {
+  visibility:hidden;
+}
+
 /* cursor-related ----------------------------------------------------------- */
 .cursorfield {
   margin-top:3px;

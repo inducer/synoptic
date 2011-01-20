@@ -1,3 +1,5 @@
+var UP_TO_DATE_TIMEOUT = 60*1000;
+
 var msgnum = 0;
 
 function busy(what)
@@ -16,10 +18,9 @@ function set_message(what, timeout)
   var my_msg = $("#msg_"+msgnum);
 
   if (timeout  == undefined)
-    timeout = "10s";
+    timeout = 10*1000;
 
-  $("#messagearea").oneTime(timeout, function()
-      { my_msg.remove(); })
+  window.setTimeout(function() { my_msg.remove(); }, 10*1000)
 }
 
 function report_error(what)
@@ -433,6 +434,9 @@ ItemManager.method("begin_edit", function()
 
     self.contents = $("#editor_"+self.id).val();
 
+    self.manager.check_if_results_are_current();
+    ++self.manager.up_to_date_check_inhibitions;
+
     $.ajax({
       type: 'POST',
       dataType: 'json',
@@ -448,6 +452,7 @@ ItemManager.method("begin_edit", function()
       {
         --edit_count;
         set_message("Saving failed.");
+        --self.manager.up_to_date_check_inhibitions;
         self.begin_edit();
       },
 
@@ -459,6 +464,14 @@ ItemManager.method("begin_edit", function()
         self.id = data.id;
         self.call_with_item_div(function(html){ self.div.replaceWith(html); });
         self.manager.set_cursor_to(self.div);
+
+        // Don't trigger change notification.
+        //
+        // There's a race condition here. Someone else might be changing items
+        // while we are doing the same. Not very likely, though--ok for our
+        // purposes.
+        self.manager.update_result_hash_and_uninhibit_check();
+
         update_tag_clouds();
         if (prev_id == null)
         {
@@ -486,6 +499,8 @@ ItemManager.method("do_delete", function()
 
   self.manager.set_cursor_to(self.div.next());
   self.div.remove();
+  self.manager.check_if_results_are_current();
+  ++self.manager.up_to_date_check_inhibitions;
 
   $.ajax({
     type: 'POST',
@@ -496,8 +511,17 @@ ItemManager.method("do_delete", function()
       tags: [],
       contents: null
     })},
-    error: function(req, stat, err) { report_error("Delete failed."); },
+    error: function(req, stat, err) { 
+             report_error("Delete failed."); 
+             --self.manager.up_to_date_check_inhibitions;
+           },
     success: function(data, msg) { 
+      // Don't trigger change notification.
+      //
+      // There's a race condition here. Someone else might be changing items
+      // while we are doing the same. Not very likely, though--ok for our
+      // purposes.
+      self.manager.update_result_hash_and_uninhibit_check();
       update_tag_clouds();
     }
   });
@@ -540,6 +564,16 @@ function ItemCollectionManager()
   self.setup_toolbar();
 
   self.query_tags = [];
+
+  // catch out-of-date results
+  window.setTimeout(function() { self.check_if_results_are_current() }, 
+      UP_TO_DATE_TIMEOUT);
+  $("#ood_reload_btn").click(function() { 
+    $("#out_of_date_notifier").addClass("ood_hidden");
+    self.reload() 
+  })
+  self.up_to_date_check_inhibitions = 0;
+
 }
 
 
@@ -1000,6 +1034,13 @@ ItemCollectionManager.method("update", function(force)
 
 
 
+ItemCollectionManager.method("reload", function()
+{
+  this.update(true);
+})
+
+
+
 
 ItemCollectionManager.method("fill", function(query, timestamp, force)
 {
@@ -1047,6 +1088,10 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
 
       fill_subtag_cloud(json);
       self.query_tags = json.query_tags;
+      self.last_query_data = data;
+      self.result_hash = json.result_hash;
+
+      $("#out_of_date_notifier").addClass("ood_hidden");
     },
     error: function(req, stat, err)
     {
@@ -1065,6 +1110,67 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
     }
     });
 })
+
+
+
+
+ItemCollectionManager.method("check_if_results_are_current", function()
+{
+  var self = this;
+
+  if (self.last_query_data && self.result_hash 
+    && self.up_to_date_check_inhibitions == 0)
+  {
+    $.ajax({
+      data: self.last_query_data,
+      url: 'items/get_result_hash',
+      dataType:"json",
+      success: function(json, status)
+      {
+        if (self.result_hash != json 
+          && self.up_to_date_check_inhibitions == 0)
+        {
+          $("#out_of_date_notifier").removeClass("ood_hidden");
+        }
+      }
+    });
+  }
+
+  window.setTimeout(function() { self.check_if_results_are_current() }, 
+      UP_TO_DATE_TIMEOUT);
+});
+
+
+
+
+ItemCollectionManager.method("update_result_hash_and_uninhibit_check", function()
+{
+  var self = this;
+
+  if (!$("#out_of_date_notifier").hasClass("ood_hidden"))
+  {
+    // we are out of date, do nothing
+    return
+  }
+
+  if (self.last_query_data && self.result_hash)
+  {
+    $.ajax({
+      data: self.last_query_data,
+      url: 'items/get_result_hash',
+      dataType:"json",
+      success: function(json, status)
+      {
+        self.result_hash = json;
+        --self.up_to_date_check_inhibitions;
+      },
+      error: function()
+      {
+        --self.up_to_date_check_inhibitions;
+      }
+    });
+  }
+});
 
 
 
