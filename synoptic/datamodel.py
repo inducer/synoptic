@@ -2,6 +2,17 @@ MAPPERS_DEFINED = [False]
 
 
 
+BUMP_INTERVALS = [
+    ("hour", "hour"),
+    ("day", "day"), 
+    ("week", "week"),
+    ("2week", "2 weeks"),
+    ("month", "month"),
+    ("year", "year")
+    ]
+
+
+
 
 class DataModel(object):
     def __init__(self):
@@ -36,7 +47,7 @@ class DataModel(object):
                 Column('start_date', Float()),
                 Column('end_date', Float()),
                 Column('bump_interval', 
-                    Enum("hour", "day", "week", "2week", "month", "year")),
+                    Enum(*[key for key, val in BUMP_INTERVALS])),
                 Column('hide_until', Float()),
                 Column('highlight_at', Float()),
                 )
@@ -105,11 +116,21 @@ class Item(object):
 
 _html_cache = {}
 class ItemVersion(object):
-    def __init__(self, item, timestamp, tags, contents):
-        self.item = item
-        self.timestamp = timestamp
-        self.tags = tags
-        self.contents = contents
+    def __init__(self, **kwargs):
+        self.item = kwargs.pop("item")
+        self.timestamp = kwargs.pop("timestamp")
+        self.tags = kwargs.pop("tags")
+        self.contents = kwargs.pop("contents")
+
+        self.start_date = kwargs.pop("start_date", None)
+        self.end_date = kwargs.pop("end_date", None)
+        self.hide_until = kwargs.pop("hide_until", None)
+        self.highlight_at = kwargs.pop("highlight_at", None)
+        self.bump_interval = kwargs.pop("bump_interval", None)
+
+        if kwargs:
+            raise TypeError(
+                    "invalid keyword args: '%s'" % ",".join(kwargs.iterkeys()))
 
     def as_json(self):
         return {"id": self.item.id,
@@ -117,6 +138,12 @@ class ItemVersion(object):
                 "timestamp": self.timestamp,
                 "tags": [tag.name for tag in self.tags],
                 "contents": self.contents,
+
+                "start_date": self.start_date,
+                "end_date": self.end_date,
+                "hide_until": self.hide_until,
+                "highlight_at": self.highlight_at,
+                "bump_interval": self.bump_interval,
                 }
 
     def copy(self, item=None, timestamp=None, tags=None, contents=None):
@@ -197,9 +224,14 @@ def find_tags(session, tags, create_them):
 
 
 
-def store_itemversion(dbsession, contents, tags, item_id=None, timestamp=None):
+def store_itemversion(dbsession, **kwargs):
     import re
     from htmlentitydefs import name2codepoint
+
+    contents = kwargs.get("contents")
+    item_id = kwargs.get("id")
+    timestamp = kwargs.get("timestamp")
+    tags = kwargs.get("tags")
 
     if contents is not None:
         def replace_special_char(match):
@@ -221,12 +253,14 @@ def store_itemversion(dbsession, contents, tags, item_id=None, timestamp=None):
         from time import time
         timestamp = time()
 
-    itemversion = ItemVersion(
-            item,
-            timestamp,
-            find_tags(dbsession, tags, create_them=True),
-            contents,
-            )
+    props = kwargs.copy()
+    del props["id"]
+    props.update(
+            item=item,
+            timestamp=timestamp,
+            tags=find_tags(dbsession, tags, create_them=True),
+            contents=contents)
+    itemversion = ItemVersion(**props)
     dbsession.add(itemversion)
 
     return itemversion
@@ -238,6 +272,8 @@ def store_itemversion(dbsession, contents, tags, item_id=None, timestamp=None):
 class SQLifyQueryVisitor(object):
     def __init__(self, session):
         self.session = session
+        self.use_hide_until = True
+        self.sort_by_date = False
 
     def visit_tag_query(self, q):
         tags = self.session.query(Tag).filter_by(name=q.name)
@@ -282,6 +318,16 @@ class SQLifyQueryVisitor(object):
         else:
             return ItemVersion.timestamp > q.timestamp
 
+    def visit_dated_query(self, q):
+        from sqlalchemy.sql import or_
+        return or_(ItemVersion.start_date != None,
+                ItemVersion.end_date != None)
+
+    def visit_no_hide_query(self, q):
+        self.use_hide_until = False
+
+    def visit_sort_by_date(self, q):
+        self.sort_by_date = True
 
 
 
@@ -348,14 +394,26 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
                 model.itemversions.c.item_id==vo_entries.c.item_id)
 
     from synoptic.datamodel import SQLifyQueryVisitor
-    where = and_(
+    visitor = SQLifyQueryVisitor(session)
+
+    conditions = [
             model.itemversions.c.contents != None,
-            parsed_query.visit(SQLifyQueryVisitor(session))
-            )
+            parsed_query.visit(visitor)
+            ]
+
+    if visitor.use_hide_until:
+        from time import time
+        conditions.append(
+                or_(ItemVersion.hide_until < time(),
+                    ItemVersion.hide_until == None))
+
+    where = and_(*conditions)
 
     result = select([model.itemversions], from_obj=[from_obj]).where(where)
 
-    if have_view_ordering:
+    if visitor.sort_by_date:
+        result = result.order_by(ItemVersion.start_date)
+    elif have_view_ordering:
         # add the ordering clause
         result = result.order_by(vo_entries.c.weight)
     else:

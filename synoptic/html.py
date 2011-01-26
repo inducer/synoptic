@@ -57,7 +57,7 @@ def navpane(context):
           <div style="white-space:nowrap;">
             <label for="edit_date" accesskey="t"><img src="static/time.png" alt="Time" class="inlineimg"/></label>
             <input type="text" id="edit_date" size="10"/>
-            
+
             <img src="static/go-last.png" id="btn_go_present" class="imagebutton" alt="Go to present"/>
           </div>
           <div id="history_time" class="ui-widget"></div>

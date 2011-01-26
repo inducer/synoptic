@@ -333,6 +333,40 @@ div.item_history {
   visibility:hidden;
 }
 
+/* date-related ------------------------------------------------------------- */
+.date-info {
+  margin-left:20px;
+  font-family: sans-serif ;
+  padding-left:5px;
+  padding-top:5px;
+}
+
+.start-date {
+  font-weight:bold;
+  margin-right:1em;
+}
+
+.end-date {
+  margin-right:1em;
+}
+.hide-date {
+  font-size:x-small;
+}
+
+
+.datecontrols {
+  font-family: sans-serif ;
+  padding:4px;
+  padding-left:25px;
+}
+
+.remindcontrols {
+  margin-top:0.3em;
+}
+.bumpcontrols {
+  margin-top:0.3em;
+}
+
 /* cursor-related ----------------------------------------------------------- */
 .cursorfield {
   margin-top:3px;

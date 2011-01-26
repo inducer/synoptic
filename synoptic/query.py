@@ -5,13 +5,13 @@ def not_ni(a):
     else:
         return not a
 
-def and_ni(a):
+def and_ni(a, b):
     if a == NotImplemented or b == NotImplemented:
         return NotImplemented
     else:
         return a and b
 
-def or_ni(a):
+def or_ni(a, b):
     if a == NotImplemented or b == NotImplemented:
         return NotImplemented
     else:
@@ -28,7 +28,7 @@ class Query(object):
     def __repr__(self):
         return self.visit(ReprVisitor())
 
-    # deriving classes need only implement __le__ and __eq__
+    # deriving classes need only implement __lt__ and __eq__
     def __ne__(self, other):
         return not_ni(self.__eq__(other))
 
@@ -54,14 +54,11 @@ class TagQuery(Query):
         return visitor.visit_tag_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, TagQuery):
-            return False
-        else:
-            return self.name == other.name
-    
+        return isinstance(other, TagQuery) and self.name == other.name
+
     def __lt__(self, other):
-        if not isinstance(other, (TagQuery, TagWildcardQuery)):
-            return True
+        if not isinstance(other, TagQuery):
+            return type(self).__name__ < type(other).__name__
         else:
             return self.name < other.name
 
@@ -73,14 +70,11 @@ class TagWildcardQuery(Query):
         return visitor.visit_tag_wildcard_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, TagWildcardQuery):
-            return False
-        else:
-            return self.name == other.name
-    
+        return isinstance(other, TagWildcardQuery) and self.name == other.name
+
     def __lt__(self, other):
-        if not isinstance(other, (TagQuery,TagWildcardQuery)):
-            return True
+        if not isinstance(other, TagWildcardQuery):
+            return type(self).__name__ < type(other).__name__
         else:
             return self.name < other.name
 
@@ -92,14 +86,11 @@ class FulltextQuery(Query):
         return visitor.visit_fulltext_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, FulltextQuery):
-            return False
-        else:
-            return self.substr == other.substr
+        return isinstance(other, FulltextQuery) and self.substr == other.substr
 
     def __lt__(self, other):
         if not isinstance(other, FulltextQuery):
-            return not isinstance(other, (TagQuery, TagWildcardQuery))
+            return type(self).__name__ < type(other).__name__
         else:
             return self.substr < other.substr
 
@@ -111,14 +102,11 @@ class NotQuery(Query):
         return visitor.visit_not_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, NotQuery):
-            return False
-        else:
-            return self.child == other.child
+        return isinstance(other, NotQuery) and self.child == other.child
 
     def __lt__(self, other):
         if not isinstance(other, NotQuery):
-            return not isinstance(other, (TagQuery, TagWildcardQuery, FulltextQuery))
+            return type(self).__name__ < type(other).__name__
         else:
             return self.child < other.child
 
@@ -131,15 +119,11 @@ class AndQuery(Query):
         return visitor.visit_and_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, AndQuery):
-            return False
-        else:
-            return self.children == other.children
+        return isinstance(other, AndQuery) and self.children == other.children
 
     def __lt__(self, other):
         if not isinstance(other, AndQuery):
-            return not isinstance(other, (
-                TagQuery, TagWildcardQuery, FulltextQuery, NotQuery))
+            return type(self).__name__ < type(other).__name__
         else:
             return self.children < other.children
 
@@ -152,15 +136,12 @@ class OrQuery(Query):
         return visitor.visit_or_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, OrQuery):
-            return False
-        else:
-            return self.children == other.children
+        return (isinstance(other, OrQuery)
+                and self.children == other.children)
 
     def __lt__(self, other):
         if not isinstance(other, OrQuery):
-            return not isinstance(other, (
-                TagQuery, TagWildcardQuery, FulltextQuery, NotQuery, AndQuery))
+            return type(self).__name__ < type(other).__name__
         else:
             return self.children < other.children
 
@@ -173,21 +154,41 @@ class DateQuery(Query):
         return visitor.visit_date_query(self, *args)
 
     def __eq__(self, other):
-        if not isinstance(other, DateQuery):
-            return False
-        else:
-            return (self.is_before == other.is_before 
-                    and self.timestamp == other.timestamp)
+        return (
+                isinstance(other, DateQuery) 
+                and self.is_before == other.is_before
+                and self.timestamp == other.timestamp)
 
     def __lt__(self, other):
         if not isinstance(other, OrQuery):
-            return not isinstance(other, (
-                TagQuery, TagWildcardQuery, 
-                FulltextQuery, NotQuery, AndQuery, OrQuery))
+            return type(self).__name__ < type(other).__name__
         else:
-            return ((self.is_before, self.timestamp) 
+            return ((self.is_before, self.timestamp)
                     <
                     (other.is_before, other.timestamp))
+
+class StatelessQueryTerminal(Query):
+    def __eq__(self, other):
+        return isinstance(other, type(self))
+
+    def __lt__(self, other):
+        if not isinstance(other, type(self)):
+            return type(self).__name__ < type(other).__name__
+        else:
+            return False
+
+class DatedQuery(StatelessQueryTerminal):
+    def visit(self, visitor, *args):
+        return visitor.visit_dated_query(self, *args)
+
+class NoHideQuery(StatelessQueryTerminal):
+    def visit(self, visitor, *args):
+        return visitor.visit_no_hide_query(self, *args)
+
+class SortByDateQuery(StatelessQueryTerminal):
+    def visit(self, visitor, *args):
+        return visitor.visit_sort_by_date(self, *args)
+
 
 
 
@@ -257,18 +258,18 @@ class StringifyVisitor(object):
                 return "not %s" % q.child.visit(self, _PREC_NOT)
 
     def visit_and_query(self, q, enclosing_prec=0):
-        me = " ".join(child.visit(self, _PREC_AND) 
+        me = " ".join(child.visit(self, _PREC_AND)
                 for child in q.children)
-        
+
         if enclosing_prec > _PREC_AND:
             return "(%s)" % me
         else:
             return me
 
     def visit_or_query(self, q, enclosing_prec=0):
-        me = " or ".join(child.visit(self, _PREC_OR) 
+        me = " or ".join(child.visit(self, _PREC_OR)
                 for child in q.children)
-        
+
         if enclosing_prec > _PREC_OR:
             return "(%s)" % me
         else:
@@ -284,32 +285,45 @@ class StringifyVisitor(object):
         return "%s(%s)" % (name,
                 datetime.fromtimestamp(q.timestamp).strftime("%d %b %Y %T"))
 
+    def visit_dated_query(self, q, enclosing_prec=0):
+        return "dated"
+
+    def visit_no_hide_query(self, q, enclosing_prec=0):
+        return "nohide"
+
+    def visit_sort_by_date(self, q, enclosing_prec=0):
+        return "sortbydate"
 
 
 
 class ReprVisitor(object):
     def visit_tag_query(self, q):
-        return "%s(%s)" % (q.__class__.__name__, repr(q.name))
+        return "%s(%s)" % (type(q).__name__, repr(q.name))
 
     def visit_tag_wildcard_query(self, q):
-        return "%s(%s)" % (q.__class__.__name__, repr(q.name))
+        return "%s(%s)" % (type(q).__name__, repr(q.name))
 
     def visit_fulltext_query(self, q):
-        return "%s(%s)" % (q.__class__.__name__, repr(q.substr))
+        return "%s(%s)" % (type(q).__name__, repr(q.substr))
 
     def visit_not_query(self, q):
-        return "%s(%s)" % (q.__class__.__name__, repr(q.child))
+        return "%s(%s)" % (type(q).__name__, repr(q.child))
 
     def visit_and_query(self, q):
-        return "%s(%s)" % (q.__class__.__name__, repr(q.children))
+        return "%s(%s)" % (type(q).__name__, repr(q.children))
 
     def visit_or_query(self, q):
-        return "%s(%s)" % (q.__class__.__name__, repr(q.children))
+        return "%s(%s)" % (type(q).__name__, repr(q.children))
 
     def visit_date_query(self, q):
-        return "%s(%s, %s)" % (q.__class__.__name__, 
+        return "%s(%s, %s)" % (q.__class__.__name__,
                 repr(q.is_before), repr(q.timestamp))
 
+    def visit_dated_query(self, q):
+        return "%s()" % type(q).__name__
+
+    visit_no_hide_query = visit_dated_query
+    visit_sort_by_date = visit_dated_query
 
 
 
@@ -341,6 +355,10 @@ class TagListVisitor(object):
     def visit_date_query(self, q):
         return []
 
+    visit_dated_query = visit_date_query
+    visit_no_hide_query = visit_date_query
+    visit_sort_by_date = visit_date_query
+
 
 
 
@@ -352,6 +370,9 @@ _openpar = intern("openpar")
 _closepar = intern("closepar")
 _before = intern("before")
 _after = intern("after")
+_dated = intern("dated")
+_nohide = intern("nohide")
+_sortbydate = intern("sortbydate")
 _tag = intern("tag")
 _negtag = intern("negtag")
 _fulltext = intern("fulltext")
@@ -369,6 +390,9 @@ _LEX_TABLE = [
     (_closepar, RE(r"\)")),
     (_before, RE(r"before\(([-:, A-Za-z0-9]+)\)")),
     (_after, RE(r"after\(([-:, A-Za-z0-9]+)\)")),
+    (_dated, RE(r"dated\b")),
+    (_nohide, RE(r"nohide\b")),
+    (_sortbydate, RE(r"sortbydate\b")),
     (_tag, RE(r"[.a-zA-Z0-9?*]+")),
     (_negtag, RE(r"-[.a-zA-Z0-9?*]+")),
     (_fulltext, RE(r'".*?(?!\\\\)"')),
@@ -378,7 +402,13 @@ _LEX_TABLE = [
 
 
 
-_TERMINALS = [_tag, _negtag, _fulltext]
+_STATELESS_TERMINALS = {
+        _dated: DatedQuery(), 
+        _nohide: NoHideQuery(),
+        _sortbydate: SortByDateQuery()
+        }
+
+_TERMINALS = [_tag, _negtag, _fulltext] + list(_STATELESS_TERMINALS.iterkeys())
 
 
 
@@ -393,6 +423,12 @@ def parse_query(expr_str):
             return NotQuery(make_tag_query(pstate.next_str_and_advance()[1:]))
         elif next_tag is _fulltext:
             return FulltextQuery(pstate.next_str_and_advance()[1:-1])
+        elif next_tag is _dated:
+            pstate.advance()
+            return DatedQuery()
+        elif next_tag in _STATELESS_TERMINALS:
+            pstate.advance()
+            return _STATELESS_TERMINALS[next_tag]
         elif next_tag in [_before, _after]:
             from parsedatetime.parsedatetime import Calendar
             cal = Calendar()
@@ -422,7 +458,7 @@ def parse_query(expr_str):
             did_something = False
             if pstate.is_at_end():
                 return left_query
-            
+
             next_tag = pstate.next_tag()
 
             if next_tag is _and and _PREC_AND > min_precedence:
@@ -439,10 +475,10 @@ def parse_query(expr_str):
 
         return left_query
 
-        
+
     from synoptic.lex import LexIterator, lex
     pstate = LexIterator(
-        [(tag, s, idx, matchobj) 
+        [(tag, s, idx, matchobj)
          for (tag, s, idx, matchobj) in lex(_LEX_TABLE, expr_str)
          if tag is not _whitespace], expr_str)
 

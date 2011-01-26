@@ -115,6 +115,7 @@ It stands on the shoulders of the following giants:
 * [Setuptools](http://peak.telecommunity.com/DevCenter/setuptools) automatically pulls together all these dependencies so alll you have to type to install synoptic is `easy_install synoptic`.
 * [Tango Icon Theme](http://tango.freedesktop.org), the pretty pictures you click on.
 * [reallysimplehistory](http://code.google.com/p/reallysimplehistory/), browser history management from Javascript.
+* [JavaScript sprintf](http://www.diveintojavascript.com/projects/javascript-sprintf), string formatting for Javascript.
 
 and lastly:
 

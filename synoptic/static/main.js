@@ -41,6 +41,28 @@ function zero_pad(s, min_length)
 
 
 
+function format_timestamp(timestamp, force_year)
+{
+  var dt = new Date(timestamp*1000);
+  var now = new Date();
+
+  var result;
+
+  if (dt.getFullYear() == now.getFullYear() && !force_year)
+    result = sprintf("%d/%d", dt.getMonth()+1, dt.getDate());
+  else
+    result = sprintf("%d/%d/%d",
+      dt.getMonth()+1, dt.getDate(), dt.getFullYear());
+
+  if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
+    result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
+
+  return result;
+}
+
+
+
+
 // String extension  -----------------------------------------------------------
 String.method("allreplace", function(from, to)
 {
@@ -126,6 +148,12 @@ ItemManager.method("set_from_obj", function(arg, is_historic)
   this.contents = arg.contents;
   this.contents_html = arg.contents_html;
 
+  this.start_date = arg.start_date;
+  this.end_date = arg.end_date;
+  this.bump_interval = arg.bump_interval;
+  this.hide_until = arg.hide_until;
+  this.highlight_at = arg.highlight_at;
+
   this.is_historic = is_historic;
 });
 
@@ -197,6 +225,28 @@ ItemManager.method("fill_item_div", function(history)
     if (contents_html == null)
       contents_html = "(deleted)";
 
+    function get_date_info()
+    {
+      var date_info = "";
+      var now = new Date();
+
+      if (self.start_date)
+        date_info += ('<span class="start-date">'
+            +format_timestamp(self.start_date)+'</span>');
+      if (self.end_date)
+        date_info += ('<span class="end-date"> &mdash;'
+            +format_timestamp(self.end_date)+'</span>');
+      if (self.hide_until && self.hide_until < now.getTime())
+      {
+        date_info += ('<span class="hide-date">Hidden until '
+            +format_timestamp(self.hide_until)+'</span>');
+      }
+
+      if (date_info.length)
+        return '<div class="date-info">'+date_info+'</div>';
+      else
+        return '';
+    }
 
     // generate item html
     if (!self.is_historic)
@@ -215,10 +265,12 @@ ItemManager.method("fill_item_div", function(history)
         '</div>'+
         '<div id="item_history_[id]" class="item_history ui-corner-all">'+hist_html+'</div>'+
         '</div>'+
+        '[dateinfo]'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
         .allreplace('[tags]', format_tag_links(self.tags))
         .allreplace('[contents]', contents_html)
+        .allreplace('[dateinfo]', get_date_info())
         );
       $('#edit_'+self.id).click(function(){ self.begin_edit() });
       $('#delete_'+self.id).click(function(){ self.do_delete() });
@@ -238,10 +290,12 @@ ItemManager.method("fill_item_div", function(history)
         '</div>'+
         '<div id="item_history_[id]" class="item_history ui-corner-all">'+hist_html+'</div>'+
         '</div>'+
+        '[dateinfo]'+
         '<div id="item_contents_[id]" class="itemcontents">[contents]</div>'
         ).allreplace('[id]', self.id)
         .allreplace('[tags]', format_tag_links(self.tags))
         .allreplace('[contents]', contents_html)
+        .allreplace('[dateinfo]', get_date_info())
         );
       $('#btn_revert_'+self.id).click(function()
         { 
@@ -384,10 +438,32 @@ ItemManager.method("begin_edit", function()
     '</div>'+
     '<div class="itemcontents">'+
     '<textarea id="editor_[id]" cols="80"></textarea>'+
+    '</div>'+
+    '<div class="datecontrols">'+
+    '<div class="whencontrols">'+
+    '<label for="edit_date_[id]">Date:</label>'+
+    '<input type="text" id="edit_date_[id]" size="15"/>'+
+    '<label for="edit_end_[id]">End:</label>'+
+    '<input type="text" id="edit_end_[id]" size="15"/>'+
+    '</div>'+
+    '<div class="remindcontrols">'+
+    '<label for="edit_hide_until_[id]">Hide Until:</label>'+
+    '<input type="text" id="edit_hide_until_[id]" size="15"/>'+
+    '<label for="edit_highlight_at_[id]">Highlight at:</label>'+
+    '<input type="text" id="edit_highlight_at_[id]" size="15"/>'+
+    '</div>'+
+    '<div class="bumpcontrols">'+
+    '<label for="sel_bump_interval_[id]">Bump interval:</label>'+
+    '<select id="sel_bump_interval_[id]" />'+
+    '<input type="button" id="btn_bump_bwd_[id]" value="&lt; Bump"/>'+
+    '<input type="button" id="btn_bump_fwd_[id]" value="Bump &gt;"/>'+
+    '</div>'+
     '</div>'
     ).allreplace("[id]",  self.id)
     );
   self.div.addClass("editing");
+
+  // {{{ initial content setup
 
   // default to current search tags
   if (self.id == null)
@@ -405,11 +481,12 @@ ItemManager.method("begin_edit", function()
 
   $("#editor_"+self.id).val(self.contents);
 
-  self.manager.install_focus_handlers($("#editor_"+self.id));
+  self.manager.install_focus_handlers($('input:text', self.div));
+  self.manager.install_focus_handlers($("textarea", self.div));
+
   $("#editor_"+self.id).get(0).focus();
   $("#editor_"+self.id).height(text_height);
 
-  self.manager.install_focus_handlers($("#edit_tags_"+self.id));
   $("#edit_tags_"+self.id).autocomplete("tags/get_filter",
       { 
         delay: 100, 
@@ -418,7 +495,42 @@ ItemManager.method("begin_edit", function()
         cacheLength:1,
         multipleSeparator:","
       });
+
+  // {{{ date - related
+
+  $("#edit_date_"+self.id).datepicker({ constrainInput: false, showOn: 'button' });
+  $("#edit_end_"+self.id).datepicker({ constrainInput: false, showOn: 'button' });
+  $("#edit_hide_until_"+self.id).datepicker({ constrainInput: false, showOn: 'button' });
+  $("#edit_highlight_at_"+self.id).datepicker({ constrainInput: false, showOn: 'button' });
+  $(".ui-datepicker-trigger", self.div).attr("tabindex", -1);
+
+  function set_date_val(name, value)
+  {
+    if (value) $(name).val(format_timestamp(value, true));
+  }
+
+  set_date_val("#edit_date_"+self.id, self.start_date);
+  set_date_val("#edit_end_"+self.id, self.end_date);
+  set_date_val("#edit_hide_until_"+self.id, self.hide_until);
+  set_date_val("#edit_highlight_at_"+self.id, self.highlight_at);
+
+  var bump_intv_html;
+
+  for (var i in BUMP_INTERVALS)
+  {
+    bump_intv_html += 
+      '<option value="'+BUMP_INTERVALS[i][0]+'">'+BUMP_INTERVALS[i][1]+"</option>";
+  }
+
+  $("#sel_bump_interval_"+self.id).html(bump_intv_html);
+
+  // }}}
+
+  // }}}
+
   self.div.get(0).scrollIntoView(false);
+
+  // {{{ button responses
 
   $("#edit_ok_"+self.id).click(function(){
     self.div.removeClass("editing");
@@ -432,7 +544,7 @@ ItemManager.method("begin_edit", function()
         return;
       }
 
-    self.contents = $("#editor_"+self.id).val();
+    var new_contents = $("#editor_"+self.id).val();
 
     self.manager.check_if_results_are_current();
     ++self.manager.up_to_date_check_inhibitions;
@@ -444,8 +556,16 @@ ItemManager.method("begin_edit", function()
       data: {json: JSON.stringify({
         id: self.id,
         tags: tags,
-        contents: self.contents,
-        current_query: $("#search").val()
+
+        contents: new_contents,
+        current_query: $("#search").val(),
+
+        start_date: $("#edit_date_"+self.id).val(),
+        end_date: $("#edit_end_"+self.id).val(),
+        hide_until: $("#edit_hide_until_"+self.id).val(),
+        highlight_at: $("#edit_highlight_at_"+self.id).val(),
+        bump_interval: $("#bump_interval_"+self.id).val()
+
       })},
 
       error: function(req, stat, err) 
@@ -481,6 +601,7 @@ ItemManager.method("begin_edit", function()
     });
   });
 
+
   $("#edit_cancel_"+self.id).click(function(){
     --edit_count;
     self.div.removeClass("editing");
@@ -488,6 +609,8 @@ ItemManager.method("begin_edit", function()
     self.fill_item_div();
     self.manager.redraw_cursor();
   });
+
+  // }}}
 });
 
 
@@ -1508,3 +1631,5 @@ window.dhtmlHistory.create({
     return JSON.parse(s);
   }
 });
+
+// vim: foldmethod=marker

@@ -63,7 +63,8 @@ def import_file(dbsession, text):
 
         idx += 1  # skip separator
 
-        store_itemversion(dbsession, "\n".join(body), tags, timestamp=timestamp)
+        store_itemversion(dbsession, 
+                contents="\n".join(body), tags=tags, timestamp=timestamp)
 
     dbsession.commit()
 
@@ -325,6 +326,11 @@ class Application(ApplicationBase):
                             "contents_html": ItemVersion.htmlize(
                                 row[itemversions_query.c.contents]),
                             "tags": [],
+                            "start_date": row[itemversions_query.c.start_date],
+                            "end_date": row[itemversions_query.c.end_date],
+                            "bump_interval": row[itemversions_query.c.bump_interval],
+                            "hide_until": row[itemversions_query.c.hide_until],
+                            "highlight_at": row[itemversions_query.c.highlight_at],
                             })
             if row[model.tags.c.name] is not None:
                 result[-1]["tags"].append(row[model.tags.c.name])
@@ -623,15 +629,18 @@ class Application(ApplicationBase):
         from simplejson import loads, dumps
         data = loads(request.POST["json"])
 
+        current_query = data.pop("current_query", None)
+        deleting = data["contents"] is None
+
         # if view ordering is present for current query,
         # make sure this entry shows up last
-        if data["contents"] is not None:
+        if not deleting:
             # if we're not deleting
             from synoptic.datamodel import ViewOrderingHandler
             from synoptic.query import parse_query
             voh = ViewOrderingHandler(
                     request.dbsession, request.datamodel,
-                    parse_query(data["current_query"]))
+                    parse_query(current_query))
             if voh.has_ordering():
                 voh.load()
                 if data["id"] in voh:
@@ -642,8 +651,42 @@ class Application(ApplicationBase):
         else:
             voh = None
 
+        import parsedatetime.parsedatetime as pdt
+        cal = pdt.Calendar()
+        import datetime
+        import time
+
+        def parse_datetime(name, rel_to_name=None):
+            if data[name]:
+                if rel_to_name is not None and data[rel_to_name] is not None:
+                    rel_to = datetime.datetime.fromtimestamp(
+                            data[rel_to_name]).timetuple()
+                else:
+                    rel_to = None
+
+                t_struct, parsed_as = cal.parse(data[name], rel_to)
+                if parsed_as:
+                    t_struct = list(t_struct)
+                    if parsed_as == 1:
+                        # only parsed as date, eliminate time part
+                        t_struct[3:6] = (0,0,0)
+
+                    t_struct[8] = -1 # isdst -- we don't know if that is DST
+
+                    data[name] = time.mktime(t_struct)
+                else:
+                    data[name] = None
+            else:
+                data[name] = None
+
+        if not deleting:
+            parse_datetime("start_date")
+            parse_datetime("end_date", "start_date")
+            parse_datetime("hide_until", "start_date")
+            parse_datetime("highlight_at", "start_date")
+
         itemversion = store_itemversion(request.dbsession,
-                data["contents"], data["tags"], data["id"])
+                **data)
 
         request.dbsession.commit() # fills in the item_id
 
@@ -690,12 +733,19 @@ class Application(ApplicationBase):
           "inheritance.js",
           "json2.js",
           "rsh.js",
+          "sprintf.js",
           "main.js",
           ]
         sep = "/* %s */\n" % (75*"-")
-        return request.respond("".join(
+        all_js = "".join(
             "%s/* %s */\n%s%s" % (sep, fn, sep, get_static_file(fn)[0])
-            for fn in all_js_filenames),
+            for fn in all_js_filenames)
+
+        from synoptic.datamodel import BUMP_INTERVALS
+        from simplejson import dumps
+        all_js = "var BUMP_INTERVALS = %s;\n%s" % (dumps(BUMP_INTERVALS), all_js)
+
+        return request.respond(all_js,
             mimetype="text/javascript")
 
     def http_quit(self, request):
