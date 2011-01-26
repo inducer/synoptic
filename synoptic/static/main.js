@@ -544,7 +544,8 @@ ItemManager.method("begin_edit", function()
         return;
       }
 
-    var new_contents = $("#editor_"+self.id).val();
+    // preserve contents in case saving fails
+    self.contents = $("#editor_"+self.id).val();
 
     self.manager.check_if_results_are_current();
     ++self.manager.up_to_date_check_inhibitions;
@@ -557,7 +558,7 @@ ItemManager.method("begin_edit", function()
         id: self.id,
         tags: tags,
 
-        contents: new_contents,
+        contents: self.contents,
         current_query: $("#search").val(),
 
         start_date: $("#edit_date_"+self.id).val(),
