@@ -523,6 +523,8 @@ ItemManager.method("begin_edit", function()
   }
 
   $("#sel_bump_interval_"+self.id).html(bump_intv_html);
+  if (self.bump_interval)
+    $("#sel_bump_interval_"+self.id).val(self.bump_interval);
 
   // }}}
 
@@ -544,8 +546,7 @@ ItemManager.method("begin_edit", function()
         return;
       }
 
-    // preserve contents in case saving fails
-    self.contents = $("#editor_"+self.id).val();
+    var new_contents = $("#editor_"+self.id).val();
 
     self.manager.check_if_results_are_current();
     ++self.manager.up_to_date_check_inhibitions;
@@ -558,14 +559,14 @@ ItemManager.method("begin_edit", function()
         id: self.id,
         tags: tags,
 
-        contents: self.contents,
+        contents: new_contents,
         current_query: $("#search").val(),
 
         start_date: $("#edit_date_"+self.id).val(),
         end_date: $("#edit_end_"+self.id).val(),
         hide_until: $("#edit_hide_until_"+self.id).val(),
         highlight_at: $("#edit_highlight_at_"+self.id).val(),
-        bump_interval: $("#bump_interval_"+self.id).val()
+        bump_interval: $("#sel_bump_interval_"+self.id).val()
 
       })},
 
@@ -575,6 +576,9 @@ ItemManager.method("begin_edit", function()
         set_message("Saving failed.");
         --self.manager.up_to_date_check_inhibitions;
         self.begin_edit();
+
+        // preserve contents in case saving fails
+        $("#editor_"+self.id).val(new_contents);
       },
 
       success: function(data, msg) 
@@ -602,14 +606,46 @@ ItemManager.method("begin_edit", function()
     });
   });
 
-
   $("#edit_cancel_"+self.id).click(function(){
     --edit_count;
     self.div.removeClass("editing");
-
     self.fill_item_div();
     self.manager.redraw_cursor();
   });
+
+  function bump(dir)
+  {
+    $.ajax({
+      type: 'POST',
+      dataType: 'json',
+      url: 'item/datebump',
+      data: {json: JSON.stringify({
+        id: self.id,
+        bump_direction: dir,
+        start_date: $("#edit_date_"+self.id).val(),
+        end_date: $("#edit_end_"+self.id).val(),
+        hide_until: $("#edit_hide_until_"+self.id).val(),
+        highlight_at: $("#edit_highlight_at_"+self.id).val(),
+        bump_interval: $("#sel_bump_interval_"+self.id).val()
+      })},
+
+      error: function(req, stat, err) 
+      {
+        set_message("Bump server request failed.");
+      },
+
+      success: function(data, msg) 
+      {
+        set_date_val("#edit_date_"+self.id, data.start_date);
+        set_date_val("#edit_end_"+self.id, data.end_date);
+        set_date_val("#edit_hide_until_"+self.id, data.hide_until);
+        set_date_val("#edit_highlight_at_"+self.id, data.highlight_at);
+      }
+    });
+  }
+
+  $("#btn_bump_fwd_"+self.id).click(function () { bump(1); } );
+  $("#btn_bump_bwd_"+self.id).click(function () { bump(-1); } );
 
   // }}}
 });

@@ -257,6 +257,7 @@ class Application(ApplicationBase):
                     (r'items/export$', self.http_export_items),
                     (r'item/history/get$', self.http_get_item_history),
                     (r'item/store$', self.http_store_item),
+                    (r'item/datebump$', self.http_item_datebump),
                     (r'item/reorder$', self.http_reorder_item),
                     (r'tags/get_filter$', self.http_get_tags),
                     (r'tags/get_for_query$', self.http_get_tags_for_query),
@@ -625,6 +626,35 @@ class Application(ApplicationBase):
         return request.respond(dumps(json),
                 mimetype="text/plain")
 
+    @staticmethod
+    def parse_datetime(data, name, rel_to_name=None):
+        import parsedatetime.parsedatetime as pdt
+        cal = pdt.Calendar()
+        import datetime
+        import time
+
+        if data[name]:
+            if rel_to_name is not None and data[rel_to_name] is not None:
+                rel_to = datetime.datetime.fromtimestamp(
+                        data[rel_to_name]).timetuple()
+            else:
+                rel_to = None
+
+            t_struct, parsed_as = cal.parse(data[name], rel_to)
+            if parsed_as:
+                t_struct = list(t_struct)
+                if parsed_as == 1:
+                    # only parsed as date, eliminate time part
+                    t_struct[3:6] = (0,0,0)
+
+                t_struct[8] = -1 # isdst -- we don't know if that is DST
+
+                data[name] = time.mktime(t_struct)
+            else:
+                data[name] = None
+        else:
+            data[name] = None
+
     def http_store_item(self, request):
         from simplejson import loads, dumps
         data = loads(request.POST["json"])
@@ -651,39 +681,11 @@ class Application(ApplicationBase):
         else:
             voh = None
 
-        import parsedatetime.parsedatetime as pdt
-        cal = pdt.Calendar()
-        import datetime
-        import time
-
-        def parse_datetime(name, rel_to_name=None):
-            if data[name]:
-                if rel_to_name is not None and data[rel_to_name] is not None:
-                    rel_to = datetime.datetime.fromtimestamp(
-                            data[rel_to_name]).timetuple()
-                else:
-                    rel_to = None
-
-                t_struct, parsed_as = cal.parse(data[name], rel_to)
-                if parsed_as:
-                    t_struct = list(t_struct)
-                    if parsed_as == 1:
-                        # only parsed as date, eliminate time part
-                        t_struct[3:6] = (0,0,0)
-
-                    t_struct[8] = -1 # isdst -- we don't know if that is DST
-
-                    data[name] = time.mktime(t_struct)
-                else:
-                    data[name] = None
-            else:
-                data[name] = None
-
         if not deleting:
-            parse_datetime("start_date")
-            parse_datetime("end_date", "start_date")
-            parse_datetime("hide_until", "start_date")
-            parse_datetime("highlight_at", "start_date")
+            self.parse_datetime(data, "start_date")
+            self.parse_datetime(data, "end_date", "start_date")
+            self.parse_datetime(data, "hide_until", "start_date")
+            self.parse_datetime(data, "highlight_at", "start_date")
 
         itemversion = store_itemversion(request.dbsession,
                 **data)
@@ -698,6 +700,78 @@ class Application(ApplicationBase):
         from simplejson import dumps
         return request.respond(
                 dumps(self.item_to_json(itemversion)),
+                mimetype="text/plain")
+
+    def http_item_datebump(self, request):
+        from simplejson import loads, dumps
+        data = loads(request.POST["json"])
+
+        bump_interval = data["bump_interval"]
+        bump_direction = data["bump_direction"]
+
+        self.parse_datetime(data, "start_date")
+        self.parse_datetime(data, "end_date", "start_date")
+        self.parse_datetime(data, "hide_until", "start_date")
+        self.parse_datetime(data, "highlight_at", "start_date")
+
+        tdelta = None
+        increment_func = None
+
+        import datetime
+        import time
+
+        if bump_interval == "hour":
+            tdelta = datetime.timedelta(hours=bump_direction)
+        elif bump_interval == "day":
+            tdelta = datetime.timedelta(days=bump_direction)
+        elif bump_interval == "week":
+            tdelta = datetime.timedelta(days=7*bump_direction)
+        elif bump_interval == "2week":
+            tdelta = datetime.timedelta(days=14*bump_direction)
+        elif bump_interval == "month":
+            def increment_func(timestamp):
+                dt = datetime.datetime.fromtimestamp(timestamp)
+                year = dt.year
+                month = dt.month + bump_direction
+                day = dt.day
+
+                if month > 12:
+                    month = 1
+                    year += 1
+                if month < 1:
+                    month = 12
+                    year -= 1
+
+                attempt_count = 10
+                while True:
+                    try:
+                        dt = dt.replace(year=year, month=month, day=day)
+                    except ValueError:
+                        day -= 1
+                        attempt_count -= 1
+                        if attempt_count == 0:
+                            raise
+                    else:
+                        break
+                return time.mktime(dt.timetuple())
+        elif bump_interval == "year":
+            tdelta = datetime.timedelta(years=bump_direction)
+        else:
+            raise RuntimeError("unknown bump_interval")
+
+        if increment_func is None:
+            def increment_func(timestamp):
+                dt = datetime.datetime.fromtimestamp(timestamp)
+                dt = dt + tdelta
+                return time.mktime(dt.timetuple())
+
+        for key in ["start_date", "end_date", "hide_until", "highlight_at"]:
+            if data[key] is not None:
+                data[key] = increment_func(data[key])
+
+        from simplejson import dumps
+        return request.respond(
+                dumps(data),
                 mimetype="text/plain")
 
     def http_reorder_item(self, request):
