@@ -262,6 +262,8 @@ class Application(ApplicationBase):
                     (r'tags/get_filter$', self.http_get_tags),
                     (r'tags/get_for_query$', self.http_get_tags_for_query),
                     (r'tags/rename$', self.http_rename_tag),
+                    (r'calendar$', self.http_calendar),
+                    (r'calendar/data$', self.http_calendar_data),
                     (r'app/get_all_js$', self.http_get_all_js),
                     (r'app/quit$', self.http_quit),
                     (r'static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
@@ -793,6 +795,76 @@ class Application(ApplicationBase):
 
         return request.respond("", mimetype="text/plain")
 
+    # {{{ calendar
+
+    def http_calendar(self, request):
+        versions = self.get_itemversions_for_request(request)
+
+        from html import calendar_page
+        return request.respond(
+                calendar_page({
+                    "title": "Synoptic Printout",
+                    "body": "<hr/>".join(
+                        '<div class="itemcontents">%s</div>' % v.contents_html()
+                        for v in versions),
+                    }))
+
+    def http_calendar_data(self, request):
+        start = float(request.GET.get("start", 0))
+        end = float(request.GET.get("end", 0))
+        max_timestamp = None # FIXME
+
+        from_obj = get_current_itemversions_join(
+                request.datamodel, max_timestamp)
+
+        from sqlalchemy.sql import select, or_, and_
+        where = or_(
+            # start_date in range
+            and_(
+                start <= ItemVersion.start_date,
+                ItemVersion.start_date <= end),
+            # end_date in range
+            and_(
+                start <= ItemVersion.end_date,
+                ItemVersion.end_date <= end),
+            # span entire range
+            and_(
+                ItemVersion.start_date <= start,
+                ItemVersion.end_date <= end)
+            )
+
+        qry = select([request.datamodel.itemversions], from_obj=from_obj) \
+                .where(where)
+
+        from time import localtime
+        data = []
+        for item_ver in (request.dbsession.query(ItemVersion).from_statement(qry)):
+
+            all_day = True
+            if item_ver.start_date is not None:
+                lt = localtime(item_ver.start_date)
+                if (lt.tm_hour, lt.tm_min, lt.tm_sec) != (0, 0, 0):
+                    all_day = False
+            if item_ver.end_date is not None:
+                lt = localtime(item_ver.end_date)
+                if (lt.tm_hour, lt.tm_min, lt.tm_sec) != (0, 0, 0):
+                    all_day = False
+
+            data.append(dict(
+                id=item_ver.id,
+                title=item_ver.contents,
+                start=item_ver.start_date,
+                end=item_ver.end_date,
+                allDay=all_day,
+                ))
+
+        from simplejson import dumps
+        return request.respond(
+                dumps(data),
+                mimetype="text/plain")
+
+    # }}}
+
     def http_get_all_js(self, request):
         all_js_filenames = [
           "jquery.js",
@@ -806,7 +878,6 @@ class Application(ApplicationBase):
           # http://bugs.jqueryui.com/ticket/5479
           "jquery.ui.datepicker.js", 
 
-          #"jquery.autocomplete.js",
           "inheritance.js",
           "json2.js",
           "rsh.js",

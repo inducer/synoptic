@@ -61,6 +61,16 @@ body, html {
   padding-left:10px;
 }
 
+#btn_search_clear {
+  background: url("edit-clear.png") no-repeat scroll 0 0 transparent;
+  position:relative;
+  right:25px;
+  top:1px;
+  width:22px;
+  height:22px;
+  border:0;
+}
+
 #hiddenitems {
   display:none;
 }

@@ -109,13 +109,14 @@ It stands on the shoulders of the following giants:
 * [SQLAlchemy](http://www.sqlalchemy.org), the Object-Relational Mapper and performer of incredible SQL magic.
 * [Python Paste](http://pythonpaste.org/), bits of usefulness for WSGI.
 * [jQuery](http://jquery.com/), makes hacking Javascript fun again. *[included, with several plugins]*
+* [jQuery UI](http://jquery UI.com/), makes hacking Javascript fun again. *[included, with several plugins]*
 * [Python Markdown](http://www.freewisdom.org/projects/python-markdown/), the Wiki syntax *[included]*
 * [SimpleJSON](http://www.undefined.org/python/), a Python/JSON interface.
 * [Parsedatetime](http://pypi.python.org/pypi/parsedatetime/), a natural-language date parser.
-* [Setuptools](http://peak.telecommunity.com/DevCenter/setuptools) automatically pulls together all these dependencies so alll you have to type to install synoptic is `easy_install synoptic`.
 * [Tango Icon Theme](http://tango.freedesktop.org), the pretty pictures you click on.
 * [reallysimplehistory](http://code.google.com/p/reallysimplehistory/), browser history management from Javascript.
 * [JavaScript sprintf](http://www.diveintojavascript.com/projects/javascript-sprintf), string formatting for Javascript.
+* [FullCalendar](http://arshaw.com/fullcalendar/), Calendar view of notes.
 
 and lastly:
 

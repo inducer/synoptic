@@ -1067,6 +1067,10 @@ ItemCollectionManager.method("setup_toolbar", function()
 
       window.open(printurl);
     });
+  $("#btn_calendar").click(function()
+    {
+      window.open("calendar");
+    });
   $("#btn_export").click(function()
     {
       var exporturl = "items/export?query="+escape($("#search").val());

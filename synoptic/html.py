@@ -29,6 +29,32 @@ def printpage(context):
 
 
 
+def calendar_page(context):
+    return """
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+         "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+    <html>
+    <head>
+      <title>Synoptic Calendar</title>
+      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
+      <link rel="stylesheet" type="text/css" href="static/calendar.css" />
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/jquery-ui.js"></script>
+      <script type="text/javascript" src="static/fullcalendar.js"></script>
+      <script type="text/javascript" src="static/calendar.js"></script>
+    </head>
+    <body>
+      <center>
+      <div id="calendar"></div>
+      </center>
+    </body>
+    </html>
+    """ % context
+
+
+
+
 def page(context):
     return """
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
@@ -36,7 +62,7 @@ def page(context):
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" type="text/css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/style.css"/>
       <link rel="stylesheet" type="text/css" href="static/content.css"/>
       <link rel="icon" type="image/png" href="static/synoptic.png"/>
@@ -97,13 +123,15 @@ def mainpane(context):
     <div id="mainpane">
       <div id="innermainpane">
         <div id="searchbar">
-          <input type="text" size="50" id="search"/>
-          <img src="static/edit-clear.png" alt="Clear search bar" title="Clear search bar" id="btn_search_clear" class="imagebutton"/>
+          <span id="search-wrapper">
+            <input type="text" size="50" id="search"/>
+            <input type="button" id="btn_search_clear"/>
+          </span>
+          <img src="static/time.png" alt="Calendar" title="Calendar" id="btn_calendar" class="imagebutton"/>
           <img src="static/print.png" alt="Print" title="Print" id="btn_print" class="imagebutton"/>
           <img src="static/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
           <img src="static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
           <img src="static/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
-          <img src="static/time.png" alt="Calendar" title="Calendar" id="btn_calendar" class="imagebutton"/>
           <img src="static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
           <img src="static/copy.png" alt="Copy (relative) link URL" title="Copy (relative) link URL" id="btn_copy" class="imagebutton"/>
           <div id="linkurl">
