@@ -382,7 +382,6 @@ ItemManager.method("fill_item_div", function(history)
       if (now > self.highlight_at)
       {
         self.div.addClass("highlighted");
-        set_message("immed hl"+now+" "+self.highlight_at);
       }
       else
       {
@@ -1627,7 +1626,7 @@ function update_tag_cloud_height()
       $(window).height()
       - $("#subtagcloud").offset().top
       - bottom_size
-      - 20
+      - 50
       );
 
   $(".tagcloud").css("max-height", tc_height+"px");

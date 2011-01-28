@@ -799,12 +799,13 @@ class Application(ApplicationBase):
           "jquery.bgiframe.js",
           "jquery.dimensions.js",
           "jquery.contextmenu.r2.js",
+          "jquery-ui.js",
+
+          # override because of z-index bug
+          # http://bugs.jqueryui.com/ticket/5479
+          "jquery.ui.datepicker.js", 
+
           "jquery.autocomplete.js",
-          "jquery-ui/ui.core.js",
-          "jquery-ui/ui.slider.js",
-          "jquery-ui/ui.tabs.js",
-          "jquery-ui/ui.sortable.js",
-          "jquery-ui/ui.datepicker.js",
           "inheritance.js",
           "json2.js",
           "rsh.js",

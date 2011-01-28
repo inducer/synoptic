@@ -36,7 +36,7 @@ def page(context):
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" href="static/jquery-ui/themes/base/ui.all.css" type="text/css" media="screen"/>
+      <link rel="stylesheet" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" type="text/css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/style.css"/>
       <link rel="stylesheet" type="text/css" href="static/content.css"/>
       <link rel="icon" type="image/png" href="static/synoptic.png"/>
@@ -103,6 +103,7 @@ def mainpane(context):
           <img src="static/expand-all.png" alt="Expand all" title="Expand all" id="btn_expand" class="imagebutton"/>
           <img src="static/collapse-all.png" alt="Collapse all" title="Collapse all" id="btn_collapse" class="imagebutton"/>
           <img src="static/export.png" alt="Export" title="Export" id="btn_export" class="imagebutton"/>
+          <img src="static/time.png" alt="Calendar" title="Calendar" id="btn_calendar" class="imagebutton"/>
           <img src="static/quit.png" alt="Quit" title="Quit" id="btn_quit" class="imagebutton"/>
           <img src="static/copy.png" alt="Copy (relative) link URL" title="Copy (relative) link URL" id="btn_copy" class="imagebutton"/>
           <div id="linkurl">
