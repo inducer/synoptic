@@ -63,7 +63,7 @@ function format_timestamp(timestamp, force_year)
 
 
 
-// String extension  -----------------------------------------------------------
+// {{{ String extension
 String.method("allreplace", function(from, to)
 {
   var last, current = this;
@@ -89,10 +89,9 @@ function str(val)
     return val.toString();
 }
 
+// }}}
 
-
-
-// misc tools -----------------------------------------------------------------
+// {{{ misc tools
 function re_escape(text) {
   if (!arguments.callee.sRE) {
     var specials = [
@@ -117,10 +116,9 @@ function find_in_array(ary, item)
   return -1;
 }
 
+// }}}
 
-
-
-// ItemManager  --------------------------------------------------------------------
+// {{{ ItemManager
 function ItemManager(mgr, arg, is_historic)
 {
   this.manager = mgr;
@@ -134,6 +132,8 @@ function ItemManager(mgr, arg, is_historic)
     this.id = null;
   else
     this.set_from_obj(arg, is_historic);
+
+  this.timeout_id = null;
 }
 
 
@@ -236,7 +236,7 @@ ItemManager.method("fill_item_div", function(history)
       if (self.end_date)
         date_info += ('<span class="end-date"> &mdash;'
             +format_timestamp(self.end_date)+'</span>');
-      if (self.hide_until && self.hide_until < now.getTime())
+      if (self.hide_until && self.hide_until < now.getTime()/1000)
       {
         date_info += ('<span class="hide-date">Hidden until '
             +format_timestamp(self.hide_until)+'</span>');
@@ -374,7 +374,42 @@ ItemManager.method("fill_item_div", function(history)
       for (var i = 0; i < history.length; ++i)
         bind_version_click_handler(history[i], i != 0);
     }
+
+    if (self.highlight_at)
+    {
+      var now = new Date().getTime()/1000;
+
+      if (now > self.highlight_at)
+      {
+        self.div.addClass("highlighted");
+        set_message("immed hl"+now+" "+self.highlight_at);
+      }
+      else
+      {
+        // set up a timer to highlight the element when it's time
+        self.div.removeClass("highlighted");
+
+        if (self.timeout_id != null)
+          window.clearTimeout(self.timeout_id);
+
+        self.timeout_id = window.setTimeout(function () {
+          self.div.addClass("highlighted");
+        }, (self.highlight_at - now)*1000);
+
+        // make sure the timeout gets killed when the page is refilled
+        self.manager.item_timeouts.push(self.timeout_id);
+      }
+    }
   }
+});
+
+
+ItemManager.method("set_highlight_for_timestamp", function(timestamp)
+{
+  if (timestamp > self.highlight_at)
+    self.div.addClass("highlighted");
+  else
+    self.div.removeClass("highlighted");
 });
 
 
@@ -707,10 +742,9 @@ ItemManager.method("load_from_server", function(when_done)
     });
 });
 
+// }}}
 
-
-
-// ItemCollectionManager ----------------------------------------------------------------
+// {{{ ItemCollectionManager
 function ItemCollectionManager()
 {
   var self = this;
@@ -724,6 +758,8 @@ function ItemCollectionManager()
   self.setup_toolbar();
 
   self.query_tags = [];
+
+  self.item_timeouts = [];
 
   // catch out-of-date results
   window.setTimeout(function() { self.check_if_results_are_current() }, 
@@ -1211,6 +1247,13 @@ ItemCollectionManager.method("fill", function(query, timestamp, force)
   }
 
   var self = this;
+
+  while (self.item_timeouts.length)
+  {
+    timeout = self.item_timeouts.pop();
+    window.clearTimeout(timeout);
+  }
+
   if (!force && query == self.last_query && timestamp == self.last_timestamp)
     return;
 
@@ -1332,10 +1375,10 @@ ItemCollectionManager.method("update_result_hash_and_uninhibit_check", function(
   }
 });
 
+// }}}
 
+// {{{ tag cloud
 
-
-// tag cloud -------------------------------------------------------------------
 function is_valid_tag(tag)
 {
   return tag.match(/^[.a-zA-Z0-9]+$/) != null;
@@ -1568,7 +1611,6 @@ function add_tag_behavior(jq_result)
 
 
 
-// functions  ------------------------------------------------------------------
 function update_tag_cloud_height()
 {
   var cloud_bottom_offset;
@@ -1590,6 +1632,10 @@ function update_tag_cloud_height()
 
   $(".tagcloud").css("max-height", tc_height+"px");
 }
+
+
+
+// }}}
 
 
 

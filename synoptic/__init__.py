@@ -753,6 +753,7 @@ class Application(ApplicationBase):
                             raise
                     else:
                         break
+
                 return time.mktime(dt.timetuple())
         elif bump_interval == "year":
             tdelta = datetime.timedelta(years=bump_direction)

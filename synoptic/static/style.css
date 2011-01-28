@@ -68,6 +68,19 @@ body, html {
   min-height:28px;
 }
 
+.item.highlighted {
+  background-color:#fcc;
+}
+.item.focused.highlighted {
+  background-color:#faa;
+}
+.item.highlighted.editing {
+  background-color:#ececff;
+}
+.item.focused {
+  background-color:#ececff;
+}
+
 .itemcontents {
   padding:5px;
   margin-left:20px;
@@ -382,9 +395,7 @@ div.item_history {
   background-position:5px 2px;
 }
 
-.item.focused {
-  background-color:#ececff;
-}
+
 
 /* collapser ---------------------------------------------------------------- */
 
