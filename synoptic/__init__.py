@@ -412,8 +412,9 @@ class Application(ApplicationBase):
                 request.dbsession, request.datamodel,
                 startswith=query, limit=limit)
 
+        from simplejson import dumps
         return request.respond(
-                "\n".join(row.name for row in q)+"\n",
+                dumps([row.name for row in q]),
                 mimetype="text/plain")
 
     def http_get_tags_for_query(self, request):
@@ -805,7 +806,7 @@ class Application(ApplicationBase):
           # http://bugs.jqueryui.com/ticket/5479
           "jquery.ui.datepicker.js", 
 
-          "jquery.autocomplete.js",
+          #"jquery.autocomplete.js",
           "inheritance.js",
           "json2.js",
           "rsh.js",

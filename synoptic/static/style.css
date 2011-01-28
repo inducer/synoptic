@@ -12,6 +12,10 @@
   right:0;
 }
 
+.ui-widget {
+  font-size:medium;
+}
+
 body, html {
   margin: 0;
   border:0;

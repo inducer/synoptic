@@ -521,14 +521,36 @@ ItemManager.method("begin_edit", function()
   $("#editor_"+self.id).get(0).focus();
   $("#editor_"+self.id).height(text_height);
 
-  $("#edit_tags_"+self.id).autocomplete("tags/get_filter",
-      { 
-        delay: 100, 
-        multiple:true, 
-        // autoFill: true, 
-        cacheLength:1,
-        multipleSeparator:","
-      });
+  function split( val ) { return val.split( /,\s*/ ); }
+  function extractLast( term ) { return split(term).pop(); }
+
+  $("#edit_tags_"+self.id)
+    // don't navigate away from the field on tab when selecting an item
+    .bind("keydown", function(event) {
+      if ( event.keyCode === $.ui.keyCode.TAB &&
+          $( this ).data( "autocomplete" ).menu.active ) {
+        event.preventDefault();
+      }
+    })
+    .autocomplete({
+      minLength: 1,
+      delay: 100,
+      source: function(request, response) {
+        $.getJSON("tags/get_filter", { q: extractLast(request.term) }, response);
+      },
+      focus: function() {
+        // prevent value inserted on focus
+        return false;
+      },
+      select: function(event, ui) {
+        var terms = split(this.value);
+        terms.pop();
+        terms.push( ui.item.value );
+        terms.push( "" );
+        this.value = terms.join( "," );
+        return false;
+      }
+    });
 
   // {{{ date - related
 
