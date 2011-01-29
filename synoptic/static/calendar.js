@@ -1,7 +1,9 @@
+var SIZE_DECREMENT = 70;
+
 $(document).ready(function() {
   $('#calendar').fullCalendar({
     theme: true,
-    aspectRatio: 1.8,
+    contentHeight: window.innerHeight-SIZE_DECREMENT,
     events: "/calendar/data",
     header: {
       left: 'title',
@@ -9,5 +11,9 @@ $(document).ready(function() {
       right: 'month,agendaWeek,agendaDay today prev,next'
     }
   })
+  $(window).resize(function() {
+    $('#calendar').fullCalendar('option', 'contentHeihgt', 
+      window.innerHeight-SIZE_DECREMENT);
+  });
 });
 

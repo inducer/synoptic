@@ -236,7 +236,7 @@ ItemManager.method("fill_item_div", function(history)
       if (self.end_date)
         date_info += ('<span class="end-date"> &mdash;'
             +format_timestamp(self.end_date)+'</span>');
-      if (self.hide_until && self.hide_until < now.getTime()/1000)
+      if (self.hide_until && now.getTime()/1000 < self.hide_until)
       {
         date_info += ('<span class="hide-date">Hidden until '
             +format_timestamp(self.hide_until)+'</span>');

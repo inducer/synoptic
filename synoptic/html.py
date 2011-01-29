@@ -45,9 +45,7 @@ def calendar_page(context):
       <script type="text/javascript" src="static/calendar.js"></script>
     </head>
     <body>
-      <center>
       <div id="calendar"></div>
-      </center>
     </body>
     </html>
     """ % context
