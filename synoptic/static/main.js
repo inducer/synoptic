@@ -391,12 +391,17 @@ ItemManager.method("fill_item_div", function(history)
         if (self.timeout_id != null)
           window.clearTimeout(self.timeout_id);
 
-        self.timeout_id = window.setTimeout(function () {
-          self.div.addClass("highlighted");
-        }, (self.highlight_at - now)*1000);
+        var timeout_value = (self.highlight_at - now)*1000;
+        if (timeout_value < 7*24*3600*1000) /* at most a week */
+        {
+          set_message("timerhl"+timeout_value+" "+self.contents);
+          self.timeout_id = window.setTimeout(function () {
+            self.div.addClass("highlighted");
+          }, toInt(timeout_value));
 
-        // make sure the timeout gets killed when the page is refilled
-        self.manager.item_timeouts.push(self.timeout_id);
+          // make sure the timeout gets killed when the page is refilled
+          self.manager.item_timeouts.push(self.timeout_id);
+        }
       }
     }
   }
