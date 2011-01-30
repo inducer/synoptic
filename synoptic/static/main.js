@@ -1,4 +1,9 @@
 var UP_TO_DATE_TIMEOUT = 60*1000;
+var DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+    "Saturday"];
+var SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+var SHORT_MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", 
+    "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 var msgnum = 0;
 
@@ -41,18 +46,34 @@ function zero_pad(s, min_length)
 
 
 
-function format_timestamp(timestamp, force_year)
+function format_editable_timestamp(timestamp)
+{
+  var dt = new Date(timestamp*1000);
+
+  var result = sprintf("%d/%d/%d",
+    dt.getMonth()+1, dt.getDate(), dt.getFullYear());
+
+  if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
+    result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
+
+  return result;
+}
+
+
+
+
+function format_timestamp(timestamp)
 {
   var dt = new Date(timestamp*1000);
   var now = new Date();
 
-  var result;
+  var result = SHORT_DAY_NAMES[dt.getDay()];
 
-  if (dt.getFullYear() == now.getFullYear() && !force_year)
-    result = sprintf("%d/%d", dt.getMonth()+1, dt.getDate());
+  if (dt.getFullYear() == now.getFullYear())
+    result += sprintf(" %s %d", SHORT_MONTH_NAMES[dt.getMonth()], dt.getDate());
   else
-    result = sprintf("%d/%d/%d",
-      dt.getMonth()+1, dt.getDate(), dt.getFullYear());
+    result += sprintf(" %s %d %d",
+      SHORT_MONTH_NAMES[dt.getMonth()], dt.getDate(), dt.getFullYear());
 
   if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
     result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
@@ -193,7 +214,7 @@ ItemManager.method("fill_item_div", function(history)
   }
   else 
   {
-    // generate history html, if requested
+    // {{{ generate history html, if requested / available
     if (history != null)
     {
       var hist_html = "";
@@ -220,6 +241,7 @@ ItemManager.method("fill_item_div", function(history)
       }
       hist_html = '<ul>'+hist_html+"</ul>";
     }
+    // }}}
 
     var contents_html = self.contents_html;
     if (contents_html == null)
@@ -464,7 +486,15 @@ ItemManager.method("begin_edit", function()
   ++edit_count;
   var self = this;
 
-  var text_height = self.div.find(".itemcontents").height();
+  var text_height;
+  if (self.div.hasClass("editing"))
+  {
+    // a repeat edit, keep previous height
+    text_height = self.div.find("textarea").height();
+  }
+  else
+    text_height = self.div.find(".itemcontents").height();
+
   if (text_height < 150)
     text_height = 150;
 
@@ -494,6 +524,8 @@ ItemManager.method("begin_edit", function()
     '<div class="bumpcontrols">'+
     '<label for="sel_bump_interval_[id]">Bump interval:</label>'+
     '<select id="sel_bump_interval_[id]" />'+
+    '<input type="checkbox" id="chk_bump_and_copy_[id]" />'+
+    '<label for="chk_bump_and_copy_[id]">Save, then bump new</label> '+
     '<input type="button" id="btn_bump_bwd_[id]" value="&lt; Bump"/>'+
     '<input type="button" id="btn_bump_fwd_[id]" value="Bump &gt;"/>'+
     '</div>'+
@@ -504,7 +536,7 @@ ItemManager.method("begin_edit", function()
 
   // {{{ initial content setup
 
-  // default to current search tags
+  // default to current search tags if new item 
   if (self.id == null)
   {
     var default_tags = self.manager.query_tags.join(",");
@@ -519,9 +551,6 @@ ItemManager.method("begin_edit", function()
     $("#edit_tags_"+self.id).val(self.tags);
 
   $("#editor_"+self.id).val(self.contents);
-
-  self.manager.install_focus_handlers($('input:text', self.div));
-  self.manager.install_focus_handlers($("textarea", self.div));
 
   $("#editor_"+self.id).get(0).focus();
   $("#editor_"+self.id).height(text_height);
@@ -567,7 +596,7 @@ ItemManager.method("begin_edit", function()
 
   function set_date_val(name, value)
   {
-    if (value) $(name).val(format_timestamp(value, true));
+    if (value) $(name).val(format_editable_timestamp(value, true));
   }
 
   set_date_val("#edit_date_"+self.id, self.start_date);
@@ -595,9 +624,10 @@ ItemManager.method("begin_edit", function()
 
   // {{{ button responses
 
-  $("#edit_ok_"+self.id).click(function(){
-    self.div.removeClass("editing");
+  // {{{ basic save functionality
 
+  function save_item(options)
+  {
     var tags = parse_tags($("#edit_tags_"+self.id).val());
 
     for (var i = 0; i<tags.length; ++i)
@@ -607,20 +637,20 @@ ItemManager.method("begin_edit", function()
         return;
       }
 
-    var new_contents = $("#editor_"+self.id).val();
+    var new_id = self.id;
+    if (typeof(new_id) != 'number')
+      new_id = null;
 
-    self.manager.check_if_results_are_current();
-    ++self.manager.up_to_date_check_inhibitions;
 
     $.ajax({
       type: 'POST',
       dataType: 'json',
       url: 'item/store',
       data: {json: JSON.stringify({
-        id: self.id,
+        id: new_id,
         tags: tags,
 
-        contents: new_contents,
+        contents: $("#editor_"+self.id).val(),
         current_query: $("#search").val(),
 
         start_date: $("#edit_date_"+self.id).val(),
@@ -628,11 +658,26 @@ ItemManager.method("begin_edit", function()
         hide_until: $("#edit_hide_until_"+self.id).val(),
         highlight_at: $("#edit_highlight_at_"+self.id).val(),
         bump_interval: $("#sel_bump_interval_"+self.id).val()
-
       })},
 
+      success: options["success"],
+      error: options["error"],
+    });
+  }
+
+  // }}}
+
+  $("#edit_ok_"+self.id).click(function(){
+    self.manager.check_if_results_are_current();
+    ++self.manager.up_to_date_check_inhibitions;
+
+    var new_contents = $("#editor_"+self.id).val();
+
+    save_item({
       error: function(req, stat, err) 
       {
+        self.div.removeClass("editing");
+
         --edit_count;
         set_message("Saving failed.");
         --self.manager.up_to_date_check_inhibitions;
@@ -644,6 +689,8 @@ ItemManager.method("begin_edit", function()
 
       success: function(data, msg) 
       {
+        self.div.removeClass("editing");
+
         --edit_count;
         var prev_id = self.id;
         self.set_from_obj(data);
@@ -705,8 +752,47 @@ ItemManager.method("begin_edit", function()
     });
   }
 
-  $("#btn_bump_fwd_"+self.id).click(function () { bump(1); } );
-  $("#btn_bump_bwd_"+self.id).click(function () { bump(-1); } );
+  function bump_button_action(dir)
+  {
+    if (!$("#chk_bump_and_copy_"+self.id).get(0).checked)
+      bump(dir)
+    else
+    {
+      // save current, then bump, then edit again
+      var new_contents = $("#editor_"+self.id).val();
+
+      save_item({
+        error: function(req, stat, err) 
+        {
+          set_message("Saving failed.");
+          self.begin_edit();
+
+          // preserve contents in case saving fails
+          $("#editor_"+self.id).val(new_contents);
+        },
+
+        success: function(data, msg) 
+        {
+          self.set_from_obj(data);
+          self.id = "post_bump_"+self.id;
+          if (self.tags.indexOf("repeat") == "-1")
+            self.tags.push("repeat");
+          self.begin_edit();
+
+          bump(dir);
+
+          $("#chk_bump_and_copy_"+self.id).get(0).checked = true;
+          if (dir > 0)
+            $("#btn_bump_fwd_"+self.id).focus();
+          else
+            $("#btn_bump_bwd_"+self.id).focus();
+        }
+      });
+    }
+  }
+
+  $("#btn_bump_fwd_"+self.id).click(function () { bump_button_action(1); } );
+  $("#btn_bump_bwd_"+self.id).click(function () { bump_button_action(-1); } );
 
   // }}}
 });
@@ -881,8 +967,6 @@ ItemCollectionManager.method("setup_history_handling", function()
 
   $("#edit_date").val('');
   $("#history_time").html('present');
-
-  self.install_focus_handlers($("#edit_date"));
 });
 
 
@@ -985,8 +1069,6 @@ ItemCollectionManager.method("setup_search", function()
       set_search("");
       $("#search").get(0).focus();
     });
-
-  self.install_focus_handlers($("#search"));
 });
 
 
@@ -996,9 +1078,8 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
 {
   var self = this;
   self.cursor_at = null;
-  self.kb_shortcut_inhibitions = 0;
   self.search_focused = 0;
-  
+
   $(document).keypress(function(ev)
     {
       var key = String.fromCharCode(ev.charCode);
@@ -1010,7 +1091,8 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
         return;
       }
 
-      if (self.kb_shortcut_inhibitions != 0)
+      // don't take the kbd shortcut if an input is focused
+      if ($("input:focus").length || $("textarea:focus").length)
         return true;
 
       if (key == "s" || key =="/")
@@ -1111,7 +1193,6 @@ ItemCollectionManager.method("setup_toolbar", function()
         linkurl_edit.focus();
       }
     });
-  this.install_focus_handlers($("#linkurl_edit"));
 });
 
 
@@ -1137,22 +1218,6 @@ ItemCollectionManager.method("set_cursor_to", function(div, is_up, noscroll)
   if (!noscroll)
     div.get(0).scrollIntoView(is_up);
   this.cursor_at = div;
-});
-
-
-
-
-ItemCollectionManager.method("install_focus_handlers", function(input_el)
-{
-  var self = this;
-  input_el.focus(function(ev) 
-    { 
-      ++self.kb_shortcut_inhibitions; 
-    });
-  input_el.blur(function(ev) 
-    { 
-      --self.kb_shortcut_inhibitions; 
-    });
 });
 
 
