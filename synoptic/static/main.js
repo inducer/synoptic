@@ -419,7 +419,7 @@ ItemManager.method("fill_item_div", function(history)
           set_message("timerhl"+timeout_value+" "+self.contents);
           self.timeout_id = window.setTimeout(function () {
             self.div.addClass("highlighted");
-          }, toInt(timeout_value));
+          }, timeout_value);
 
           // make sure the timeout gets killed when the page is refilled
           self.manager.item_timeouts.push(self.timeout_id);
@@ -668,6 +668,8 @@ ItemManager.method("begin_edit", function()
   // }}}
 
   $("#edit_ok_"+self.id).click(function(){
+    $("input", self.div).attr("disabled", true);
+
     self.manager.check_if_results_are_current();
     ++self.manager.up_to_date_check_inhibitions;
 
@@ -754,6 +756,7 @@ ItemManager.method("begin_edit", function()
 
   function bump_button_action(dir)
   {
+    $("input", self.div).attr("disabled", true);
     if (!$("#chk_bump_and_copy_"+self.id).get(0).checked)
       bump(dir)
     else
