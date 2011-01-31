@@ -765,11 +765,11 @@ ItemManager.method("begin_edit", function()
 
   function bump_button_action(dir)
   {
-    $("input", self.div).attr("disabled", true);
     if (!$("#chk_bump_and_copy_"+self.id).get(0).checked)
       bump(dir)
     else
     {
+      $("input", self.div).attr("disabled", true);
       // save current, then bump, then edit again
       var new_contents = $("#editor_"+self.id).val();
 
