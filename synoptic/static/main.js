@@ -1108,7 +1108,16 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
         return true;
 
       if (key == "s" || key =="/")
+      {
         $("#search").get(0).focus();
+        handled = true;
+      }
+
+      if (key == "u")
+      {
+        self.reload();
+        handled = true;
+      }
 
       if (key == "c")
       {
