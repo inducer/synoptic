@@ -1142,11 +1142,20 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
           handled = true;
         }
         else if (key == "e")
+        {
           self.cursor_at.find(".editcontrols .editcontrols_top .editbutton").click();
+          handled = true;
+        }
         else if (key == "h")
+        {
           self.cursor_at.find(".editcontrols .editcontrols_top .item_history_button").click();
+          handled = true;
+        }
         else if (key == "D")
+        {
           self.cursor_at.find(".editcontrols .editcontrols_top .deletebutton").click();
+          handled = true;
+        }
         else if (key == "n")
         {
           var new_item_div = $("#item_null");
@@ -1155,6 +1164,7 @@ ItemCollectionManager.method("setup_keyboard_nav", function()
             self.set_cursor_to(new_item_div);
             self.cursor_at.find(".editcontrols .editcontrols_top .editbutton").click();
           }
+          handled = true;
         }
       }
 
