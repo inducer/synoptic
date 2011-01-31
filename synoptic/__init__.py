@@ -837,7 +837,7 @@ class Application(ApplicationBase):
         qry = select([request.datamodel.itemversions], from_obj=from_obj) \
                 .where(where)
 
-        from time import localtime
+        from time import localtime, time
         data = []
         for item_ver in (request.dbsession.query(ItemVersion).from_statement(qry)):
 
@@ -861,6 +861,16 @@ class Application(ApplicationBase):
                 className=["tag-%s" % tag.name for tag in item_ver.tags],
                 url="/#"+quote('{"query": "id(%d) nohide"}' % item_ver.item_id),
                 ))
+
+        now = time()
+        data.append(dict(
+            id="-1",
+            title="NOW",
+            start=now,
+            end=now + 7.5 * 60,
+            allDay=False,
+            className=["calendar-now" ],
+            ))
 
         from simplejson import dumps
         return request.respond(

@@ -536,7 +536,7 @@ ItemManager.method("begin_edit", function()
     '<input type="checkbox" id="chk_bump_and_copy_[id]" />'+
     '<label for="chk_bump_and_copy_[id]">Save, then bump new</label> '+
     '<input type="button" id="btn_bump_bwd_[id]" value="&lt; Bump"/>'+
-    '<input type="button" id="btn_bump_fwd_[id]" value="Bump &gt;"acceskey="b"/>'+
+    '<input type="button" id="btn_bump_fwd_[id]" value="Bump &gt;"accesskey="b"/>'+
     '</div>'+
     '</div>'
     ).allreplace("[id]",  self.id)

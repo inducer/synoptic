@@ -5,6 +5,8 @@
 .key {
   border: 1px outset;
   background-color:#ccc;
+  padding-left:2px;
+  padding-right:2px;
 }
 
 .keyhelp {
@@ -16,3 +18,9 @@
 .ui-state-highlight {
   background: #ffff88 !important;
 }
+
+.calendar-now, .fc-agenda .calendar-now .fc-event-time, .calendar-now a
+{ background-image: url("construction.png") ; border-color: black; }
+
+.calendar-now a
+{ background-color: yellow; background-image: none; border-color: black; color: black; }
