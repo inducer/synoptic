@@ -180,6 +180,20 @@ ItemManager.method("set_from_obj", function(arg, is_historic)
 
 
 
+ItemManager.method("as_json", function()
+{
+  return {
+    id: this.id,
+    tags: this.tags,
+    contents: this.contents,
+
+    start_date: this.start_date,
+    end_date: this.end_date,
+    bump_interval: this.bump_interval,
+    hide_until: this.hide_until,
+    highlight_at: this.highlight_at
+  }
+});
 
 ItemManager.method("call_with_item_div", function(inserter, when_created)
 {
@@ -321,16 +335,14 @@ ItemManager.method("fill_item_div", function(history)
         );
       $('#btn_revert_'+self.id).click(function()
         { 
+          var data = self.as_json();
+          data.current_query = $("#search").val();
+
           $.ajax({
             type: 'POST',
             dataType: 'json',
             url: 'item/store',
-            data: {json: JSON.stringify({
-              id: self.id,
-              tags: self.tags,
-              contents: self.contents,
-              current_query: $("#search").val()
-            })},
+            data: {json: JSON.stringify(data)},
             error: function(req, stat, err) { report_error("Revert failed."); },
             success: function(data, msg) { 
               set_message("Revert successful."); 
@@ -340,16 +352,14 @@ ItemManager.method("fill_item_div", function(history)
         });
       $('#btn_copy_to_present_'+self.id).click(function()
         { 
+          var data = self.as_json();
+          data.current_query = $("#search").val();
+
           $.ajax({
             type: 'POST',
             dataType: 'json',
             url: 'item/store',
-            data: {json: JSON.stringify({
-              id: null,
-              tags: self.tags,
-              contents: self.contents,
-              current_query: $("#search").val()
-            })},
+            data: {json: JSON.stringify(data)},
             error: function(req, stat, err) { report_error("Copy failed."); },
             success: function(data, msg) { 
               set_message("Copy successful."); 
