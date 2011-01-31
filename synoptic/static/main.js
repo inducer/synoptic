@@ -416,7 +416,6 @@ ItemManager.method("fill_item_div", function(history)
         var timeout_value = (self.highlight_at - now)*1000;
         if (timeout_value < 7*24*3600*1000) /* at most a week */
         {
-          set_message("timerhl"+timeout_value+" "+self.contents);
           self.timeout_id = window.setTimeout(function () {
             self.div.addClass("highlighted");
           }, timeout_value);
@@ -881,7 +880,7 @@ function ItemCollectionManager()
       UP_TO_DATE_TIMEOUT);
   $("#ood_reload_btn").click(function() { 
     $("#out_of_date_notifier").addClass("ood_hidden");
-    self.reload() 
+    self.reload();
   })
   self.up_to_date_check_inhibitions = 0;
 
@@ -1493,7 +1492,7 @@ function format_tag_links(tags, joiner)
   var result = '';
   for (var i = 0; i < tags.length; ++i)
   {
-    result += '<a class="taglink">'+tags[i]+'</a>';
+    result += '<a class="taglink tag-'+tags[i]+' ui-corner-all">'+tags[i]+'</a>';
     if (i < tags.length-1)
       result += joiner;
   }
@@ -1537,7 +1536,7 @@ function make_tag_cloud(data, show_hidden, exclude)
     var sizefraction = 1-Math.pow(1-usefraction, 0.8);
     var fontsize = Math.round(7.+usefraction*15);
 
-    html += ('<a class="taglink" style="font-size:[fs]pt">[tag]</a> '
+    html += ('<a class="taglink tag-[tag]" style="font-size:[fs]pt">[tag]</a> '
       .allreplace("[fs]", fontsize)
       .allreplace("[tag]", tag));
   }

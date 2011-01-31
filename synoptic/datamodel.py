@@ -289,6 +289,7 @@ class SQLifyQueryVisitor(object):
 
         cnt = tags.count()
         if cnt == 0:
+            from sqlalchemy.sql import literal
             return literal(True)
         elif tags.count() == 1:
             return ItemVersion.tags.any(id=tags[0].id)

@@ -265,6 +265,7 @@ class Application(ApplicationBase):
                     (r'calendar$', self.http_calendar),
                     (r'calendar/data$', self.http_calendar_data),
                     (r'app/get_all_js$', self.http_get_all_js),
+                    (r'tag-color-css$', self.http_get_tag_color_css),
                     (r'app/quit$', self.http_quit),
                     (r'static/([-_/a-zA-Z0-9.]+)$', self.serve_static),
                     ]],
@@ -895,6 +896,39 @@ class Application(ApplicationBase):
 
         return request.respond(all_js,
             mimetype="text/javascript")
+
+    def http_get_tag_color_css(self, request):
+        tags = request.dbsession.query(Tag).filter_by(name=u"colorconfig")
+
+        if request.GET.get("calendar", "") == "true":
+            pattern = """.tag-%(tag)s, .fc-agenda .tag-%(tag)s .fc-event-time, .tag-%(tag)s a
+                { background-color: %(color)s; border-color: %(color)s; }"""
+        else:
+            pattern = ".tag-%(tag)s { background-color: %(color)s; color:white; }" 
+
+
+        if tags.count():
+            color_config_tag = tags.one()
+
+            from sqlalchemy.sql import select
+            qry = select([request.datamodel.itemversions],
+                    from_obj=get_current_itemversions_join(request.datamodel)) \
+                    .where(ItemVersion.tags.any(id=color_config_tag.id))
+
+            import re
+            color_rule_re = re.compile(r"^\s*(?:\*\s+)?([a-zA-Z0-9]+)\s*:\s*(.*)$",
+                    re.MULTILINE)
+            color_decls = []
+            for item_ver in request.dbsession.query(ItemVersion).from_statement(qry):
+                for match in color_rule_re.finditer(item_ver.contents):
+                    color_decls.append(pattern % dict(
+                        tag=match.group(1), color=match.group(2)))
+
+            css = "\n".join(color_decls)
+        else:
+            css = ""
+
+        return request.respond(css, mimetype="text/css")
 
     def http_quit(self, request):
         if self.quit_func is not None:

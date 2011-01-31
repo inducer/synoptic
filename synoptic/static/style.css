@@ -44,6 +44,10 @@ body, html {
   right:0;
 }
 
+#subtagcloud_search_tags .taglink, .tagcloud .taglink {
+  background: none !important;
+}
+
 #items {
   margin-top:5px;
   padding-right:10px;

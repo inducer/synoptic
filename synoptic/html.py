@@ -39,6 +39,7 @@ def calendar_page(context):
       <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
       <link rel="stylesheet" type="text/css" href="static/calendar.css" />
+      <link rel="stylesheet" type="text/css" href="tag-color-css?calendar=true" />
       <script type="text/javascript" src="static/jquery.js"></script>
       <script type="text/javascript" src="static/jquery-ui.js"></script>
       <script type="text/javascript" src="static/fullcalendar.js"></script>
@@ -63,6 +64,7 @@ def page(context):
       <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/style.css"/>
       <link rel="stylesheet" type="text/css" href="static/content.css"/>
+      <link rel="stylesheet" type="text/css" href="tag-color-css" />
       <link rel="icon" type="image/png" href="static/synoptic.png"/>
       <script type="text/javascript" src="app/get_all_js"></script>
     </head>
