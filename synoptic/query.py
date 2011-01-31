@@ -46,6 +46,22 @@ class Query(object):
 
 
 
+class IdQuery(Query):
+    def __init__(self, id):
+        self.id = id
+
+    def visit(self, visitor, *args):
+        return visitor.visit_id_query(self, *args)
+
+    def __eq__(self, other):
+        return isinstance(other, IdQuery) and self.id == other.id
+
+    def __lt__(self, other):
+        if not isinstance(other, TagQuery):
+            return type(self).__name__ < type(other).__name__
+        else:
+            return self.id < other.id
+
 class TagQuery(Query):
     def __init__(self, name):
         self.name = name
@@ -239,6 +255,9 @@ _PREC_NOT = 30
 
 # query visitors --------------------------------------------------------------
 class StringifyVisitor(object):
+    def visit_id_query(self, q, enclosing_prec=0):
+        return "id(%d)" % q.id
+
     def visit_tag_query(self, q, enclosing_prec=0):
         return q.name
 
@@ -298,6 +317,9 @@ class StringifyVisitor(object):
 
 class ReprVisitor(object):
     def visit_tag_query(self, q):
+        return "%s(%s)" % (type(q).__name__, repr(q.id))
+
+    def visit_tag_query(self, q):
         return "%s(%s)" % (type(q).__name__, repr(q.name))
 
     def visit_tag_wildcard_query(self, q):
@@ -328,6 +350,9 @@ class ReprVisitor(object):
 
 
 class TagListVisitor(object):
+    def visit_id_query(self, q):
+        return []
+
     def visit_tag_query(self, q):
         return [q.name]
 
@@ -368,6 +393,7 @@ _or = intern("or")
 _not = intern("not")
 _openpar = intern("openpar")
 _closepar = intern("closepar")
+_id = intern("id")
 _before = intern("before")
 _after = intern("after")
 _dated = intern("dated")
@@ -388,6 +414,7 @@ _LEX_TABLE = [
     (_not, RE(r"not\b")),
     (_openpar, RE(r"\(")),
     (_closepar, RE(r"\)")),
+    (_id, RE(r"id\(([0-9]+)\)")),
     (_before, RE(r"before\(([-:, A-Za-z0-9]+)\)")),
     (_after, RE(r"after\(([-:, A-Za-z0-9]+)\)")),
     (_dated, RE(r"dated\b")),
@@ -408,7 +435,7 @@ _STATELESS_TERMINALS = {
         _sortbydate: SortByDateQuery()
         }
 
-_TERMINALS = [_tag, _negtag, _fulltext] + list(_STATELESS_TERMINALS.iterkeys())
+_TERMINALS = [_tag, _negtag, _fulltext, _id, _before, _after] + list(_STATELESS_TERMINALS.iterkeys())
 
 
 
@@ -429,6 +456,10 @@ def parse_query(expr_str):
         elif next_tag in _STATELESS_TERMINALS:
             pstate.advance()
             return _STATELESS_TERMINALS[next_tag]
+        elif next_tag in [_id]:
+            result = IdQuery(int(pstate.next_match_obj().group(1)))
+            pstate.advance()
+            return result
         elif next_tag in [_before, _after]:
             from parsedatetime.parsedatetime import Calendar
             cal = Calendar()

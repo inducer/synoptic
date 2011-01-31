@@ -851,12 +851,15 @@ class Application(ApplicationBase):
                 if (lt.tm_hour, lt.tm_min, lt.tm_sec) != (0, 0, 0):
                     all_day = False
 
+            from urllib import quote
             data.append(dict(
                 id=item_ver.id,
                 title=item_ver.contents,
                 start=item_ver.start_date,
                 end=item_ver.end_date,
                 allDay=all_day,
+                className=["tag-%s" % tag.name for tag in item_ver.tags],
+                url="/#"+quote('{"query": "id(%d) nohide"}' % item_ver.item_id),
                 ))
 
         from simplejson import dumps

@@ -275,6 +275,9 @@ class SQLifyQueryVisitor(object):
         self.use_hide_until = True
         self.sort_by_date = False
 
+    def visit_id_query(self, q):
+        return ItemVersion.item_id == q.id
+
     def visit_tag_query(self, q):
         tags = self.session.query(Tag).filter_by(name=q.name)
         if tags.count() == 1:
