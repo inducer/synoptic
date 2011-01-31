@@ -44,9 +44,18 @@ def calendar_page(context):
       <script type="text/javascript" src="static/jquery-ui.js"></script>
       <script type="text/javascript" src="static/fullcalendar.js"></script>
       <script type="text/javascript" src="static/calendar.js"></script>
+      <link rel="icon" type="image/png" href="static/calendar-favicon.png"/>
     </head>
     <body>
       <div id="calendar"></div>
+      <div class="keyhelp">
+      Keyboard shortcuts: 
+      <span class="key">H</span> previous
+      <span class="key">L</span> next
+      <span class="key">W</span> week view
+      <span class="key">M</span> month view
+      <span class="key">U</span> update
+      </div>
     </body>
     </html>
     """ % context

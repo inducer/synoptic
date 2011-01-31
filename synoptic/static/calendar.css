@@ -1,3 +1,18 @@
 .ui-widget {
   font-size:medium;
 }
+
+.key {
+  border: 1px outset;
+  background-color:#ccc;
+}
+
+.keyhelp {
+  margin-top:0.5ex;
+  text-align:center;
+  font-family:sans-serif;
+}
+
+.ui-state-highlight {
+  background: #ffff88 !important;
+}
