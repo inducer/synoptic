@@ -32,6 +32,13 @@ making Synoptic work as seamlessly as possible. You may never notice
 many of these refinements, because they're meant to make stuff work like
 it's supposed to. If you're curious nonetheless, take a [peek](#advanced).
 
+* **[Built-in Calendar](#advanced).** Synoptic can display its notes in a
+calendar view that can be reached by the calendar button in the toolbar. That,
+along 'hide until' and 'highlight at' fields in notes make Synoptic ideally
+suited for staying organized, whether you are using the [Getting Things
+Done](https://secure.wikimedia.org/wikipedia/en/wiki/Getting_Things_Done)
+method or not.
+
 You can also see what's [changed since the last release](#changes) or browse
 the [Frequently Asked Questions](#faq). Curious who cooked this up?
 Check the [credits](#credits). Also make sure you understand the
@@ -47,6 +54,7 @@ When navigating:
 * **S**, **/**: jump to the search bar.
 * **N**: create a new note.
 * **C**: toggle collapsed state.
+* **U**: update view.
 
 When your cursor is in the search field, just hit **Enter** to return
 to the usual navigation mode.
@@ -285,9 +293,10 @@ TAGS: faq, browsers
 
 You'll likely have most fun with [Firefox](http://getfirefox.com). However,
 synoptic is usable to some extent in most browsers. Here's a list of
-them, with a list of problems:
+them, with a list of problems, if any:
 
 * Opera 9: works, no keyboard shortcuts.
+* Chrome: works.
 * Konqueror: works, but scrolling the note by anything other
 than the scroll bar is broken.
 * IE: Not tried.
@@ -300,6 +309,20 @@ TAGS: .hidden
 Congratulations, you found the hidden note! Here's your [pony][pony]. :)
 
 [pony]: http://en.wikipedia.org/wiki/Image:MyLittlePony-RunawayRainbow.jpg
+---------------------------------------------------------------------------
+TAGS: changes
+# Changes in 0.93
+
+* Calendaring, highlight-at, hide-until.
+* Notification when results are out of date.
+* Coloring of calendar events.
+---------------------------------------------------------------------------
+TAGS: changes
+# Changes in 0.92
+
+* History browsing
+* Tag autocomplete
+* New space-saving item UI
 ---------------------------------------------------------------------------
 TAGS: changes
 # Changes in 0.91
@@ -396,8 +419,27 @@ Examples:
 * `-tag3 and "fulltext"`
 * `not tag3 and "fulltext"`
 ---------------------------------------------------------------------------
+TAGS: search,syntax,operators,advanced
+# Miscellaneous other search terms
+
+Examples:
+
+* `dated`: Matches notes that have a date set
+* `nohide`: Override 'hide until', always show
+* `sortbydate`: sort by date, oddly enough
+* `id(num)`: Retrieve item by its id (mostly for automated use)
+---------------------------------------------------------------------------
 TAGS: faq, search
 # How do I search for all my notes?
 
 Enter a tautological query, such as `"blah or -blah"`. If you have many notes,
 rendering all of them might take a while, so be patient.
+---------------------------------------------------------------------------
+TAGS: colorconfig,advanced
+# How to color notes and tags by colors
+
+Any note with the tag `colorconfig` describes rules for coloring of tags
+and calendar entries, in a simple `tag: color` format, optionally as part
+of an enumeration. Here's an example:
+
+* faq: red
