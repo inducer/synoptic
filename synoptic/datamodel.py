@@ -254,7 +254,8 @@ def store_itemversion(dbsession, **kwargs):
         timestamp = time()
 
     props = kwargs.copy()
-    del props["id"]
+    if "id" in props:
+        del props["id"]
     props.update(
             item=item,
             timestamp=timestamp,
