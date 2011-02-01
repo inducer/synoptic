@@ -1,4 +1,4 @@
-var SIZE_DECREMENT = 90;
+var SIZE_DECREMENT = 100;
 
 $(document).ready(function() {
   var cal =$('#calendar');
