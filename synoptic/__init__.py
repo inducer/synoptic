@@ -760,7 +760,25 @@ class Application(ApplicationBase):
 
                 return time.mktime(dt.timetuple())
         elif bump_interval == "year":
-            tdelta = datetime.timedelta(years=bump_direction)
+            def increment_func(timestamp):
+                dt = datetime.datetime.fromtimestamp(timestamp)
+                year = dt.year + bump_direction
+                month = dt.month
+                day = dt.day
+
+                attempt_count = 10
+                while True:
+                    try:
+                        dt = dt.replace(year=year, month=month, day=day)
+                    except ValueError:
+                        day -= 1
+                        attempt_count -= 1
+                        if attempt_count == 0:
+                            raise
+                    else:
+                        break
+
+                return time.mktime(dt.timetuple())
         else:
             raise RuntimeError("unknown bump_interval")
 

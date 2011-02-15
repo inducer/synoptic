@@ -8,9 +8,9 @@ $(document).ready(function() {
     contentHeight: window.innerHeight-SIZE_DECREMENT,
     events: "/calendar/data",
     header: {
-      left: 'title',
-      center: 'today',
-      right: 'month,agendaWeek prev,next'
+      left: 'prev,next today',
+      center: 'title',
+      right: 'month,agendaWeek'
     }
   })
 
