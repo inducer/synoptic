@@ -26,6 +26,7 @@ def get_static_file(filename):
     mimetypes = {
             ".jpg": "image/jpeg",
             ".png": "image/png",
+            ".gif": "image/gif",
             ".css": "text/css",
             ".txt": "text/plain",
             ".js": "text/javascript",
@@ -460,6 +461,10 @@ class Application(ApplicationBase):
         old_name = data["old_name"]
         new_name = data["new_name"]
 
+        from synoptic.datamodel import is_valid_tag
+        if not is_valid_tag(new_name):
+            raise RuntimeError("invalid tag")
+
         tag = request.dbsession.query(Tag).filter_by(name=old_name).one()
         new_tag_query = request.dbsession.query(Tag).filter_by(name=new_name)
 
@@ -690,6 +695,12 @@ class Application(ApplicationBase):
             self.parse_datetime(data, "end_date", "start_date")
             self.parse_datetime(data, "hide_until", "start_date")
             self.parse_datetime(data, "highlight_at", "start_date")
+
+        if not deleting:
+            from synoptic.datamodel import is_valid_tag
+            for tag in data["tags"]:
+                if not is_valid_tag(tag):
+                    raise RuntimeError("invalid tag")
 
         itemversion = store_itemversion(request.dbsession,
                 **data)

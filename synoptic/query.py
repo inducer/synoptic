@@ -420,8 +420,8 @@ _LEX_TABLE = [
     (_dated, RE(r"dated\b")),
     (_nohide, RE(r"nohide\b")),
     (_sortbydate, RE(r"sortbydate\b")),
-    (_tag, RE(r"[.a-zA-Z0-9?*]+")),
-    (_negtag, RE(r"-[.a-zA-Z0-9?*]+")),
+    (_tag, RE(r"[.\w?*]+")),
+    (_negtag, RE(r"-[.\w?*]+")),
     (_fulltext, RE(r'".*?(?!\\\\)"')),
     (_whitespace, RE("[ \t]+")),
     ]

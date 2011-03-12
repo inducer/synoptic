@@ -14,6 +14,12 @@ BUMP_INTERVALS = [
 
 
 
+def is_valid_tag(tag):
+    return tag.isalnum()
+
+
+
+
 class DataModel(object):
     def __init__(self):
         if MAPPERS_DEFINED[0]:
@@ -374,7 +380,7 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
 
     # find view ordering
     view_orderings = (session.query(ViewOrdering)
-            .filter_by(norm_query=str(parsed_query))
+            .filter_by(norm_query=unicode(parsed_query))
             .order_by(ViewOrdering.timestamp.desc())
             .limit(1)).all()
 

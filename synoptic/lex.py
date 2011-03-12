@@ -35,7 +35,7 @@ class ParseError(Exception):
 class RE:
     def __init__(self, str):
         self.Content = str
-        self.RE = re.compile(str)
+        self.RE = re.compile(str, re.UNICODE)
 
     def __repr__(self):
         return "RE(%s)" % self.Content

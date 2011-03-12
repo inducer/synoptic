@@ -639,17 +639,9 @@ ItemManager.method("begin_edit", function()
   {
     var tags = parse_tags($("#edit_tags_"+self.id).val());
 
-    for (var i = 0; i<tags.length; ++i)
-      if (!is_valid_tag(tags[i]))
-      {
-        alert("Invalid tag: '[tag]'".allreplace("[tag]", tags[i]));
-        return;
-      }
-
     var new_id = self.id;
     if (typeof(new_id) != 'number')
       new_id = null;
-
 
     $.ajax({
       type: 'POST',
@@ -690,7 +682,7 @@ ItemManager.method("begin_edit", function()
         self.div.removeClass("editing");
 
         --edit_count;
-        set_message("Saving failed.");
+        alert("Saving failed.\n"+req.responseText);
         --self.manager.up_to_date_check_inhibitions;
         self.begin_edit();
 
@@ -986,10 +978,10 @@ ItemCollectionManager.method("setup_history_handling", function()
 
 ItemCollectionManager.method("get_current_fragment", function()
 {
-  return escape(JSON.stringify({
+  return escape(escape(JSON.stringify({
       query:$("#search").val(),
       timestamp:this.view_time
-    }));
+    })));
 });
 
 
@@ -999,7 +991,8 @@ var nav_warning_inhibitor = 0;
 ItemCollectionManager.method("add_history_item", function()
 {
   ++nav_warning_inhibitor;
-  dhtmlHistory.add(this.get_current_fragment());
+  var frag = this.get_current_fragment();
+  dhtmlHistory.add(frag);
   --nav_warning_inhibitor;
 });
 
@@ -1010,7 +1003,7 @@ ItemCollectionManager.method("handle_history_event", function(new_loc, dummy)
 {
   if (new_loc != "")
   {
-    new_loc = unescape(new_loc);
+    new_loc = unescape(unescape(new_loc));
     if (new_loc[0] == "{")
     {
       var loc_descriptor = JSON.parse(new_loc);
@@ -1073,7 +1066,7 @@ ItemCollectionManager.method("setup_search", function()
     {
       self.div.stopTime("search_changewatch");
       self.add_history_item();
-      self.update(); 
+      self.update();
       --self.search_focused;
     });
   $("#btn_search_clear").click(function()
@@ -1702,26 +1695,23 @@ function add_tag_behavior(jq_result)
             old_name);
           if (new_name != undefined && new_name != old_name)
           {
-            if (!is_valid_tag(new_name))
-              alert("Cannot rename--not a valid tag.");
-            else
-            {
-              $.ajax({
-                type: 'POST',
-                dataType: 'text',
-                url: 'tags/rename',
-                data: {json: JSON.stringify({
-                  old_name: old_name,
-                  new_name: new_name
-                })},
-                error: function(req, stat, err) { report_error("Rename failed."); },
-                success: function(data, msg) { 
-                  set_message("Rename successful."); 
-                  update_tag_clouds();
-                  document.collection_manager.update(true);
-                }
-              });
-            }
+            $.ajax({
+              type: 'POST',
+              dataType: 'text',
+              url: 'tags/rename',
+              data: {json: JSON.stringify({
+                old_name: old_name,
+                new_name: new_name
+              })},
+              error: function(req, stat, err) { 
+                alert("Rename failed.\n"+req.responseText); 
+              },
+              success: function(data, msg) { 
+                set_message("Rename successful."); 
+                update_tag_clouds();
+                document.collection_manager.update(true);
+              }
+            });
           }
         },
         'tag-menu-restrict': function(tag_html) {
