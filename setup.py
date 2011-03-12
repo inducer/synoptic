@@ -78,7 +78,7 @@ def main():
           scripts=["bin/synoptic"],
           packages=[
                   "synoptic",
-                  "synoptic.schema_ver_repo"
+                  "synoptic.schema_ver_repo",
                   "synoptic.schema_ver_repo.versions"
                   ],
           include_package_data=True,
