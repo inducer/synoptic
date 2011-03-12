@@ -2,7 +2,7 @@ var UP_TO_DATE_TIMEOUT = 60*1000;
 var DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
     "Saturday"];
 var SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-var SHORT_MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", 
+var SHORT_MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
     "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 var msgnum = 0;
@@ -36,7 +36,7 @@ function report_error(what)
 
 
 
-function zero_pad(s, min_length) 
+function zero_pad(s, min_length)
 {
   while (s.length < min_length)
     s = "0"+s;
@@ -88,7 +88,7 @@ function format_timestamp(timestamp)
 String.method("allreplace", function(from, to)
 {
   var last, current = this;
-  do 
+  do
   {
     last = current;
     current = last.replace(from, to);
@@ -226,7 +226,7 @@ ItemManager.method("fill_item_div", function(history)
       );
     $('#new_'+self.id).click(function(){ self.begin_edit() });
   }
-  else 
+  else
   {
     // {{{ generate history html, if requested / available
     if (history != null)
@@ -334,7 +334,7 @@ ItemManager.method("fill_item_div", function(history)
         .allreplace('[dateinfo]', get_date_info())
         );
       $('#btn_revert_'+self.id).click(function()
-        { 
+        {
           var data = self.as_json();
           data.current_query = $("#search").val();
 
@@ -344,14 +344,14 @@ ItemManager.method("fill_item_div", function(history)
             url: 'item/store',
             data: {json: JSON.stringify(data)},
             error: function(req, stat, err) { report_error("Revert failed."); },
-            success: function(data, msg) { 
-              set_message("Revert successful."); 
+            success: function(data, msg) {
+              set_message("Revert successful.");
               update_tag_clouds();
             }
           });
         });
       $('#btn_copy_to_present_'+self.id).click(function()
-        { 
+        {
           var data = self.as_json();
           data.current_query = $("#search").val();
 
@@ -361,8 +361,8 @@ ItemManager.method("fill_item_div", function(history)
             url: 'item/store',
             data: {json: JSON.stringify(data)},
             error: function(req, stat, err) { report_error("Copy failed."); },
-            success: function(data, msg) { 
-              set_message("Copy successful."); 
+            success: function(data, msg) {
+              set_message("Copy successful.");
               update_tag_clouds();
             }
           });
@@ -397,7 +397,7 @@ ItemManager.method("fill_item_div", function(history)
                   self.set_from_obj(data, is_historic);
                   self.fill_item_div(history);
                 },
-                error: function(req, stat, err) 
+                error: function(req, stat, err)
                 { report_error("Error retrieving version."); },
             });
           });
@@ -454,7 +454,7 @@ function item_toggle_collapsed(div)
 }
 
 
-ItemManager.method("toggle_history", function() 
+ItemManager.method("toggle_history", function()
 {
   var self = this;
 
@@ -464,9 +464,9 @@ ItemManager.method("toggle_history", function()
     // make sure we're showing the current version
     self.load_from_server(
       function() { self.fill_item_div(); }
-      ); 
+      );
   }
-  else 
+  else
   {
     var histdiv = $(self.div).find(".item_history");
 
@@ -490,7 +490,7 @@ ItemManager.method("toggle_history", function()
 
 
 var edit_count = 0;
-ItemManager.method("begin_edit", function() 
+ItemManager.method("begin_edit", function()
 {
   ++edit_count;
   var self = this;
@@ -545,7 +545,7 @@ ItemManager.method("begin_edit", function()
 
   // {{{ initial content setup
 
-  // default to current search tags if new item 
+  // default to current search tags if new item
   if (self.id == null)
   {
     var default_tags = self.manager.query_tags.join(",");
@@ -617,7 +617,7 @@ ItemManager.method("begin_edit", function()
 
   for (var i in BUMP_INTERVALS)
   {
-    bump_intv_html += 
+    bump_intv_html +=
       '<option value="'+BUMP_INTERVALS[i][0]+'">'+BUMP_INTERVALS[i][1]+"</option>";
   }
 
@@ -677,7 +677,7 @@ ItemManager.method("begin_edit", function()
     var new_contents = $("#editor_"+self.id).val();
 
     save_item({
-      error: function(req, stat, err) 
+      error: function(req, stat, err)
       {
         self.div.removeClass("editing");
 
@@ -690,7 +690,7 @@ ItemManager.method("begin_edit", function()
         $("#editor_"+self.id).val(new_contents);
       },
 
-      success: function(data, msg) 
+      success: function(data, msg)
       {
         self.div.removeClass("editing");
 
@@ -740,12 +740,12 @@ ItemManager.method("begin_edit", function()
         bump_interval: $("#sel_bump_interval_"+self.id).val()
       })},
 
-      error: function(req, stat, err) 
+      error: function(req, stat, err)
       {
         set_message("Bump server request failed.");
       },
 
-      success: function(data, msg) 
+      success: function(data, msg)
       {
         set_date_val("#edit_date_"+self.id, data.start_date);
         set_date_val("#edit_end_"+self.id, data.end_date);
@@ -766,7 +766,7 @@ ItemManager.method("begin_edit", function()
       var new_contents = $("#editor_"+self.id).val();
 
       save_item({
-        error: function(req, stat, err) 
+        error: function(req, stat, err)
         {
           set_message("Saving failed.");
           self.begin_edit();
@@ -775,7 +775,7 @@ ItemManager.method("begin_edit", function()
           $("#editor_"+self.id).val(new_contents);
         },
 
-        success: function(data, msg) 
+        success: function(data, msg)
         {
           self.set_from_obj(data);
           self.id = "post_bump_"+self.id;
@@ -822,11 +822,11 @@ ItemManager.method("do_delete", function()
       tags: [],
       contents: null
     })},
-    error: function(req, stat, err) { 
-             report_error("Delete failed."); 
+    error: function(req, stat, err) {
+             report_error("Delete failed.");
              --self.manager.up_to_date_check_inhibitions;
            },
-    success: function(data, msg) { 
+    success: function(data, msg) {
       // Don't trigger change notification.
       //
       // There's a race condition here. Someone else might be changing items
@@ -838,11 +838,11 @@ ItemManager.method("do_delete", function()
   });
 });
 
-ItemManager.method("load_from_server", function(when_done) 
+ItemManager.method("load_from_server", function(when_done)
 {
   var self = this;
   $.ajax({
-    url: "item/get_by_id", 
+    url: "item/get_by_id",
     data: {id: self.id},
     dataType:"json",
     success: function(obj, status)
@@ -878,9 +878,9 @@ function ItemCollectionManager()
   self.item_timeouts = [];
 
   // catch out-of-date results
-  window.setTimeout(function() { self.check_if_results_are_current() }, 
+  window.setTimeout(function() { self.check_if_results_are_current() },
       UP_TO_DATE_TIMEOUT);
-  $("#ood_reload_btn").click(function() { 
+  $("#ood_reload_btn").click(function() {
     $("#out_of_date_notifier").addClass("ood_hidden");
     self.reload();
   })
@@ -914,8 +914,8 @@ ItemCollectionManager.method("setup_history_handling", function()
 
   self.tsrange = null;
   $.getJSON("timestamp/get_range", function (json)
-    { 
-      self.tsrange = json; 
+    {
+      self.tsrange = json;
       self.set_history_slider(self.view_time);
     });
 
@@ -933,7 +933,7 @@ ItemCollectionManager.method("setup_history_handling", function()
           if (ui.value == 100)
             self.show_time(null);
           else
-            var new_time = self.tsrange.min 
+            var new_time = self.tsrange.min
               + ui.value/100.*(self.tsrange.max-self.tsrange.min);
             self.show_time(new_time);
         },
@@ -946,7 +946,7 @@ ItemCollectionManager.method("setup_history_handling", function()
             self.set_time(null, "slider");
           else
           {
-            var new_time = self.tsrange.min 
+            var new_time = self.tsrange.min
               + ui.value/100.*(self.tsrange.max-self.tsrange.min);
             self.set_time(new_time, "slider");
           }
@@ -1038,8 +1038,8 @@ ItemCollectionManager.method("setup_search", function()
       var is_updated = true;
 
       self.div.everyTime("100ms", "search_changewatch",
-        function() 
-        { 
+        function()
+        {
           var search = $("#search").val();
           if (search != last_search)
           {
@@ -1055,7 +1055,7 @@ ItemCollectionManager.method("setup_search", function()
 
             if (unchanged_count > 3)
             {
-              self.update(); 
+              self.update();
               is_updated = true;
             }
           }
@@ -1191,19 +1191,19 @@ ItemCollectionManager.method("setup_toolbar", function()
       window.open(exporturl);
     });
   $("#btn_expand").click(function()
-    { 
+    {
       $(".item").removeClass("collapsed");
     });
   $("#btn_collapse").click(function()
-    { 
+    {
       $(".item").addClass("collapsed");
     });
   $("#btn_quit").click(function()
-    { 
+    {
       location.href = "app/quit";
     });
   $("#btn_copy").click(function()
-    { 
+    {
       var linkurl = $("#linkurl");
       if (linkurl.hasClass("shown"))
       {
@@ -1440,7 +1440,7 @@ ItemCollectionManager.method("check_if_results_are_current", function()
 {
   var self = this;
 
-  if (self.last_query_data && self.result_hash 
+  if (self.last_query_data && self.result_hash
     && self.up_to_date_check_inhibitions == 0)
   {
     $.ajax({
@@ -1449,7 +1449,7 @@ ItemCollectionManager.method("check_if_results_are_current", function()
       dataType:"json",
       success: function(json, status)
       {
-        if (self.result_hash != json 
+        if (self.result_hash != json
           && self.up_to_date_check_inhibitions == 0)
         {
           $("#out_of_date_notifier").removeClass("ood_hidden");
@@ -1458,7 +1458,7 @@ ItemCollectionManager.method("check_if_results_are_current", function()
     });
   }
 
-  window.setTimeout(function() { self.check_if_results_are_current() }, 
+  window.setTimeout(function() { self.check_if_results_are_current() },
       UP_TO_DATE_TIMEOUT);
 });
 
@@ -1506,7 +1506,7 @@ function is_valid_tag(tag)
 
 
 
-function format_tag_links(tags, joiner) 
+function format_tag_links(tags, joiner)
 {
   if (joiner == undefined)
     joiner = ", ";
@@ -1581,7 +1581,7 @@ function update_tag_clouds()
 function update_main_tag_cloud()
 {
   $.getJSON("tags/get_for_query", function (json)
-    {  
+    {
       $("#tagcloud").html(make_tag_cloud(
           json.tags, $("#chk_tagcloud_show_hidden").get(0).checked));
       add_tag_behavior($("#tagcloud a"));
@@ -1594,8 +1594,8 @@ function update_main_tag_cloud()
 function fill_subtag_cloud(data)
 {
   $("#subtagcloud").html(
-    make_tag_cloud(data.tags, 
-      $("#chk_subtagcloud_show_hidden").get(0).checked, 
+    make_tag_cloud(data.tags,
+      $("#chk_subtagcloud_show_hidden").get(0).checked,
       data.query_tags));
   add_tag_behavior($("#subtagcloud a"));
 
@@ -1686,7 +1686,7 @@ function add_tag_behavior(jq_result)
     { set_search($(this).html()); });
   jq_result.contextMenu("tag_context_menu", {
       bindings: {
-        'tag-menu-rename': function(tag_html) 
+        'tag-menu-rename': function(tag_html)
         {
           var old_name = $(tag_html).html();
           var new_name = prompt(
@@ -1703,11 +1703,11 @@ function add_tag_behavior(jq_result)
                 old_name: old_name,
                 new_name: new_name
               })},
-              error: function(req, stat, err) { 
-                alert("Rename failed.\n"+req.responseText); 
+              error: function(req, stat, err) {
+                alert("Rename failed.\n"+req.responseText);
               },
-              success: function(data, msg) { 
-                set_message("Rename successful."); 
+              success: function(data, msg) {
+                set_message("Rename successful.");
                 update_tag_clouds();
                 document.collection_manager.update(true);
               }
@@ -1763,11 +1763,11 @@ $(document).ready(function()
 
   tag_tabs = $("#navtabs").tabs();
 
-  $("#items").sortable({ 
+  $("#items").sortable({
     handle: ".item-drag-handle",
-    start: function(event, ui) 
+    start: function(event, ui)
       { $("#item_null").appendTo("#hiddenitems"); },
-    stop: function(event, ui) 
+    stop: function(event, ui)
       { $("#item_null").appendTo("#items"); },
     update: function(event, ui)
       {
@@ -1785,7 +1785,7 @@ $(document).ready(function()
               new_order: item_ids.join(","),
               current_search: $("#search").val()
             })},
-          error: function(req, stat, err) 
+          error: function(req, stat, err)
           { report_error("Reordering failed on server."); }
         });
       }
@@ -1798,8 +1798,8 @@ $(document).ready(function()
   dhtmlHistory.initialize();
   dhtmlHistory.addListener(
     function (new_loc, data)
-    { 
-      collection_manager.handle_history_event(new_loc, data); 
+    {
+      collection_manager.handle_history_event(new_loc, data);
     });
   if (dhtmlHistory.isFirstLoad())
     collection_manager.handle_history_event(dhtmlHistory.getCurrentLocation(), null);
@@ -1807,7 +1807,7 @@ $(document).ready(function()
   $(window).resize(update_tag_cloud_height);
   update_tag_cloud_height();
 
-  window.onbeforeunload = function(evt) { 
+  window.onbeforeunload = function(evt) {
     var e = e || window.event;
 
     if (nav_warning_inhibitor == 0 && edit_count)
@@ -1821,11 +1821,11 @@ $(document).ready(function()
 
 
 window.dhtmlHistory.create({
-  toJSON: function(o) 
+  toJSON: function(o)
   {
     return JSON.stringify(o);
-  }, 
-  fromJSON: function(s) 
+  },
+  fromJSON: function(s)
   {
     return JSON.parse(s);
   }
