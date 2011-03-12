@@ -81,7 +81,6 @@ def main():
                   "synoptic.schema_ver_repo"
                   "synoptic.schema_ver_repo.versions"
                   ],
-          packages=["synoptic"],
           include_package_data=True,
           package_data={'synoptic': [
               'static/*.js',
