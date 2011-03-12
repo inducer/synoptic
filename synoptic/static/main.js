@@ -46,15 +46,23 @@ function zero_pad(s, min_length)
 
 
 
-function format_editable_timestamp(timestamp)
+function format_editable_timestamp(timestamp, all_day)
 {
   var dt = new Date(timestamp*1000);
 
-  var result = sprintf("%d/%d/%d",
-    dt.getMonth()+1, dt.getDate(), dt.getFullYear());
+  if (all_day)
+  {
+    var result = sprintf("%d/%d/%d",
+      dt.getUTCMonth()+1, dt.getUTCDate(), dt.getUTCFullYear());
+  }
+  else
+  {
+    var result = sprintf("%d/%d/%d",
+      dt.getMonth()+1, dt.getDate(), dt.getFullYear());
 
-  if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
-    result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
+    if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
+      result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
+  }
 
   return result;
 }
@@ -62,21 +70,34 @@ function format_editable_timestamp(timestamp)
 
 
 
-function format_timestamp(timestamp)
+function format_timestamp(timestamp, all_day)
 {
   var dt = new Date(timestamp*1000);
   var now = new Date();
 
-  var result = SHORT_DAY_NAMES[dt.getDay()];
+  if (all_day)
+  {
+    var result = SHORT_DAY_NAMES[dt.getUTCDay()];
 
-  if (dt.getFullYear() == now.getFullYear())
-    result += sprintf(" %s %d", SHORT_MONTH_NAMES[dt.getMonth()], dt.getDate());
+    if (dt.getUTCFullYear() == now.getUTCFullYear())
+      result += sprintf(" %s %d", SHORT_MONTH_NAMES[dt.getUTCMonth()], dt.getUTCDate());
+    else
+      result += sprintf(" %s %d %d",
+        SHORT_MONTH_NAMES[dt.getUTCMonth()], dt.getUTCDate(), dt.getUTCFullYear());
+  }
   else
-    result += sprintf(" %s %d %d",
-      SHORT_MONTH_NAMES[dt.getMonth()], dt.getDate(), dt.getFullYear());
+  {
+    var result = SHORT_DAY_NAMES[dt.getDay()];
 
-  if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
-    result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
+    if (dt.getFullYear() == now.getFullYear())
+      result += sprintf(" %s %d", SHORT_MONTH_NAMES[dt.getMonth()], dt.getDate());
+    else
+      result += sprintf(" %s %d %d",
+        SHORT_MONTH_NAMES[dt.getMonth()], dt.getDate(), dt.getFullYear());
+
+    if (!(dt.getHours() == 0 && dt.getMinutes() == 0 && dt.getSeconds() == 0))
+      result += sprintf(" %d:%02d", dt.getHours(), dt.getMinutes());
+  }
 
   return result;
 }
@@ -169,6 +190,7 @@ ItemManager.method("set_from_obj", function(arg, is_historic)
   this.contents = arg.contents;
   this.contents_html = arg.contents_html;
 
+  this.all_day = arg.all_day;
   this.start_date = arg.start_date;
   this.end_date = arg.end_date;
   this.bump_interval = arg.bump_interval;
@@ -187,6 +209,7 @@ ItemManager.method("as_json", function()
     tags: this.tags,
     contents: this.contents,
 
+    all_day: this.all_day,
     start_date: this.start_date,
     end_date: this.end_date,
     bump_interval: this.bump_interval,
@@ -268,10 +291,10 @@ ItemManager.method("fill_item_div", function(history)
 
       if (self.start_date)
         date_info += ('<span class="start-date">'
-            +format_timestamp(self.start_date)+'</span>');
+            +format_timestamp(self.start_date, self.all_day)+'</span>');
       if (self.end_date)
         date_info += ('<span class="end-date"> &mdash;'
-            +format_timestamp(self.end_date)+'</span>');
+            +format_timestamp(self.end_date, self.all_day)+'</span>');
       if (self.hide_until && now.getTime()/1000 < self.hide_until)
       {
         date_info += ('<span class="hide-date">Hidden until '
@@ -523,6 +546,8 @@ ItemManager.method("begin_edit", function()
     '<input type="text" id="edit_date_[id]" size="15"/>'+
     '<label for="edit_end_[id]">End:</label>'+
     '<input type="text" id="edit_end_[id]" size="15"/>'+
+    '<input type="checkbox" id="chk_all_day_[id]"/>'+
+    '<label for="chk_all_day_[id]">All day</label>'+
     '</div>'+
     '<div class="remindcontrols">'+
     '<label for="edit_hide_until_[id]">Hide Until:</label>'+
@@ -603,15 +628,17 @@ ItemManager.method("begin_edit", function()
   $("#edit_highlight_at_"+self.id).datepicker({ constrainInput: false, showOn: 'button' });
   $(".ui-datepicker-trigger", self.div).attr("tabindex", -1);
 
-  function set_date_val(name, value)
+  function set_date_val(name, value, all_day_affected)
   {
-    if (value) $(name).val(format_editable_timestamp(value, true));
+    if (value) $(name).val(format_editable_timestamp(
+          value, all_day_affected && self.all_day));
   }
 
-  set_date_val("#edit_date_"+self.id, self.start_date);
-  set_date_val("#edit_end_"+self.id, self.end_date);
-  set_date_val("#edit_hide_until_"+self.id, self.hide_until);
-  set_date_val("#edit_highlight_at_"+self.id, self.highlight_at);
+  $("#chk_all_day_"+self.id).get(0).checked = self.all_day;
+  set_date_val("#edit_date_"+self.id, self.start_date, true);
+  set_date_val("#edit_end_"+self.id, self.end_date, true);
+  set_date_val("#edit_hide_until_"+self.id, self.hide_until, false);
+  set_date_val("#edit_highlight_at_"+self.id, self.highlight_at, false);
 
   var bump_intv_html;
 
@@ -654,6 +681,7 @@ ItemManager.method("begin_edit", function()
         contents: $("#editor_"+self.id).val(),
         current_query: $("#search").val(),
 
+        all_day: $("#chk_all_day_"+self.id).get(0).checked,
         start_date: $("#edit_date_"+self.id).val(),
         end_date: $("#edit_end_"+self.id).val(),
         hide_until: $("#edit_hide_until_"+self.id).val(),
@@ -978,6 +1006,9 @@ ItemCollectionManager.method("setup_history_handling", function()
 
 ItemCollectionManager.method("get_current_fragment", function()
 {
+  // Need to double-escape because something is preventing unicode characters
+  // in URLs.
+
   return escape(escape(JSON.stringify({
       query:$("#search").val(),
       timestamp:this.view_time

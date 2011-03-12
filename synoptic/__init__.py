@@ -331,6 +331,7 @@ class Application(ApplicationBase):
                             "contents_html": ItemVersion.htmlize(
                                 row[itemversions_query.c.contents]),
                             "tags": [],
+                            "all_day": row[itemversions_query.c.all_day],
                             "start_date": row[itemversions_query.c.start_date],
                             "end_date": row[itemversions_query.c.end_date],
                             "bump_interval": row[itemversions_query.c.bump_interval],
@@ -636,7 +637,7 @@ class Application(ApplicationBase):
                 mimetype="text/plain")
 
     @staticmethod
-    def parse_datetime(data, name, rel_to_name=None):
+    def parse_datetime(data, name, rel_to_name=None, use_utc=False):
         import parsedatetime.parsedatetime as pdt
         cal = pdt.Calendar()
         import datetime
@@ -658,7 +659,11 @@ class Application(ApplicationBase):
 
                 t_struct[8] = -1 # isdst -- we don't know if that is DST
 
-                data[name] = time.mktime(t_struct)
+                if use_utc:
+                    from calendar import timegm
+                    data[name] = timegm(t_struct)
+                else:
+                    data[name] = time.mktime(t_struct)
             else:
                 data[name] = None
         else:
@@ -691,8 +696,10 @@ class Application(ApplicationBase):
             voh = None
 
         if not deleting:
-            self.parse_datetime(data, "start_date")
-            self.parse_datetime(data, "end_date", "start_date")
+            self.parse_datetime(data, "start_date", 
+                    use_utc=data["all_day"])
+            self.parse_datetime(data, "end_date", "start_date", 
+                    use_utc=data["all_day"])
             self.parse_datetime(data, "hide_until", "start_date")
             self.parse_datetime(data, "highlight_at", "start_date")
 
@@ -866,31 +873,28 @@ class Application(ApplicationBase):
         qry = select([request.datamodel.itemversions], from_obj=from_obj) \
                 .where(where)
 
-        from time import localtime, time
         data = []
         for item_ver in (request.dbsession.query(ItemVersion).from_statement(qry)):
-
-            all_day = True
-            if item_ver.start_date is not None:
-                lt = localtime(item_ver.start_date)
-                if (lt.tm_hour, lt.tm_min, lt.tm_sec) != (0, 0, 0):
-                    all_day = False
-            if item_ver.end_date is not None:
-                lt = localtime(item_ver.end_date)
-                if (lt.tm_hour, lt.tm_min, lt.tm_sec) != (0, 0, 0):
-                    all_day = False
+            if item_ver.all_day:
+                from time import gmtime, mktime
+                start = mktime(gmtime(item_ver.start_date))
+                end = mktime(gmtime(item_ver.end_date))
+            else:
+                start = item_ver.start_date
+                end = item_ver.end_date
 
             from urllib import quote
             data.append(dict(
                 id=item_ver.id,
                 title=item_ver.contents,
-                start=item_ver.start_date,
-                end=item_ver.end_date,
-                allDay=all_day,
+                start=start,
+                end=end,
+                allDay=item_ver.all_day,
                 className=["tag-%s" % tag.name for tag in item_ver.tags],
                 url="/#"+quote('{"query": "id(%d) nohide"}' % item_ver.item_id),
                 ))
 
+        from time import time
         now = time()
         data.append(dict(
             id="-1",

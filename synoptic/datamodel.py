@@ -29,7 +29,7 @@ class DataModel(object):
 
         from sqlalchemy import Table, Column, \
                 Integer, Float, Text, UnicodeText, Unicode, ForeignKey, \
-                MetaData
+                MetaData, Boolean
         from sqlalchemy.types import Enum
 
         cls = DataModel
@@ -50,6 +50,11 @@ class DataModel(object):
                 Column('item_id', Integer, ForeignKey('items.id')),
                 Column('timestamp', Float, index=True),
                 Column('contents', UnicodeText()),
+
+                # all-day events are saved with start/end dates at 0:00 
+                # in the GMT timezone
+                Column('all_day', Boolean()),
+
                 Column('start_date', Float()),
                 Column('end_date', Float()),
                 Column('bump_interval', 
@@ -128,6 +133,7 @@ class ItemVersion(object):
         self.tags = kwargs.pop("tags")
         self.contents = kwargs.pop("contents")
 
+        self.all_day = kwargs.pop("all_day", False)
         self.start_date = kwargs.pop("start_date", None)
         self.end_date = kwargs.pop("end_date", None)
         self.hide_until = kwargs.pop("hide_until", None)
@@ -145,6 +151,7 @@ class ItemVersion(object):
                 "tags": [tag.name for tag in self.tags],
                 "contents": self.contents,
 
+                "all_day": self.all_day,
                 "start_date": self.start_date,
                 "end_date": self.end_date,
                 "hide_until": self.hide_until,
