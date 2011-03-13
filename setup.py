@@ -82,16 +82,19 @@ def main():
                   "synoptic.schema_ver_repo.versions"
                   ],
           include_package_data=True,
-          package_data={'synoptic': [
-              'static/*.js',
-              'static/*.gif',
-              'static/*.png',
-              'static/*.txt',
-              'static/*.css',
-              'static/jquery-ui/*.js',
-              'static/jquery-ui/themes/base/*.css',
-              'static/jquery-ui/themes/base/images/*.png',
-              ]}
+          package_data={
+                  'synoptic': [
+                      'static/*.js',
+                      'static/*.gif',
+                      'static/*.png',
+                      'static/*.txt',
+                      'static/*.css',
+                      'static/jquery-ui/*.js',
+                      'static/jquery-ui/themes/base/*.css',
+                      'static/jquery-ui/themes/base/images/*.png',
+                      ],
+                  "synoptic.schema_ver_repo": ["migrate.cfg"],
+              }
          )
 
 if __name__ == "__main__":

@@ -8,5 +8,6 @@ include synoptic/static/*.css
 include synoptic/static/jquery-ui/*.js
 include synoptic/static/jquery-ui/themes/base/*.css
 include synoptic/static/jquery-ui/themes/base/images/*.png
+include synoptic/schema_ver_repo/migrate.cfg
 
 include COPYING
