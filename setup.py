@@ -90,8 +90,8 @@ def main():
                       'static/*.txt',
                       'static/*.css',
                       'static/jquery-ui/*.js',
-                      'static/jquery-ui/themes/base/*.css',
-                      'static/jquery-ui/themes/base/images/*.png',
+                      'static/jquery-ui-css/smoothness/*.css',
+                      'static/jquery-ui-css/smoothness/images/*.png',
                       ],
                   "synoptic.schema_ver_repo": ["migrate.cfg"],
               }

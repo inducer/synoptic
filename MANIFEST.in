@@ -5,9 +5,8 @@ include synoptic/static/*.gif
 include synoptic/static/*.png
 include synoptic/static/*.txt
 include synoptic/static/*.css
-include synoptic/static/jquery-ui/*.js
-include synoptic/static/jquery-ui/themes/base/*.css
-include synoptic/static/jquery-ui/themes/base/images/*.png
-include synoptic/schema_ver_repo/migrate.cfg
+include synoptic/schema_ver_repo/*.cfg
+include synoptic/static/jquery-ui-css/smoothness/*.css
+include synoptic/static/jquery-ui-css/smoothness/images/*.png
 
 include COPYING
