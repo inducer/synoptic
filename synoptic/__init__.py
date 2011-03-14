@@ -84,7 +84,7 @@ class DBSessionInjector(object):
         latest_ver = mig_api.version(versioning_repo)
 
         if exists:
-            from migrate.versioning.exceptions import DatabaseNotControlledError
+            from migrate.exceptions import DatabaseNotControlledError
             try:
                 db_ver = mig_api.db_version(dburl, versioning_repo)
             except DatabaseNotControlledError:
