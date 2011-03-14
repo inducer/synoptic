@@ -356,16 +356,20 @@ class Application(ApplicationBase):
 
         from simplejson import dumps
         from sqlalchemy import asc, desc
-        return request.respond(
-                dumps({
-                    "min": request.dbsession.query(ItemVersion).
-                           order_by(asc(ItemVersion.timestamp))[0].timestamp,
-                    "max": max(now,
-                           request.dbsession.query(ItemVersion).
-                           order_by(desc(ItemVersion.timestamp))[0].timestamp),
-                    "now": now,
-                    }),
-                mimetype="text/plain")
+        base_query = request.dbsession.query(ItemVersion)
+        if list(base_query.limit(1)):
+            return request.respond(
+                    dumps({
+                        "min": base_query.order_by(asc(ItemVersion.timestamp))[0].timestamp,
+                        "max": max(now,
+                               base_query.order_by(desc(ItemVersion.timestamp))[0].timestamp),
+                        "now": now,
+                        }),
+                    mimetype="text/plain")
+        else:
+            return request.respond(
+                    dumps({ "min": now, "max": now+1, "now": now, }),
+                    mimetype="text/plain")
 
     def get_tags_with_usecounts(self, session, model, parsed_query=None,
             max_timestamp=None, startswith=None, limit=None):
