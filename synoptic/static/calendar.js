@@ -15,7 +15,7 @@ $(document).ready(function() {
   })
 
   $(window).resize(function() {
-    cal.fullCalendar('option', 'contentHeihgt', 
+    cal.fullCalendar('option', 'contentHeight', 
       window.innerHeight-SIZE_DECREMENT);
   });
 
