@@ -72,6 +72,15 @@ def import_file(dbsession, text):
 
 
 
+def kill_hms_in_time_struct(t_struct):
+    t_struct = list(t_struct)
+    t_struct[3:6] = (0,0,0)
+    t_struct[8] = -1
+    return t_struct
+
+
+
+
 class DBSessionInjector(object):
     def __init__(self, sub_app, dburl, exists, echo=False):
         # {{{ schema upgrade
@@ -881,8 +890,18 @@ class Application(ApplicationBase):
         for item_ver in (request.dbsession.query(ItemVersion).from_statement(qry)):
             if item_ver.all_day:
                 from time import gmtime, mktime
-                start = mktime(gmtime(item_ver.start_date))
-                end = mktime(gmtime(item_ver.end_date))
+                if item_ver.start_date is not None:
+                    start = mktime(
+                            kill_hms_in_time_struct(
+                                gmtime(item_ver.start_date)))
+                else:
+                    start = None
+                if item_ver.end_date is not None:
+                    end = mktime(
+                            kill_hms_in_time_struct(
+                                gmtime(item_ver.end_date)))
+                else:
+                    end = None
             else:
                 start = item_ver.start_date
                 end = item_ver.end_date
