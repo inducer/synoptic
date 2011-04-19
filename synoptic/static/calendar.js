@@ -48,8 +48,7 @@ $(document).ready(function() {
       if (key == "u")
       {
         // boo yuck
-        cal.fullCalendar("prev");
-        cal.fullCalendar("next");
+        cal.fullCalendar("refetchEvents");
         handled = true;
       }
 
