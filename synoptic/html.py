@@ -97,7 +97,7 @@ def mobile_page(context):
       <link rel="icon" type="image/png" href="static/synoptic.png"/>
       <link rel="stylesheet" type="text/css" href="static/jquery-mobile/jquery.mobile-1.0b3.css" media="screen"/>
       <script type="text/javascript" src="app/get_all_js"></script>
-      <script type="text/javascript" src="jquery-mobile/jquery.mobile-1.0b3.js"></script>
+      <script type="text/javascript" src="static/jquery-mobile/jquery.mobile-1.0b3.js"></script>
       <script type="text/javascript" src="static/mobile.js"></script>
     </head>
     <body>
