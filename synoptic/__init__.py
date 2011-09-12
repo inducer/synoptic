@@ -30,7 +30,6 @@ def get_static_file(filename):
             ".css": "text/css",
             ".txt": "text/plain",
             ".js": "text/javascript",
-            ".js": "text/javascript",
             }
 
     if ext == ".txt":
@@ -259,6 +258,7 @@ class Application(ApplicationBase):
         ApplicationBase.__init__(self,
                 [(re_prefix+pattern, handler) for pattern, handler in [
                     (r'$', self.index),
+                    (r'mobile$', self.mobile_index),
                     (r'timestamp/get_range$', self.http_get_tsrange),
                     (r'item/get_by_id$', self.http_get_item_by_id),
                     (r'item/get_version_by_id$', self.http_get_item_version_by_id),
@@ -355,9 +355,14 @@ class Application(ApplicationBase):
 
     # page handlers -----------------------------------------------------------
     def index(self, request):
-        from synoptic.html import mainpage, Context
+        from synoptic.html import main_page, Context
         ctx = Context()
-        return request.respond(mainpage(ctx))
+        return request.respond(main_page(ctx))
+
+    def mobile_index(self, request):
+        from synoptic.html import mobile_main_page, Context
+        ctx = Context()
+        return request.respond(mobile_main_page(ctx))
 
     def http_get_tsrange(self, request):
         from time import time
@@ -953,7 +958,6 @@ class Application(ApplicationBase):
           "json2.js",
           "rsh.js",
           "sprintf.js",
-          "main.js",
           ]
         sep = "/* %s */\n" % (75*"-")
         all_js = "".join(
