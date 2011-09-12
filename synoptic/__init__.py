@@ -257,8 +257,8 @@ class Application(ApplicationBase):
 
         ApplicationBase.__init__(self,
                 [(re_prefix+pattern, handler) for pattern, handler in [
-                    (r'$', self.index),
-                    (r'mobile$', self.mobile_index),
+                    (r'$', self.http_index),
+                    (r'mobile$', self.http_mobile_index),
                     (r'timestamp/get_range$', self.http_get_tsrange),
                     (r'item/get_by_id$', self.http_get_item_by_id),
                     (r'item/get_version_by_id$', self.http_get_item_version_by_id),
@@ -274,6 +274,7 @@ class Application(ApplicationBase):
                     (r'tags/get_for_query$', self.http_get_tags_for_query),
                     (r'tags/rename$', self.http_rename_tag),
                     (r'calendar$', self.http_calendar),
+                    (r'mobile-calendar$', self.http_mobile_calendar),
                     (r'calendar/data$', self.http_calendar_data),
                     (r'app/get_all_js$', self.http_get_all_js),
                     (r'tag-color-css$', self.http_get_tag_color_css),
@@ -354,12 +355,12 @@ class Application(ApplicationBase):
         return result
 
     # page handlers -----------------------------------------------------------
-    def index(self, request):
+    def http_index(self, request):
         from synoptic.html import main_page, Context
         ctx = Context()
         return request.respond(main_page(ctx))
 
-    def mobile_index(self, request):
+    def http_mobile_index(self, request):
         from synoptic.html import mobile_main_page, Context
         ctx = Context()
         return request.respond(mobile_main_page(ctx))
@@ -857,13 +858,13 @@ class Application(ApplicationBase):
         versions = self.get_itemversions_for_request(request)
 
         from html import calendar_page
-        return request.respond(
-                calendar_page({
-                    "title": "Synoptic Printout",
-                    "body": "<hr/>".join(
-                        '<div class="itemcontents">%s</div>' % v.contents_html()
-                        for v in versions),
-                    }))
+        return request.respond(calendar_page({}))
+
+    def http_mobile_calendar(self, request):
+        versions = self.get_itemversions_for_request(request)
+
+        from html import mobile_calendar_page
+        return request.respond(mobile_calendar_page({}))
 
     def http_calendar_data(self, request):
         start = float(request.GET.get("start", 0))

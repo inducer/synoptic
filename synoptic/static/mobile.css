@@ -1,0 +1,39 @@
+.ui-field-contain.search-container
+{
+  margin-top:0;
+  padding-top:0;
+}
+
+li.ui-btn p
+{
+  white-space: normal;
+  font-size:small;
+}
+li.ui-btn p.ui-li-desc
+{
+  overflow:visible;
+}
+li.ui-btn li
+{
+  font-weight:normal;
+  font-size:small;
+  white-space:normal;
+}
+
+.itemcontainer
+{
+  overflow:visible;
+}
+
+.tagdisplay {
+  text-align:right;
+  font-weight:bold;
+  padding:5px;
+  background-color:#cce;
+  font-family: Verdana,Arial,sans-serif ;
+  float:right;
+  font-size:x-small;
+  border-radius:5px;
+  margin-bottom:5px;
+  margin-left:5px;
+}

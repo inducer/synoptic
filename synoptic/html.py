@@ -35,7 +35,7 @@ def calendar_page(context):
          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
     <html>
     <head>
-      <title>Synoptic Calendar</title>
+      <title>Synoptic Mobile Calendar</title>
       <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
       <link rel="stylesheet" type="text/css" href="static/calendar.css" />
@@ -77,29 +77,6 @@ def page(context):
       <link rel="icon" type="image/png" href="static/synoptic.png"/>
       <script type="text/javascript" src="app/get_all_js"></script>
       <script type="text/javascript" src="static/main.js"></script>
-    </head>
-    <body>
-        %(body)s
-    </body>
-    </html>
-    """ % context
-
-
-
-
-def mobile_page(context):
-    return """
-    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
-         "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-    <head>
-      <title>%(title)s</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="icon" type="image/png" href="static/synoptic.png"/>
-      <link rel="stylesheet" type="text/css" href="static/jquery-mobile/jquery.mobile-1.0b3.css" media="screen"/>
-      <script type="text/javascript" src="app/get_all_js"></script>
-      <script type="text/javascript" src="static/jquery-mobile/jquery.mobile-1.0b3.js"></script>
-      <script type="text/javascript" src="static/mobile.js"></script>
     </head>
     <body>
         %(body)s
@@ -210,6 +187,32 @@ def main_page(context):
 
 
 
+# {{{ mobile pages
+
+def mobile_page(context):
+    return """
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+         "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+      <title>%(title)s</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="icon" type="image/png" href="static/synoptic.png"/>
+      <link rel="stylesheet" type="text/css" href="static/jquery-mobile/jquery-mobile.css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/mobile.css"/>
+      <script type="text/javascript" src="app/get_all_js"></script>
+      <script type="text/javascript" src="static/jquery-mobile/jquery-mobile.js"></script>
+      <script type="text/javascript" src="static/mobile.js"></script>
+    </head>
+    <body>
+        %(body)s
+    </body>
+    </html>
+    """ % context
+
+
+
+
 def mobile_body():
     return """
     <div data-role="page" id="main">
@@ -219,40 +222,159 @@ def mobile_body():
         </div>
 
         <div data-role="content" id="one">
-            <div data-role="fieldcontain">
+            <div data-role="fieldcontain" class="search-container">
                 <input type="search" name="query" id="search" value="" />
             </div>
 
             <ul data-role="listview">
-                <li><a href="index.html">
-                    <h3>Stephen Weber</h3>
-                    <p><strong>You've been invited to a meeting at Filament Group in Boston, MA</strong></p>
-                    <p>Hey Stephen, if you're available at 10am tomorrow, we've got a meeting with the jQuery team.</p>
-                    <p class="ui-li-aside"><strong>6:24</strong>PM</p>
-
+                <li><a href="#edit">
+                    <p>Get money from Cornell trip</p>
                 </a></li>
-                <li><a href="index.html">
-                    <h3>jQuery Team</h3>
-                    <p><strong>Boston Conference Planning</strong></p>
-                    <p>In preparation for the upcoming conference in Boston, we need to start gathering a list of sponsors and speakers.</p>
-                    <p class="ui-li-aside"><strong>9:18</strong>AM</p>
-
+                <li><a href="#edit">
+                    <p>Alternatives for stuff:
+                    <ul>
+                    <li> Alternative 1</li>
+                    <li> Alternative 1</li>
+                    </ul>
+                    </p>
+                </a></li>
+                <li><a href="#edit">
+                    <div class="ui-li-desc itemcontainer">
+                    <div class="tagdisplay">now getmoney silly</div>
+                    <p><strong>Hidden until 9/14</strong></p>
+                    <p>
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    Take out the trash
+                    </p>
+                    </div>
+                </a></li>
+                <li><a href="#edit">
+                    <p>
+                    Water plants
+                    </p>
                 </a></li>
             </ul>
-            <p style="margin-top:15px"></p>
+            <div style="padding-top:15px"></div>
 
             <div data-role="controlgroup">
-            <a href="#calendar" data-role="button" data-icon="grid">View Calendar</a>
-            <a href="#tags" data-role="button" data-icon="info">Browse Tags</a>
-            <a href="#tags" data-role="button" data-icon="arrow-l">Go Back in Time</a>
-            <a href="#quit" data-role="button" data-icon="alert">Quit Synoptic</a>
+              <a href="#edit" data-role="button" data-icon="plus">Add Note</a>
+              <a href="/mobile-calendar" rel="external" data-role="button" data-icon="grid">Calendar</a>
+              <a href="#quit" data-role="button" data-icon="alert" data-rel="dialog">Quit Synoptic</a>
             </div>
         </div><!-- /content -->
 
     </div>
 
 
-    <!-- Start of second page: #two -->
+    <div data-role="page" id="edit">
+        <div data-role="header">
+            <a href="#main" data-role="button" data-icon="back" data-rel="back">Cancel</a>
+            <h1>Edit Item</h1>
+            <a href="#main" data-role="button" data-icon="check">Save</a>
+        </div>
+
+        <div data-role="content">
+            <form>
+            <div data-role="fieldcontain">
+                <textarea cols="40" rows="20" name="textarea" id="textarea"></textarea>
+            </div>
+            <div data-role="fieldcontain">
+                <label for="tags">Tags:</label>
+                <input type="text" name="tags" id="tags" value="" />
+            </div>
+            <div data-role="fieldcontain">
+                <label for="start_date">Date:</label>
+                <input type="text" name="start_date" id="start_date" value="" />
+            </div>
+            <div data-role="fieldcontain">
+                <label for="end_date">End:</label>
+                <input type="text" name="end_date" id="end_date" value="" />
+            </div>
+            <div data-role="fieldcontain">
+                <fieldset data-role="controlgroup">
+                    <input type="checkbox" name="all_day" id="all_day" class="custom" />
+                    <label for="all_day">All day</label>
+                </fieldset>
+            </div>
+            <div data-role="fieldcontain">
+                <label for="hide_until">Hide Until:</label>
+                <input type="text" name="hide_until" id="hide_until" value="" />
+            </div>
+            <div data-role="fieldcontain">
+                <label for="highlight_at">Highlight At:</label>
+                <input type="text" name="highlight_at" id="highlight_at" value="" />
+            </div>
+            <div data-role="fieldcontain">
+                <label for="bump_interval" class="select">Bump interval:</label>
+                <select name="bump_interval" id="bump_interval">
+                    <option value="day">Day</option>
+                    <option value="week">Week</option>
+                    <option value="Month">Month</option>
+                </select>
+            </div>
+
+            <div data-role="controlgroup" data-type="horizontal">
+                <a href="#" data-role="button" data-icon="arrow-l" >Bump</a>
+                <a href="#" data-role="button" data-icon="arrow-r" >Bump</a>
+            </div>
+            </form>
+        </div>
+
+        <div data-role="footer" class="ui-bar">
+            <div data-role="controlgroup" data-type="horizontal">
+                <a href="#main" data-role="button" data-icon="check">Save</a>
+                <a href="#main" data-role="button" data-icon="delete">Delete</a>
+                <a href="#main" data-role="button" data-icon="back" data-rel="back">Cancel</a>
+            </div>
+        </div>
+    </div>
+
+
     <div data-role="page" id="calendar" data-theme="a">
 
         <div data-role="header">
@@ -284,8 +406,8 @@ def mobile_body():
             Are you sure you want to quit Synoptic Mobile?
 
             <div data-role="controlgroup">
-            <a href="/app/quit" data-role="button" data-icon="check">Yes</a>
-            <a href="#main" data-role="button" data-icon="delete">No</a>
+            <a href="/app/quit" data-role="button" rel="external" data-icon="check">Yes</a>
+            <a href="#main" data-role="button" data-icon="back" data-rel="back">No</a>
             </div>
         </div>
     </div>
@@ -299,3 +421,48 @@ def mobile_main_page(context):
         title="Synoptic Mobile",
         body=mobile_body()
         ))
+
+
+
+
+def mobile_calendar_page(context):
+    return """
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+         "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+    <html>
+    <head>
+      <title>Synoptic Calendar</title>
+      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
+      <link rel="stylesheet" type="text/css" href="static/mobile-calendar.css" />
+      <link rel="stylesheet" type="text/css" href="tag-color-css?calendar=true" />
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/jquery-ui.js"></script>
+      <script type="text/javascript" src="static/fullcalendar.js"></script>
+      <script type="text/javascript" src="static/mobile-calendar.js"></script>
+      <link rel="icon" type="image/png" href="static/calendar-favicon.png"/>
+    </head>
+    <body>
+      <div id="view-nav" class="view-controls">
+        <span class="view-nav-button" id="backward">&lt;</span>
+        <span class="view-nav-button" id="forward">&gt;</span>
+      </div>
+
+      <div id="calendar"></div>
+
+      <div id="view-chooser" class="view-controls">
+        <span class="view-button" id="month">Month</span>
+        <span class="view-button" id="week">Week</span>
+        <span class="view-button" id="day">Day</span>
+      </div>
+
+    </body>
+    </html>
+    """ % context
+
+
+
+# }}}
+
+# vim: foldmethod=marker

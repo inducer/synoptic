@@ -1,0 +1,61 @@
+body {
+  margin: 0;
+  background-color:#ddd;
+}
+
+#calendar {
+  margin-top:20px;
+}
+
+.fc-view {
+  font-size:x-small;
+}
+
+.ui-state-highlight {
+  background: #ffff88 !important;
+}
+
+.calendar-now, .fc-agenda .calendar-now .fc-event-time, .calendar-now a
+{ background-image: url("construction.png") ; border-color: black; }
+
+.calendar-now a
+{ background-color: yellow; background-image: none; border-color: black; color: black; }
+
+.view-controls {
+  padding-top:10px;
+  padding-bottom:10px;
+  text-align:center;
+  font-size:x-large;
+  font-family: Verdana,Arial,sans-serif ;
+}
+
+.view-nav-button {
+  padding:5px;
+
+  background-color: #ddd;
+  border-left:solid 2px #fff;
+  border-top:solid 2px #fff;
+  border-bottom:solid 2px #bbb;
+  border-right:solid 2px #bbb;
+  cursor:pointer;
+  padding-left:20%;
+  padding-right:20%;
+}
+
+.view-button {
+  padding:5px;
+
+  background-color: #ddd;
+  border-left:solid 2px #fff;
+  border-top:solid 2px #fff;
+  border-bottom:solid 2px #bbb;
+  border-right:solid 2px #bbb;
+  cursor:pointer;
+}
+
+.view-button.selected {
+  border-left:solid 2px #bbb;
+  border-top:solid 2px #bbb;
+  border-bottom:solid 2px #fff;
+  border-right:solid 2px #fff;
+}
