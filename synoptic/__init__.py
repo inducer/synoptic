@@ -855,14 +855,10 @@ class Application(ApplicationBase):
     # {{{ calendar
 
     def http_calendar(self, request):
-        versions = self.get_itemversions_for_request(request)
-
         from html import calendar_page
         return request.respond(calendar_page({}))
 
     def http_mobile_calendar(self, request):
-        versions = self.get_itemversions_for_request(request)
-
         from html import mobile_calendar_page
         return request.respond(mobile_calendar_page({}))
 
@@ -913,10 +909,15 @@ class Application(ApplicationBase):
                 start = item_ver.start_date
                 end = item_ver.end_date
 
+            contents = item_ver.contents
+
+            if len(contents) > 40:
+                contents = contents[:40] + "..."
+
             from urllib import quote
             data.append(dict(
                 id=item_ver.id,
-                title=item_ver.contents,
+                title=contents,
                 start=start,
                 end=end,
                 allDay=item_ver.all_day,

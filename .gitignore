@@ -1,5 +1,6 @@
 *~
-.*.swp
+.sw[op]
+.*.sw[op]
 build
 *.db
 dist
