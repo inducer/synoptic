@@ -32,12 +32,13 @@ making Synoptic work as seamlessly as possible. You may never notice
 many of these refinements, because they're meant to make stuff work like
 it's supposed to. If you're curious nonetheless, take a [peek](#advanced).
 
-* **[Built-in Calendar](#advanced).** Synoptic can display its notes in a
+* **[Built-in Calendar](#calendar).** Synoptic can display its notes in a
 calendar view that can be reached by the calendar button in the toolbar. That,
 along 'hide until' and 'highlight at' fields in notes make Synoptic ideally
 suited for staying organized, whether you are using the [Getting Things
 Done](https://secure.wikimedia.org/wikipedia/en/wiki/Getting_Things_Done)
-method or not.
+method or not. The calendar also offers the option of integrating information
+from Google Calendar.
 
 You can also see what's [changed since the last release](#changes) or browse
 the [Frequently Asked Questions](#faq). Curious who cooked this up?
@@ -443,3 +444,24 @@ and calendar entries, in a simple `tag: color` format, optionally as part
 of an enumeration. Here's an example:
 
 * faq: red
+---------------------------------------------------------------------------
+TAGS: calendar,advanced
+# How to integrate information from Google Calendar
+
+Create a note with the tag `googlecalendar` with content like the following:
+
+* url: https://www.google.com/calendar/feeds/somebody%40gmail.com/private-alskdjfasdlkjfasldfjsa/basic
+* color: #4433cc
+
+The `color` entry is optional. Any CSS color is accepted. Additional space
+around these entries is silently discarded, so that using Markdown's markup for
+preformatted code (indent by 4 spaces) will work.
+
+You can find the calendar URL as the private (or public) XML feed from the
+'Calendar Settings' page in Google Calendar.
+
+**Note:** The code displaying Google Calendar content has a habit of breaking
+when you're offline. Synoptic relies on the browser's 
+[navigator.onLine](https://developer.mozilla.org/en-US/docs/DOM/window.navigator.onLine)
+property to filter out Google calendar sources when you're offline. If that
+flag is not up-to-date, your calendar may instead show up empty.

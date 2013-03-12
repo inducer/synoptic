@@ -40,6 +40,8 @@ def get_static_file(filename):
 
 
 
+# {{{ import backup/initial content
+
 def import_file(dbsession, text):
     lines = text.split("\n")
 
@@ -68,6 +70,8 @@ def import_file(dbsession, text):
 
     dbsession.commit()
 
+# }}}
+
 
 
 
@@ -79,6 +83,16 @@ def kill_hms_in_time_struct(t_struct):
 
 
 
+def get_google_calendar_tag(entry_dict):
+    from hashlib import md5
+    md5_obj = md5()
+    md5_obj.update(str(entry_dict.get("url")))
+    return "gcal-"+md5_obj.hexdigest()[:10]
+
+
+
+
+# {{{ HTTP middleware
 
 class DBSessionInjector(object):
     def __init__(self, sub_app, dburl, exists, echo=False):
@@ -199,9 +213,9 @@ class Request(WSGIRequest):
         resp = Response(self.environ, self.start_response, *args, **kwargs)
         return resp()
 
+# }}}
 
-
-
+# {{{ URL dispatch
 
 class ApplicationBase(object):
     def __init__(self, table, allowed_networks=[]):
@@ -247,6 +261,8 @@ class ApplicationBase(object):
             from paste.httpexceptions import HTTPNotFound
             raise HTTPNotFound()
 
+# }}}
+
 
 
 
@@ -275,6 +291,7 @@ class Application(ApplicationBase):
                     (r'tags/rename$', self.http_rename_tag),
                     (r'calendar$', self.http_calendar),
                     (r'mobile-calendar$', self.http_mobile_calendar),
+                    (r'calendar/event_sources$', self.http_calendar_event_sources),
                     (r'calendar/data$', self.http_calendar_data),
                     (r'app/get_all_js$', self.http_get_all_js),
                     (r'tag-color-css$', self.http_get_tag_color_css),
@@ -289,7 +306,8 @@ class Application(ApplicationBase):
     def set_quit_func(self, quit_func):
         self.quit_func = quit_func
 
-    # tools -------------------------------------------------------------------
+    # {{{ tools
+
     def item_to_json(self, item):
         result = item.as_json()
         result['contents_html'] = item.contents_html()
@@ -354,7 +372,41 @@ class Application(ApplicationBase):
 
         return result
 
-    # page handlers -----------------------------------------------------------
+    def get_config_info_by_tag(self, datamodel, dbsession, tag):
+        """Return a list of dictionaries containing configuration information
+        from notes with *tag* which are formatted like this::
+
+            * url: https://bladiblah
+            * color: #4433cc
+        """
+
+        tags = dbsession.query(Tag).filter_by(name=tag)
+
+        entries = []
+
+        if tags.count():
+            google_calendar_tag = tags.one()
+
+            from sqlalchemy.sql import select
+            qry = select([datamodel.itemversions],
+                    from_obj=get_current_itemversions_join(datamodel)) \
+                    .where(ItemVersion.tags.any(id=google_calendar_tag.id))
+
+            import re
+            config_entry_re = re.compile(r"^\s*(?:\*\s+)?([a-zA-Z0-9]+)\s*:\s*(.*)\s*$",
+                    re.MULTILINE)
+            for item_ver in dbsession.query(ItemVersion).from_statement(qry):
+                entry = {}
+                entries.append(entry)
+                for match in config_entry_re.finditer(item_ver.contents):
+                    entry[match.group(1)] = match.group(2)
+
+        return entries
+
+    # }}}
+
+    # {{{ page handlers
+
     def http_index(self, request):
         from synoptic.html import main_page, Context
         ctx = Context()
@@ -862,6 +914,23 @@ class Application(ApplicationBase):
         from html import mobile_calendar_page
         return request.respond(mobile_calendar_page({}))
 
+    def http_calendar_event_sources(self, request):
+        event_sources = ["/calendar/data"]
+
+        for entry_dict in self.get_config_info_by_tag(
+                request.datamodel, request.dbsession, u"googlecalendar"):
+            if "url" not in entry_dict:
+                continue
+            event_sources.append(dict(
+                url=entry_dict["url"],
+                className=get_google_calendar_tag(entry_dict),
+                requireOnline=True))
+
+        from simplejson import dumps
+        return request.respond(
+                dumps(event_sources),
+                mimetype="text/plain")
+
     def http_calendar_data(self, request):
         start = float(request.GET.get("start", 0))
         end = float(request.GET.get("end", 0))
@@ -946,6 +1015,7 @@ class Application(ApplicationBase):
     def http_get_all_js(self, request):
         all_js_filenames = [
           "jquery.js",
+          "jquery-migrate.js",
           "jquery.timers.js",
           "jquery.bgiframe.js",
           "jquery.dimensions.js",
@@ -974,35 +1044,31 @@ class Application(ApplicationBase):
             mimetype="text/javascript")
 
     def http_get_tag_color_css(self, request):
-        tags = request.dbsession.query(Tag).filter_by(name=u"colorconfig")
-
-        if request.GET.get("calendar", "") == "true":
-            pattern = """.tag-%(tag)s, .fc-agenda .tag-%(tag)s .fc-event-time, .tag-%(tag)s a
+        is_calendar = request.GET.get("calendar", "") == "true"
+        if is_calendar:
+            pattern = """.tag-%(tag)s, .fc-agenda .tag-%(tag)s .fc-event-time, .tag-%(tag)s .fc-event-inner
                 { background-color: %(color)s; border-color: %(color)s; }"""
         else:
             pattern = ".tag-%(tag)s { background-color: %(color)s; color:white; }" 
 
+        color_decls = []
+        for entry_dict in self.get_config_info_by_tag(
+                request.datamodel, request.dbsession, u"colorconfig"):
+            for tag, color in entry_dict.iteritems():
+                color_decls.append(pattern % dict(tag=tag, color=color))
 
-        if tags.count():
-            color_config_tag = tags.one()
+        if is_calendar:
+            for entry_dict in self.get_config_info_by_tag(
+                    request.datamodel, request.dbsession, u"googlecalendar"):
+                if "color" in entry_dict:
+                    color_decls.append(
+                        """.%(tag)s, .fc-agenda .%(tag)s .fc-event-time, .%(tag)s .fc-event-inner
+                            { background-color: %(color)s; border-color: %(color)s; }"""
+                        % dict(
+                            tag=get_google_calendar_tag(entry_dict),
+                            color=entry_dict["color"]))
 
-            from sqlalchemy.sql import select
-            qry = select([request.datamodel.itemversions],
-                    from_obj=get_current_itemversions_join(request.datamodel)) \
-                    .where(ItemVersion.tags.any(id=color_config_tag.id))
-
-            import re
-            color_rule_re = re.compile(r"^\s*(?:\*\s+)?([a-zA-Z0-9]+)\s*:\s*(.*)$",
-                    re.MULTILINE)
-            color_decls = []
-            for item_ver in request.dbsession.query(ItemVersion).from_statement(qry):
-                for match in color_rule_re.finditer(item_ver.contents):
-                    color_decls.append(pattern % dict(
-                        tag=match.group(1), color=match.group(2)))
-
-            css = "\n".join(color_decls)
-        else:
-            css = ""
+        css = "\n".join(color_decls)
 
         return request.respond(css, mimetype="text/css")
 
@@ -1025,5 +1091,7 @@ class Application(ApplicationBase):
             raise HTTPNotFound()
 
         return request.respond(data, mimetype=mimetype)
+
+    # }}}
 
 # vim: foldmethod=marker

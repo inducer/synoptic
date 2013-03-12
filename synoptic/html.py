@@ -35,14 +35,16 @@ def calendar_page(context):
          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
     <html>
     <head>
-      <title>Synoptic Mobile Calendar</title>
+      <title>Synoptic Calendar</title>
       <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
       <link rel="stylesheet" type="text/css" href="static/calendar.css" />
       <link rel="stylesheet" type="text/css" href="tag-color-css?calendar=true" />
       <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/jquery-migrate.js"></script>
       <script type="text/javascript" src="static/jquery-ui.js"></script>
       <script type="text/javascript" src="static/fullcalendar.js"></script>
+      <script type="text/javascript" src="static/gcal.js"></script>
       <script type="text/javascript" src="static/calendar.js"></script>
       <link rel="icon" type="image/png" href="static/calendar-favicon.png"/>
     </head>
@@ -438,6 +440,7 @@ def mobile_calendar_page(context):
       <link rel="stylesheet" type="text/css" href="tag-color-css?calendar=true" />
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/jquery-migrate.js"></script>
       <script type="text/javascript" src="static/jquery-ui.js"></script>
       <script type="text/javascript" src="static/fullcalendar.js"></script>
       <script type="text/javascript" src="static/mobile-calendar.js"></script>

@@ -19,8 +19,8 @@
   background: #ffff88 !important;
 }
 
-.calendar-now, .fc-agenda .calendar-now .fc-event-time, .calendar-now a
-{ background-image: url("construction.png") ; border-color: black; }
+.calendar-now, .fc-agenda .calendar-now .fc-event-time, .calendar-now .fc-event-inner
+{ border-color: black; }
 
-.calendar-now a
+.calendar-now .fc-event-inner
 { background-color: yellow; background-image: none; border-color: black; color: black; }
