@@ -36,7 +36,7 @@ def calendar_page(context):
     <html>
     <head>
       <title>Synoptic Calendar</title>
-      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.10.1.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
       <link rel="stylesheet" type="text/css" href="static/calendar.css" />
       <link rel="stylesheet" type="text/css" href="tag-color-css?calendar=true" />
@@ -72,7 +72,7 @@ def page(context):
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
     <head>
       <title>%(title)s</title>
-      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.10.1.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/style.css"/>
       <link rel="stylesheet" type="text/css" href="static/content.css"/>
       <link rel="stylesheet" type="text/css" href="tag-color-css" />
@@ -434,7 +434,7 @@ def mobile_calendar_page(context):
     <html>
     <head>
       <title>Synoptic Calendar</title>
-      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.8.9.custom.css" media="screen"/>
+      <link rel="stylesheet" type="text/css" href="static/jquery-ui-css/smoothness/jquery-ui-1.10.1.custom.css" media="screen"/>
       <link rel="stylesheet" type="text/css" href="static/fullcalendar.css"/>
       <link rel="stylesheet" type="text/css" href="static/mobile-calendar.css" />
       <link rel="stylesheet" type="text/css" href="tag-color-css?calendar=true" />
