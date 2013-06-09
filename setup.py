@@ -64,7 +64,7 @@ def main():
          )
 
 if __name__ == "__main__":
-    import distribute_setup
-    distribute_setup.use_setuptools()
+    import ez_setup
+    ez_setup.use_setuptools()
 
     main()
