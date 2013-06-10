@@ -1,5 +1,4 @@
 include doc/*.wsgi
-include ez_setup.py
 include synoptic/static/*.js
 include synoptic/static/*.gif
 include synoptic/static/*.png

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 def main():
     from setuptools import setup
 
@@ -10,7 +11,7 @@ def main():
           long_description=open("README.rst", "rt").read(),
           author=u"Andreas Kloeckner",
           author_email="inform@tiker.net",
-          license = "MIT",
+          license="MIT",
           url="http://mathema.tician.de/software/synoptic",
           classifiers=[
               'Development Status :: 4 - Beta',
@@ -61,10 +62,7 @@ def main():
                       ],
                   "synoptic.schema_ver_repo": ["migrate.cfg"],
               }
-         )
+          )
 
 if __name__ == "__main__":
-    import ez_setup
-    ez_setup.use_setuptools()
-
     main()
