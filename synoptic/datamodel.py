@@ -1,10 +1,9 @@
 MAPPERS_DEFINED = [False]
 
 
-
 BUMP_INTERVALS = [
     ("hour", "hour"),
-    ("day", "day"), 
+    ("day", "day"),
     ("week", "week"),
     ("2week", "2 weeks"),
     ("month", "month"),
@@ -12,12 +11,8 @@ BUMP_INTERVALS = [
     ]
 
 
-
-
 def is_valid_tag(tag):
     return tag.isalnum()
-
-
 
 
 class DataModel(object):
@@ -51,20 +46,21 @@ class DataModel(object):
                 Column('timestamp', Float, index=True),
                 Column('contents', UnicodeText()),
 
-                # all-day events are saved with start/end dates at 0:00 
+                # all-day events are saved with start/end dates at 0:00
                 # in the GMT timezone
                 Column('all_day', Boolean()),
 
                 Column('start_date', Float()),
                 Column('end_date', Float()),
-                Column('bump_interval', 
+                Column('bump_interval',
                     Enum(*[key for key, val in BUMP_INTERVALS])),
                 Column('hide_until', Float()),
                 Column('highlight_at', Float()),
                 )
 
         cls.itemversions_tags = Table('itemversions_tags', self.metadata,
-                Column('itemversion_id', Integer, ForeignKey('itemversions.id'), index=True),
+                Column('itemversion_id', Integer,
+                    ForeignKey('itemversions.id'), index=True),
                 Column('tag_id', Integer, ForeignKey('tags.id'), index=True),
                 )
 
@@ -88,7 +84,7 @@ class DataModel(object):
             })
         mapper(Tag, self.tags)
         mapper(ItemVersion, self.itemversions, properties={
-            'tags':relation(Tag, secondary=self.itemversions_tags)
+            'tags': relation(Tag, secondary=self.itemversions_tags)
             })
 
         mapper(ViewOrdering, self.vieworderings, properties={
@@ -99,9 +95,8 @@ class DataModel(object):
             })
 
 
+# {{{ mapped instances
 
-
-# mapped instances ------------------------------------------------------------
 class Tag(object):
     def __init__(self, name):
         self.name = name
@@ -116,16 +111,14 @@ class Tag(object):
         return self.name == other.name
 
 
-
-
 class Item(object):
     def __repr__(self):
         return "<Item %s>" % self.id
 
 
-
-
 _html_cache = {}
+
+
 class ItemVersion(object):
     def __init__(self, **kwargs):
         self.item = kwargs.pop("item")
@@ -179,7 +172,7 @@ class ItemVersion(object):
                 try:
                     result = markdown(text)
                 except:
-                    result = "*** MARKDOWN ERROR *** "+text;
+                    result = "*** MARKDOWN ERROR *** "+text
 
                 _html_cache[text] = result
                 return result
@@ -190,13 +183,10 @@ class ItemVersion(object):
         return self.htmlize(self.contents)
 
 
-
 class ViewOrdering(object):
     def __init__(self, norm_query, timestamp):
         self.norm_query = norm_query
         self.timestamp = timestamp
-
-
 
 
 class ViewOrderingEntry(object):
@@ -208,10 +198,11 @@ class ViewOrderingEntry(object):
     def __repr__(self):
         return "<VOEntry item=%s, weight=%s>" % (self.item, self.weight)
 
+# }}}
 
 
+# {{{ tools
 
-# tools -----------------------------------------------------------------------
 def find_tags(session, tags, create_them):
     if isinstance(tags, basestring):
         tags = [s.strip() for s in tags.split(",")]
@@ -233,8 +224,6 @@ def find_tags(session, tags, create_them):
                 result.append(Tag(tag_str))
 
     return result
-
-
 
 
 def store_itemversion(dbsession, **kwargs):
@@ -279,10 +268,11 @@ def store_itemversion(dbsession, **kwargs):
 
     return itemversion
 
+# }}}
 
 
+# {{{ query rewrite visitor
 
-# query rewrite visitor -------------------------------------------------------
 class SQLifyQueryVisitor(object):
     def __init__(self, session):
         self.session = session
@@ -338,7 +328,7 @@ class SQLifyQueryVisitor(object):
 
     def visit_dated_query(self, q):
         from sqlalchemy.sql import or_
-        return or_(ItemVersion.start_date != None,
+        return or_(ItemVersion.start_date != None,  # noqa
                 ItemVersion.end_date != None)
 
     def visit_no_hide_query(self, q):
@@ -347,14 +337,15 @@ class SQLifyQueryVisitor(object):
     def visit_sort_by_date(self, q):
         self.sort_by_date = True
 
+# }}}
 
 
+# {{{ query helpers
 
-# query helpers ---------------------------------------------------------------
 def get_current_itemversions_join(model, max_timestamp=None):
     """Find the current version of all items."""
 
-    from sqlalchemy.sql import select, and_, or_, not_, func
+    from sqlalchemy.sql import select, and_, func
 
     max_timestamps_per_item = select(
             [model.itemversions.c.item_id,
@@ -371,19 +362,17 @@ def get_current_itemversions_join(model, max_timestamp=None):
     return model.itemversions.join(max_timestamps_per_item,
                 and_(
                     max_timestamps_per_item.c.item_id
-                      ==model.itemversions.c.item_id,
+                    == model.itemversions.c.item_id,
                     max_timestamps_per_item.c.max_timestamp
-                      ==model.itemversions.c.timestamp,
+                    == model.itemversions.c.timestamp,
                     ))
-
-
 
 
 def query_itemversions(session, model, parsed_query, max_timestamp=None):
     """Given parsed_query and max_timestamp, find the resulting ItemVersion ids,
     in the right order."""
 
-    from sqlalchemy.sql import select, and_, or_, not_, func
+    from sqlalchemy.sql import select, and_, or_
 
     # find view ordering
     view_orderings = (session.query(ViewOrdering)
@@ -406,22 +395,22 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
         vo_entries = (
                 select([model.viewordering_entries])
                 .where(model.viewordering_entries.c.viewordering_id
-                    ==view_orderings[0].id)).alias("vo_entries")
+                    == view_orderings[0].id)).alias("vo_entries")
 
         from_obj = from_obj.outerjoin(vo_entries,
-                model.itemversions.c.item_id==vo_entries.c.item_id)
+                model.itemversions.c.item_id == vo_entries.c.item_id)
 
     from synoptic.datamodel import SQLifyQueryVisitor
     visitor = SQLifyQueryVisitor(session)
 
     conditions = [
-            model.itemversions.c.contents != None,
+            model.itemversions.c.contents != None,  # noqa
             parsed_query.visit(visitor)
             ]
 
     if visitor.use_hide_until:
         from time import time
-        conditions.append(
+        conditions.append(  # noqa
                 or_(ItemVersion.hide_until < time(),
                     ItemVersion.hide_until == None))
 
@@ -439,10 +428,11 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
 
     return result.group_by(model.itemversions.c.item_id)
 
+# }}}
 
 
+# {{{ view ordering handler
 
-# view ordering handler -------------------------------------------------------
 class ViewOrderingHandler:
     def __init__(self, session, model, parsed_query):
         self.session = session
@@ -466,20 +456,20 @@ class ViewOrderingHandler:
     def load(self):
         self.item_ids = [row[self.model.itemversions.c.item_id]
                 for row in self.session.execute(
-                query_itemversions(self.session,
-                    self.model, self.parsed_query)
-                .alias("currentversions"))]
+                    query_itemversions(self.session,
+                        self.model, self.parsed_query)
+                    .alias("currentversions"))]
 
     def __contains__(self, sought_item_id):
         return sought_item_id in self.item_ids
 
     def index_from_id(self, sought_item_id):
-        if sought_item_id == None:
+        if sought_item_id is None:
             return len(self.item_ids)
         for idx, item_id in enumerate(self.item_ids):
             if item_id == sought_item_id:
                 return idx
-        raise ValueError, "invalid item id supplied"
+        raise ValueError("invalid item id supplied")
 
     def reorder(self, moved_idx, before_idx):
         assert moved_idx != before_idx
@@ -501,8 +491,8 @@ class ViewOrderingHandler:
         from time import time
 
         viewordering = ViewOrdering(str(self.parsed_query), time())
-        session.add(viewordering)
-        session.commit()
+        self.session.add(viewordering)
+        self.session.commit()
 
     def save(self):
         from time import time
@@ -513,3 +503,7 @@ class ViewOrderingHandler:
             viewordering.entries.append(ViewOrderingEntry(viewordering,
                 self.session.query(Item).get(item_id), idx))
         self.session.add(viewordering)
+
+# }}}
+
+# vim: foldmethod=marker
