@@ -1,5 +1,6 @@
 #! /usr/bin/env python2.5
 
+
 def get_data_path():
     import os.path
 
@@ -15,8 +16,6 @@ def get_data_path():
         return synoptic_path
 
 
-
-
 class Log:
     """file-like for writes with auto flush after each write
     to ensure that everything is logged, even during an
@@ -24,13 +23,13 @@ class Log:
 
     def __init__(self, f):
         self.f = f
+
     def write(self, s):
         self.f.write(s)
         self.f.flush()
+
     def flush(self):
         self.f.flush()
-
-
 
 
 def main():
@@ -42,8 +41,9 @@ def main():
     mydir = get_data_path()
 
     description = ("An AJAXy information/note manager * "
-            "To start a new database file, simply pick a file name and start synoptic "
-            "with it. That file will be created and will contain your set of notes.")
+            "To start a new database file, simply pick a file name and start "
+            "synoptic with it. That file will be created and will contain your "
+            "set of notes.")
 
     parser = OptionParser(description=description,
             usage="%prog [options] dbfile")
@@ -145,7 +145,7 @@ def main():
             if pid > 0:
                 # exit from second parent, print eventual PID before
                 #print "Daemon PID %d" % pid
-                open(options.pidfile,'w').write("%d"%pid)
+                open(options.pidfile, 'w').write("%d" % pid)
                 sys.exit(0)
         except OSError, e:
             print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror)
@@ -174,4 +174,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
