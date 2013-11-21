@@ -1,10 +1,8 @@
-from synoptic.datamodel import \
-        Item, ItemVersion, Tag, ViewOrdering, ViewOrderingEntry, \
-        store_itemversion,  \
-        get_current_itemversions_join, \
-        query_itemversions
-
-
+from synoptic.datamodel import (
+        ItemVersion, Tag, ViewOrdering,
+        store_itemversion,
+        get_current_itemversions_join,
+        query_itemversions)
 
 
 def get_static_file(filename):
@@ -38,8 +36,6 @@ def get_static_file(filename):
     return (data, mimetypes.get(ext, "application/octet-stream"))
 
 
-
-
 # {{{ import backup/initial content
 
 def import_file(dbsession, text):
@@ -65,7 +61,7 @@ def import_file(dbsession, text):
 
         idx += 1  # skip separator
 
-        store_itemversion(dbsession, 
+        store_itemversion(dbsession,
                 contents="\n".join(body), tags=tags, timestamp=timestamp)
 
     dbsession.commit()
@@ -73,14 +69,11 @@ def import_file(dbsession, text):
 # }}}
 
 
-
-
 def kill_hms_in_time_struct(t_struct):
     t_struct = list(t_struct)
-    t_struct[3:6] = (0,0,0)
+    t_struct[3:6] = (0, 0, 0)
     t_struct[8] = -1
     return t_struct
-
 
 
 def get_google_calendar_tag(entry_dict):
@@ -88,8 +81,6 @@ def get_google_calendar_tag(entry_dict):
     md5_obj = md5()
     md5_obj.update(str(entry_dict.get("url")))
     return "gcal-"+md5_obj.hexdigest()[:10]
-
-
 
 
 # {{{ HTTP middleware
@@ -114,14 +105,15 @@ class DBSessionInjector(object):
                 mig_api.version_control(dburl, versioning_repo)
                 db_ver = mig_api.db_version(dburl, versioning_repo)
 
-
-            print "found database version %d, code uses version %d" % (db_ver, latest_ver)
+            print "found database version %d, code uses version %d" % (
+                    db_ver, latest_ver)
 
             if db_ver < latest_ver:
                 print "upgrading..."
                 mig_api.upgrade(dburl, versioning_repo)
         else:
-            # we're only just creating the db, thus using the latest available version
+            # we're only just creating the db, thus using the latest available
+            # version
             mig_api.version_control(dburl, versioning_repo, version=latest_ver)
 
         # }}}
@@ -153,8 +145,6 @@ class DBSessionInjector(object):
             raise
 
 
-
-
 class ErrorMiddleware(object):
     def __init__(self, sub_app):
         self.sub_app = sub_app
@@ -170,7 +160,7 @@ class ErrorMiddleware(object):
             return e(environ, start_response)
         except:
             status = "500 Server Error"
-            response_headers = [("content-type","text/plain")]
+            response_headers = [("content-type", "text/plain")]
             exc_info = sys.exc_info()
             ex_type, ex_val, ex_tb = exc_info
 
@@ -181,11 +171,9 @@ class ErrorMiddleware(object):
                 pass
 
             start_response(status, response_headers, exc_info)
-            return ["%s: %s" % (ex_type.__name__,str(ex_val))]
+            return ["%s: %s" % (ex_type.__name__, str(ex_val))]
 
 from paste.wsgiwrappers import WSGIRequest, WSGIResponse
-
-
 
 
 class Response(WSGIResponse):
@@ -197,9 +185,6 @@ class Response(WSGIResponse):
 
     def __call__(self):
         return WSGIResponse.__call__(self, self.environ, self.start_response)
-
-
-
 
 
 class Request(WSGIRequest):
@@ -214,6 +199,7 @@ class Request(WSGIRequest):
         return resp()
 
 # }}}
+
 
 # {{{ URL dispatch
 
@@ -262,8 +248,6 @@ class ApplicationBase(object):
             raise HTTPNotFound()
 
 # }}}
-
-
 
 
 class Application(ApplicationBase):
@@ -333,18 +317,20 @@ class Application(ApplicationBase):
 
     def get_json_items(self, session, model, parsed_query, max_timestamp):
         itemversions_query = query_itemversions(
-                session, model, parsed_query, max_timestamp).alias("currentitemversions")
+                session, model, parsed_query, max_timestamp)\
+                        .alias("currentitemversions")
 
         # prepare eager loading of tags
         from sqlalchemy.sql import select
         iv_and_t_query = select([itemversions_query, model.tags],
-                from_obj=[itemversions_query
+                from_obj=[
+                    itemversions_query
                     .outerjoin(model.itemversions_tags,
                         itemversions_query.c.id
-                        ==model.itemversions_tags.c.itemversion_id)
+                        == model.itemversions_tags.c.itemversion_id)
                     .outerjoin(model.tags,
                         model.itemversions_tags.c.tag_id
-                        ==model.tags.c.id)
+                        == model.tags.c.id)
                     ],
                 use_labels=True)
 
@@ -354,7 +340,8 @@ class Application(ApplicationBase):
             if last_id != row[itemversions_query.c.id]:
                 last_id = row[itemversions_query.c.id]
                 result.append(
-                        {"id": row[itemversions_query.c.item_id],
+                        {
+                            "id": row[itemversions_query.c.item_id],
                             "version_id": row[itemversions_query.c.id],
                             "contents": row[itemversions_query.c.contents],
                             "contents_html": ItemVersion.htmlize(
@@ -393,7 +380,8 @@ class Application(ApplicationBase):
                     .where(ItemVersion.tags.any(id=google_calendar_tag.id))
 
             import re
-            config_entry_re = re.compile(r"^\s*(?:\*\s+)?([a-zA-Z0-9]+)\s*:\s*(.*)\s*$",
+            config_entry_re = re.compile(
+                    r"^\s*(?:\*\s+)?([a-zA-Z0-9]+)\s*:\s*(.*)\s*$",
                     re.MULTILINE)
             for item_ver in dbsession.query(ItemVersion).from_statement(qry):
                 entry = {}
@@ -428,20 +416,23 @@ class Application(ApplicationBase):
         if list(base_query.limit(1)):
             return request.respond(
                     dumps({
-                        "min": base_query.order_by(asc(ItemVersion.timestamp))[0].timestamp,
-                        "max": max(now,
-                               base_query.order_by(desc(ItemVersion.timestamp))[0].timestamp),
+                        "min":
+                        base_query.order_by(asc(ItemVersion.timestamp))[0].timestamp,
+                        "max":
+                        max(now,
+                            base_query.order_by(
+                                desc(ItemVersion.timestamp))[0].timestamp),
                         "now": now,
                         }),
                     mimetype="text/plain")
         else:
             return request.respond(
-                    dumps({ "min": now, "max": now+1, "now": now, }),
+                    dumps({"min": now, "max": now+1, "now": now, }),
                     mimetype="text/plain")
 
     def get_tags_with_usecounts(self, session, model, parsed_query=None,
             max_timestamp=None, startswith=None, limit=None):
-        from sqlalchemy.sql import select, and_, or_, not_, func
+        from sqlalchemy.sql import select, func
 
         if parsed_query is not None:
             itemversions_q = query_itemversions(session, model,
@@ -460,9 +451,11 @@ class Application(ApplicationBase):
                     model.tags.c.name,
                     func.count(itemversions_q.c.id).label("use_count"),
                         ],
-                    from_obj=[model.itemversions_tags
+                    from_obj=[
+                        model.itemversions_tags
                         .join(itemversions_q,
-                            itemversions_q.c.id==model.itemversions_tags.c.itemversion_id)
+                            itemversions_q.c.id
+                            == model.itemversions_tags.c.itemversion_id)
                         .join(model.tags)
                         ])
                 )
@@ -470,9 +463,10 @@ class Application(ApplicationBase):
         if startswith:
             twuc_q = twuc_q.where(model.tags.c.name.startswith(startswith))
 
-        twuc_q = (twuc_q
+        twuc_q = (
+                twuc_q
                 .group_by(model.tags.c.id)
-                .having(func.count(itemversions_q.c.id)>0)
+                .having(func.count(itemversions_q.c.id) > 0)
                 .order_by(model.tags.c.name)
                 )
 
@@ -522,13 +516,13 @@ class Application(ApplicationBase):
 
         return request.respond(
                 dumps({
-                "tags": tags,
-                "query_tags": query_tags,
-                }),
+                    "tags": tags,
+                    "query_tags": query_tags,
+                    }),
                 mimetype="text/plain")
 
     def http_rename_tag(self, request):
-        from simplejson import loads, dumps
+        from simplejson import loads
         data = loads(request.POST["json"])
 
         old_name = data["old_name"]
@@ -542,7 +536,7 @@ class Application(ApplicationBase):
         new_tag_query = request.dbsession.query(Tag).filter_by(name=new_name)
 
         if new_tag_query.count():
-            raise ValueError, "tag already exsits"
+            raise ValueError("tag already exsits")
 
         tag.name = new_name
 
@@ -561,7 +555,7 @@ class Application(ApplicationBase):
                 request.dbsession.query(ItemVersion)
                 .filter_by(item_id=int(request.GET["id"]))
                 .order_by(ItemVersion.timestamp.desc())
-                .filter(ItemVersion.contents != None)
+                .filter(ItemVersion.contents != None)  # noqa
                 .limit(1)
                     )
 
@@ -694,10 +688,10 @@ class Application(ApplicationBase):
 
         json = [
                 {
-                    "version_id": iv.id, 
-                    "timestamp":iv.timestamp,
-                    "is_current":False,
-                    "contents":iv.contents,
+                    "version_id": iv.id,
+                    "timestamp": iv.timestamp,
+                    "is_current": False,
+                    "contents": iv.contents,
                     }
                 for iv in request.dbsession.query(ItemVersion)
                 .filter_by(item_id=item_id)
@@ -727,9 +721,9 @@ class Application(ApplicationBase):
                 t_struct = list(t_struct)
                 if parsed_as == 1:
                     # only parsed as date, eliminate time part
-                    t_struct[3:6] = (0,0,0)
+                    t_struct[3:6] = (0, 0, 0)
 
-                t_struct[8] = -1 # isdst -- we don't know if that is DST
+                t_struct[8] = -1  # isdst -- we don't know if that is DST
 
                 if use_utc:
                     from calendar import timegm
@@ -768,9 +762,9 @@ class Application(ApplicationBase):
             voh = None
 
         if not deleting:
-            self.parse_datetime(data, "start_date", 
+            self.parse_datetime(data, "start_date",
                     use_utc=data["all_day"])
-            self.parse_datetime(data, "end_date", "start_date", 
+            self.parse_datetime(data, "end_date", "start_date",
                     use_utc=data["all_day"])
             self.parse_datetime(data, "hide_until", "start_date")
             self.parse_datetime(data, "highlight_at", "start_date")
@@ -784,14 +778,13 @@ class Application(ApplicationBase):
         itemversion = store_itemversion(request.dbsession,
                 **data)
 
-        request.dbsession.commit() # fills in the item_id
+        request.dbsession.commit()  # fills in the item_id
 
         if voh is not None:
             voh.insert(len(voh), itemversion.item_id)
             voh.save()
 
         # send response
-        from simplejson import dumps
         return request.respond(
                 dumps(self.item_to_json(itemversion)),
                 mimetype="text/plain")
@@ -882,7 +875,6 @@ class Application(ApplicationBase):
             if data[key] is not None:
                 data[key] = increment_func(data[key])
 
-        from simplejson import dumps
         return request.respond(
                 dumps(data),
                 mimetype="text/plain")
@@ -934,7 +926,7 @@ class Application(ApplicationBase):
     def http_calendar_data(self, request):
         start = float(request.GET.get("start", 0))
         end = float(request.GET.get("end", 0))
-        max_timestamp = None # FIXME
+        max_timestamp = None  # FIXME
 
         from_obj = get_current_itemversions_join(
                 request.datamodel, max_timestamp)
@@ -1002,7 +994,7 @@ class Application(ApplicationBase):
             start=now,
             end=now + 7.5 * 60,
             allDay=False,
-            className=["calendar-now" ],
+            className=["calendar-now"],
             ))
 
         from simplejson import dumps
@@ -1014,23 +1006,23 @@ class Application(ApplicationBase):
 
     def http_get_all_js(self, request):
         all_js_filenames = [
-          "jquery.js",
-          "jquery-migrate.js",
-          "jquery.timers.js",
-          "jquery.bgiframe.js",
-          "jquery.dimensions.js",
-          "jquery.contextmenu.r2.js",
-          "jquery-ui.js",
+            "jquery.js",
+            "jquery-migrate.js",
+            "jquery.timers.js",
+            "jquery.bgiframe.js",
+            "jquery.dimensions.js",
+            "jquery.contextmenu.r2.js",
+            "jquery-ui.js",
 
-          # override because of z-index bug
-          # http://bugs.jqueryui.com/ticket/5479
-          "jquery.ui.datepicker.js", 
+            # override because of z-index bug
+            # http://bugs.jqueryui.com/ticket/5479
+            "jquery.ui.datepicker.js",
 
-          "inheritance.js",
-          "json2.js",
-          "rsh.js",
-          "sprintf.js",
-          ]
+            "inheritance.js",
+            "json2.js",
+            "rsh.js",
+            "sprintf.js",
+            ]
         sep = "/* %s */\n" % (75*"-")
         all_js = "".join(
             "%s/* %s */\n%s%s" % (sep, fn, sep, get_static_file(fn)[0])
@@ -1046,10 +1038,11 @@ class Application(ApplicationBase):
     def http_get_tag_color_css(self, request):
         is_calendar = request.GET.get("calendar", "") == "true"
         if is_calendar:
-            pattern = """.tag-%(tag)s, .fc-agenda .tag-%(tag)s .fc-event-time, .tag-%(tag)s .fc-event-inner
+            pattern = """.tag-%(tag)s, .fc-agenda .tag-%(tag)s \
+                    .fc-event-time, .tag-%(tag)s .fc-event-inner
                 { background-color: %(color)s; border-color: %(color)s; }"""
         else:
-            pattern = ".tag-%(tag)s { background-color: %(color)s; color:white; }" 
+            pattern = ".tag-%(tag)s { background-color: %(color)s; color:white; }"
 
         color_decls = []
         for entry_dict in self.get_config_info_by_tag(
@@ -1062,8 +1055,12 @@ class Application(ApplicationBase):
                     request.datamodel, request.dbsession, u"googlecalendar"):
                 if "color" in entry_dict:
                     color_decls.append(
-                        """.%(tag)s, .fc-agenda .%(tag)s .fc-event-time, .%(tag)s .fc-event-inner
-                            { background-color: %(color)s; border-color: %(color)s; }"""
+                        """.%(tag)s, .fc-agenda .%(tag)s .fc-event-time, \
+                                .%(tag)s .fc-event-inner
+                            {
+                                background-color: %(color)s;
+                                border-color: %(color)s;
+                            }"""
                         % dict(
                             tag=get_google_calendar_tag(entry_dict),
                             color=entry_dict["color"]))
