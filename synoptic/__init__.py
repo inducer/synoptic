@@ -120,7 +120,7 @@ class DBSessionInjector(object):
 
         from sqlalchemy.pool import NullPool
         from sqlalchemy import create_engine
-        self.engine = create_engine(dburl, poolclass=NullPool)
+        self.engine = create_engine(dburl, poolclass=NullPool, echo=True)
 
         from synoptic.datamodel import DataModel
         self.datamodel = DataModel()

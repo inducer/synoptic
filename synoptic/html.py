@@ -117,18 +117,21 @@ def navpane(context):
           <div id="fragment-1">
             <div id="subtagcloud_search_tags"> </div>
             <div id="subtagcloud" class="tagcloud"> </div>
-            <input type="checkbox" id="chk_subtagcloud_show_hidden"/>
-            <span id="navtab_size_helper_top_1"></span>
-            <label for="chk_subtagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
+            <div id="tagcloud_hidden_control_1">
+              <input type="checkbox" id="chk_subtagcloud_show_hidden"/>
+              <label for="chk_subtagcloud_show_hidden">
+                Show hidden (.<i>tag</i>)
+              </label>
+            </div>
           </div>
           <div id="fragment-2">
             <div id="tagcloud" class="tagcloud"> </div>
-            <input type="checkbox" id="chk_tagcloud_show_hidden"/>
-            <span id="navtab_size_helper_top_2"></span>
-            <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
+            <div id="tagcloud_hidden_control_2">
+              <input type="checkbox" id="chk_tagcloud_show_hidden"/>
+              <label for="chk_tagcloud_show_hidden">Show hidden (.<i>tag</i>)</label>
+            </div>
           </div>
         </div>
-        <span id="navtab_size_helper_bottom"></span>
       </div>
     </div>
     """

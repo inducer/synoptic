@@ -1760,22 +1760,17 @@ function add_tag_behavior(jq_result)
 
 function update_tag_cloud_height()
 {
-  var cloud_bottom_offset;
-  if ($("#navtabs").tabs("option", "selected") == 0)
-    cloud_bottom_offset = $("#navtab_size_helper_top_1").offset().top;
-  else
-    cloud_bottom_offset = $("#navtab_size_helper_top_2").offset().top;
-
-  var bottom_size = (
-      $("#navtab_size_helper_bottom").offset().top
-      - cloud_bottom_offset);
-
   var tc_height = (
       $(window).height()
-      - $("#subtagcloud").offset().top
-      - bottom_size
-      - 50
+      - $("#logo").height()
+      - $("#history_nav").height()
+      - $("#tagtab_header").height()
+      - $("#tagcloud_hidden_control_1").height()
+      - 95
       );
+
+  if (tc_height < 100)
+    tc_height = 100;
 
   $(".tagcloud").css("max-height", tc_height+"px");
 }
