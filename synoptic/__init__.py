@@ -120,7 +120,10 @@ class DBSessionInjector(object):
 
         from sqlalchemy.pool import NullPool
         from sqlalchemy import create_engine
-        self.engine = create_engine(dburl, poolclass=NullPool, echo=True)
+        self.engine = create_engine(
+                dburl, poolclass=NullPool,
+                #echo=True
+                )
 
         from synoptic.datamodel import DataModel
         self.datamodel = DataModel()
@@ -704,7 +707,7 @@ class Application(ApplicationBase):
 
     @staticmethod
     def parse_datetime(data, name, rel_to_name=None, use_utc=False):
-        import parsedatetime.parsedatetime as pdt
+        import parsedatetime as pdt
         cal = pdt.Calendar()
         import datetime
         import time
