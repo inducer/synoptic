@@ -1,9 +1,13 @@
-# logic that preserves NotImplemented -----------------------------------------
+
+
+# {{{ logic that preserves NotImplemented
+
 def not_ni(a):
     if a == NotImplemented:
         return NotImplemented
     else:
         return not a
+
 
 def and_ni(a, b):
     if a == NotImplemented or b == NotImplemented:
@@ -11,16 +15,18 @@ def and_ni(a, b):
     else:
         return a and b
 
+
 def or_ni(a, b):
     if a == NotImplemented or b == NotImplemented:
         return NotImplemented
     else:
         return a or b
 
+# }}}
 
 
+# {{{ query objects
 
-# query objects ---------------------------------------------------------------
 class Query(object):
     def __str__(self):
         return self.visit(StringifyVisitor())
@@ -44,8 +50,6 @@ class Query(object):
         return not_ni(self.__lt__(other))
 
 
-
-
 class IdQuery(Query):
     def __init__(self, id):
         self.id = id
@@ -61,6 +65,7 @@ class IdQuery(Query):
             return type(self).__name__ < type(other).__name__
         else:
             return self.id < other.id
+
 
 class TagQuery(Query):
     def __init__(self, name):
@@ -78,6 +83,7 @@ class TagQuery(Query):
         else:
             return self.name < other.name
 
+
 class TagWildcardQuery(Query):
     def __init__(self, name):
         self.name = name
@@ -93,6 +99,7 @@ class TagWildcardQuery(Query):
             return type(self).__name__ < type(other).__name__
         else:
             return self.name < other.name
+
 
 class FulltextQuery(Query):
     def __init__(self, substr):
@@ -110,6 +117,7 @@ class FulltextQuery(Query):
         else:
             return self.substr < other.substr
 
+
 class NotQuery(Query):
     def __init__(self, child):
         self.child = child
@@ -125,6 +133,7 @@ class NotQuery(Query):
             return type(self).__name__ < type(other).__name__
         else:
             return self.child < other.child
+
 
 class AndQuery(Query):
     def __init__(self, children):
@@ -142,6 +151,7 @@ class AndQuery(Query):
             return type(self).__name__ < type(other).__name__
         else:
             return self.children < other.children
+
 
 class OrQuery(Query):
     def __init__(self, children):
@@ -161,6 +171,7 @@ class OrQuery(Query):
         else:
             return self.children < other.children
 
+
 class DateQuery(Query):
     def __init__(self, is_before, timestamp):
         self.is_before = is_before
@@ -171,7 +182,7 @@ class DateQuery(Query):
 
     def __eq__(self, other):
         return (
-                isinstance(other, DateQuery) 
+                isinstance(other, DateQuery)
                 and self.is_before == other.is_before
                 and self.timestamp == other.timestamp)
 
@@ -183,6 +194,7 @@ class DateQuery(Query):
                     <
                     (other.is_before, other.timestamp))
 
+
 class StatelessQueryTerminal(Query):
     def __eq__(self, other):
         return isinstance(other, type(self))
@@ -193,28 +205,32 @@ class StatelessQueryTerminal(Query):
         else:
             return False
 
+
 class DatedQuery(StatelessQueryTerminal):
     def visit(self, visitor, *args):
         return visitor.visit_dated_query(self, *args)
+
 
 class NoHideQuery(StatelessQueryTerminal):
     def visit(self, visitor, *args):
         return visitor.visit_no_hide_query(self, *args)
 
+
 class SortByDateQuery(StatelessQueryTerminal):
     def visit(self, visitor, *args):
         return visitor.visit_sort_by_date(self, *args)
 
+# }}}
 
 
+# {{{ normalizing query constructors
 
-
-# normalizing query constructors ----------------------------------------------
 def make_tag_query(tag):
     if "?" in tag or "*" in tag:
         return TagWildcardQuery(tag)
     else:
         return TagQuery(tag)
+
 
 def make_not_query(child):
     if isinstance(child, NotQuery):
@@ -226,6 +242,7 @@ def make_not_query(child):
     else:
         return NotQuery(child)
 
+
 def _make_flattened_children_query(klass, children):
     new_children = []
     for ch in children:
@@ -236,24 +253,28 @@ def _make_flattened_children_query(klass, children):
 
     return klass(new_children)
 
+
 def make_and_query(children):
     return _make_flattened_children_query(AndQuery, children)
+
 
 def make_or_query(children):
     return _make_flattened_children_query(OrQuery, children)
 
+# }}}
 
 
+# {{{ operator precedence
 
-# operator precedence ---------------------------------------------------------
 _PREC_OR = 10
 _PREC_AND = 20
 _PREC_NOT = 30
 
+# }}}
 
 
+# {{{ query visitors
 
-# query visitors --------------------------------------------------------------
 class StringifyVisitor(object):
     def visit_id_query(self, q, enclosing_prec=0):
         return "id(%d)" % q.id
@@ -314,11 +335,7 @@ class StringifyVisitor(object):
         return "sortbydate"
 
 
-
 class ReprVisitor(object):
-    def visit_tag_query(self, q):
-        return "%s(%s)" % (type(q).__name__, repr(q.id))
-
     def visit_tag_query(self, q):
         return "%s(%s)" % (type(q).__name__, repr(q.name))
 
@@ -346,7 +363,6 @@ class ReprVisitor(object):
 
     visit_no_hide_query = visit_dated_query
     visit_sort_by_date = visit_dated_query
-
 
 
 class TagListVisitor(object):
@@ -384,10 +400,11 @@ class TagListVisitor(object):
     visit_no_hide_query = visit_date_query
     visit_sort_by_date = visit_date_query
 
+# }}}
 
 
+# {{{ lexer data
 
-# lexer data ------------------------------------------------------------------
 _and = intern("and")
 _or = intern("or")
 _not = intern("not")
@@ -403,8 +420,6 @@ _tag = intern("tag")
 _negtag = intern("negtag")
 _fulltext = intern("fulltext")
 _whitespace = intern("whitespace")
-
-
 
 
 from synoptic.lex import RE
@@ -427,20 +442,21 @@ _LEX_TABLE = [
     ]
 
 
-
-
 _STATELESS_TERMINALS = {
-        _dated: DatedQuery(), 
+        _dated: DatedQuery(),
         _nohide: NoHideQuery(),
         _sortbydate: SortByDateQuery()
         }
 
-_TERMINALS = [_tag, _negtag, _fulltext, _id, _before, _after] + list(_STATELESS_TERMINALS.iterkeys())
+_TERMINALS = (
+        [_tag, _negtag, _fulltext, _id, _before, _after]
+        + list(_STATELESS_TERMINALS.iterkeys()))
+
+# }}}
 
 
+# {{{parser
 
-
-# parser ----------------------------------------------------------------------
 def parse_query(expr_str):
     def parse_terminal(pstate):
         next_tag = pstate.next_tag()
@@ -466,7 +482,7 @@ def parse_query(expr_str):
             timetup = cal.parse(pstate.next_match_obj().group(1))
             pstate.advance()
             import time
-            return DateQuery(next_tag==_before, time.mktime(timetup[0]))
+            return DateQuery(next_tag == _before, time.mktime(timetup[0]))
         else:
             pstate.expected("terminal")
 
@@ -494,18 +510,21 @@ def parse_query(expr_str):
 
             if next_tag is _and and _PREC_AND > min_precedence:
                 pstate.advance()
-                left_query = make_and_query([left_query, inner_parse(pstate, _PREC_AND)])
+                left_query = make_and_query(
+                        [left_query, inner_parse(pstate, _PREC_AND)])
                 did_something = True
             elif next_tag is _or and _PREC_OR > min_precedence:
                 pstate.advance()
-                left_query = make_or_query([left_query, inner_parse(pstate, _PREC_OR)])
+                left_query = make_or_query(
+                        [left_query, inner_parse(pstate, _PREC_OR)])
                 did_something = True
-            elif next_tag in _TERMINALS + [_not, _openpar] and _PREC_AND > min_precedence:
-                left_query = make_and_query([left_query, inner_parse(pstate, _PREC_AND)])
+            elif (next_tag in _TERMINALS + [_not, _openpar]
+                    and _PREC_AND > min_precedence):
+                left_query = make_and_query(
+                        [left_query, inner_parse(pstate, _PREC_AND)])
                 did_something = True
 
         return left_query
-
 
     from synoptic.lex import LexIterator, lex
     pstate = LexIterator(
@@ -522,8 +541,10 @@ def parse_query(expr_str):
 
     return result
 
+# }}}
 
 
+# {{{ 'test'
 
 if __name__ == "__main__":
     v = parse_query('not (yuck "yy!" and (not (not them and (yes or me)) and you))')
@@ -541,3 +562,7 @@ if __name__ == "__main__":
     print v2
     v = parse_query('pic ("test" or "validation")')
     print repr(v)
+
+# }}}
+
+# vim: foldmethod=marker
