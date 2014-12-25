@@ -3,7 +3,7 @@
 
 
 def main():
-    from setuptools import setup
+    from setuptools import setup, find_packages
 
     setup(name="synoptic",
           version="2013.1",
@@ -42,11 +42,7 @@ def main():
               ],
 
           scripts=["bin/synoptic"],
-          packages=[
-                  "synoptic",
-                  "synoptic.schema_ver_repo",
-                  "synoptic.schema_ver_repo.versions"
-                  ],
+          packages=find_packages(),
           include_package_data=True,
           package_data={
                   'synoptic': [
