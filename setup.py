@@ -37,7 +37,6 @@ def main():
               "Paste>=1.7",
               "SQLAlchemy>=0.8",
               "sqlalchemy-migrate>=0.7.2.24",
-              "SimpleJSON>=1.7",
               "parsedatetime>=0.8.6",
               "ipaddr",
               ],
@@ -61,7 +60,7 @@ def main():
                       'static/jquery-ui-css/smoothness/images/*.png',
                       ],
                   "synoptic.schema_ver_repo": ["migrate.cfg"],
-              }
+                  }
           )
 
 if __name__ == "__main__":

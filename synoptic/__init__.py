@@ -3,6 +3,7 @@ from synoptic.datamodel import (
         store_itemversion,
         get_current_itemversions_join,
         query_itemversions)
+import json
 
 
 def get_static_file(filename):
@@ -413,12 +414,11 @@ class Application(ApplicationBase):
 
         now = time()
 
-        from simplejson import dumps
         from sqlalchemy import asc, desc
         base_query = request.dbsession.query(ItemVersion)
         if list(base_query.limit(1)):
             return request.respond(
-                    dumps({
+                    json.dumps({
                         "min":
                         base_query.order_by(asc(ItemVersion.timestamp))[0].timestamp,
                         "max":
@@ -430,7 +430,7 @@ class Application(ApplicationBase):
                     mimetype="text/plain")
         else:
             return request.respond(
-                    dumps({"min": now, "max": now+1, "now": now, }),
+                    json.dumps({"min": now, "max": now+1, "now": now, }),
                     mimetype="text/plain")
 
     def get_tags_with_usecounts(self, session, model, parsed_query=None,
@@ -486,9 +486,8 @@ class Application(ApplicationBase):
                 request.dbsession, request.datamodel,
                 startswith=query, limit=limit)
 
-        from simplejson import dumps
         return request.respond(
-                dumps([row.name for row in q]),
+                json.dumps([row.name for row in q]),
                 mimetype="text/plain")
 
     def http_get_tags_for_query(self, request):
@@ -513,20 +512,17 @@ class Application(ApplicationBase):
                 request.dbsession, request.datamodel, parsed_query,
                 max_timestamp)
 
-        from simplejson import dumps
-
         tags = [list(row) for row in result]
 
         return request.respond(
-                dumps({
+                json.dumps({
                     "tags": tags,
                     "query_tags": query_tags,
                     }),
                 mimetype="text/plain")
 
     def http_rename_tag(self, request):
-        from simplejson import loads
-        data = loads(request.POST["json"])
+        data = json.loads(request.POST["json"])
 
         old_name = data["old_name"]
         new_name = data["new_name"]
@@ -566,8 +562,7 @@ class Application(ApplicationBase):
             from paste.httpexceptions import HTTPNotFound
             raise HTTPNotFound()
 
-        from simplejson import dumps
-        return request.respond(dumps(self.item_to_json(query.first())),
+        return request.respond(json.dumps(self.item_to_json(query.first())),
                 mimetype="text/plain")
 
     def http_get_item_version_by_id(self, request):
@@ -580,8 +575,7 @@ class Application(ApplicationBase):
             from paste.httpexceptions import HTTPNotFound
             raise HTTPNotFound()
 
-        from simplejson import dumps
-        return request.respond(dumps(self.item_to_json(query.first())),
+        return request.respond(json.dumps(self.item_to_json(query.first())),
                 mimetype="text/plain")
 
     def http_get_items(self, request):
@@ -626,13 +620,11 @@ class Application(ApplicationBase):
 
             query_tags = []
 
-        from simplejson import dumps
-
         # kind of silly to do two JSON encodes, but what the heck
-        result_hash = hash(dumps(json_items))
+        result_hash = hash(json.dumps(json_items))
 
         # and ship them out by JSON
-        return request.respond(dumps({
+        return request.respond(json.dumps({
             "items": json_items,
             "result_hash": result_hash,
             "tags": tags,
@@ -655,11 +647,10 @@ class Application(ApplicationBase):
                 request.dbsession, request.datamodel,
                 parsed_query, max_timestamp)
 
-        from simplejson import dumps
-        result_hash = hash(dumps(json_items))
+        result_hash = hash(json.dumps(json_items))
 
         # and ship them out by JSON
-        return request.respond(dumps(result_hash),
+        return request.respond(json.dumps(result_hash),
                 mimetype="text/plain")
 
     def http_print_items(self, request):
@@ -701,8 +692,7 @@ class Application(ApplicationBase):
                 .order_by(ItemVersion.timestamp.desc())]
         json[0]["is_current"] = True
 
-        from simplejson import dumps
-        return request.respond(dumps(json),
+        return request.respond(json.dumps(json),
                 mimetype="text/plain")
 
     @staticmethod
@@ -739,8 +729,7 @@ class Application(ApplicationBase):
             data[name] = None
 
     def http_store_item(self, request):
-        from simplejson import loads, dumps
-        data = loads(request.POST["json"])
+        data = json.loads(request.POST["json"])
 
         current_query = data.pop("current_query", None)
         deleting = data["contents"] is None
@@ -789,12 +778,11 @@ class Application(ApplicationBase):
 
         # send response
         return request.respond(
-                dumps(self.item_to_json(itemversion)),
+                json.dumps(self.item_to_json(itemversion)),
                 mimetype="text/plain")
 
     def http_item_datebump(self, request):
-        from simplejson import loads, dumps
-        data = loads(request.POST["json"])
+        data = json.loads(request.POST["json"])
 
         bump_interval = data["bump_interval"]
         bump_direction = data["bump_direction"]
@@ -879,12 +867,11 @@ class Application(ApplicationBase):
                 data[key] = increment_func(data[key])
 
         return request.respond(
-                dumps(data),
+                json.dumps(data),
                 mimetype="text/plain")
 
     def http_reorder_item(self, request):
-        from simplejson import loads
-        data = loads(request.POST["json"])
+        data = json.loads(request.POST["json"])
 
         from synoptic.query import parse_query
         from synoptic.datamodel import ViewOrderingHandler
@@ -921,9 +908,8 @@ class Application(ApplicationBase):
                 className=get_google_calendar_tag(entry_dict),
                 requireOnline=True))
 
-        from simplejson import dumps
         return request.respond(
-                dumps(event_sources),
+                json.dumps(event_sources),
                 mimetype="text/plain")
 
     def http_calendar_data(self, request):
@@ -1000,9 +986,8 @@ class Application(ApplicationBase):
             className=["calendar-now"],
             ))
 
-        from simplejson import dumps
         return request.respond(
-                dumps(data),
+                json.dumps(data),
                 mimetype="text/plain")
 
     # }}}
@@ -1032,8 +1017,8 @@ class Application(ApplicationBase):
             for fn in all_js_filenames)
 
         from synoptic.datamodel import BUMP_INTERVALS
-        from simplejson import dumps
-        all_js = "var BUMP_INTERVALS = %s;\n%s" % (dumps(BUMP_INTERVALS), all_js)
+        all_js = "var BUMP_INTERVALS = %s;\n%s" % (
+                json.dumps(BUMP_INTERVALS), all_js)
 
         return request.respond(all_js,
             mimetype="text/javascript")
