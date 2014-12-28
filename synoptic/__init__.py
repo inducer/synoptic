@@ -135,6 +135,10 @@ class DBSessionInjector(object):
         self.sessionmaker = sessionmaker(bind=self.engine, autoflush=True,
                 autocommit=False)
 
+        session = self.sessionmaker()
+        session.execute("analyze;")
+        session.commit()
+
         self.sub_app = sub_app
 
     def __call__(self, environ, start_response):
@@ -340,6 +344,7 @@ class Application(ApplicationBase):
 
         last_id = None
         result = []
+
         for row in session.execute(iv_and_t_query):
             if last_id != row[itemversions_query.c.id]:
                 last_id = row[itemversions_query.c.id]
