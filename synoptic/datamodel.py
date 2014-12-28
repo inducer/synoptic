@@ -334,8 +334,14 @@ class SQLifyQueryVisitor(object):
     def visit_no_hide_query(self, q):
         self.use_hide_until = False
 
+        from sqlalchemy.sql import true
+        return true()
+
     def visit_sort_by_date(self, q):
         self.sort_by_date = True
+
+        from sqlalchemy.sql import true
+        return true()
 
 # }}}
 
