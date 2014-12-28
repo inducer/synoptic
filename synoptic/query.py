@@ -422,7 +422,7 @@ _fulltext = intern("fulltext")
 _whitespace = intern("whitespace")
 
 
-from synoptic.lex import RE
+from pytools.lex import RE
 _LEX_TABLE = [
     (_and, RE(r"and\b")),
     (_or, RE(r"or\b")),
@@ -526,10 +526,11 @@ def parse_query(expr_str):
 
         return left_query
 
-    from synoptic.lex import LexIterator, lex
+    from pytools.lex import LexIterator, lex
     pstate = LexIterator(
         [(tag, s, idx, matchobj)
-         for (tag, s, idx, matchobj) in lex(_LEX_TABLE, expr_str)
+         for (tag, s, idx, matchobj) in lex(
+             _LEX_TABLE, expr_str, match_objects=True)
          if tag is not _whitespace], expr_str)
 
     if pstate.is_at_end():

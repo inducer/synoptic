@@ -41,6 +41,7 @@ def main():
               "SQLAlchemy>=0.8",
               "sqlalchemy-migrate>=0.7.2.24",
               "parsedatetime>=0.8.6",
+              "pytools>=2014.3.5",
               "ipaddr",
               ],
 
