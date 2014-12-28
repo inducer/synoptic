@@ -6,6 +6,8 @@ from synoptic.datamodel import (
 import json
 
 
+# {{{ static file retrieval
+
 def get_static_file(filename):
     from os.path import splitext, join, normpath
 
@@ -35,6 +37,8 @@ def get_static_file(filename):
         data = data.decode("utf-8")
 
     return (data, mimetypes.get(ext, "application/octet-stream"))
+
+# }}}
 
 
 # {{{ import backup/initial content
@@ -70,6 +74,8 @@ def import_file(dbsession, text):
 # }}}
 
 
+# {{{ random usefulness
+
 def kill_hms_in_time_struct(t_struct):
     t_struct = list(t_struct)
     t_struct[3:6] = (0, 0, 0)
@@ -82,6 +88,61 @@ def get_google_calendar_tag(entry_dict):
     md5_obj = md5()
     md5_obj.update(str(entry_dict.get("url")))
     return "gcal-"+md5_obj.hexdigest()[:10]
+
+
+def parse_datetime(s, rel_to=None, use_utc=False):
+    import parsedatetime as pdt
+
+    us_ptc = pdt.Constants("en_US")
+    us_cal = pdt.Calendar(us_ptc)
+
+    native_cal = pdt.Calendar()
+    import datetime
+    import time
+
+    if s:
+        if rel_to is not None:
+            rel_to = datetime.datetime.fromtimestamp(rel_to).timetuple()
+        else:
+            rel_to = None
+
+        t_struct, parsed_as = us_cal.parse(s, rel_to)
+
+        if not parsed_as:
+            t_struct, parsed_as = us_cal.parse(s, None)
+
+        if not parsed_as:
+            t_struct, parsed_as = native_cal.parse(s, rel_to)
+
+        if not parsed_as:
+            t_struct, parsed_as = native_cal.parse(s, None)
+
+        if parsed_as:
+            t_struct = list(t_struct)
+            if parsed_as == 1:
+                # only parsed as date, eliminate time part
+                t_struct[3:6] = (0, 0, 0)
+
+            t_struct[8] = -1  # isdst -- we don't know if that is DST
+
+            if use_utc:
+                from calendar import timegm
+                return timegm(t_struct)
+            else:
+                return time.mktime(t_struct)
+        else:
+            raise ValueError("failed to parse date/time '%s'" % s)
+    else:
+        return None
+
+
+def set_with_parsed_datetime(data, name, rel_to_name=None, use_utc=False):
+    data[name] = parse_datetime(
+            data[name],
+            data.get(rel_to_name),
+            use_utc=use_utc)
+
+# }}}
 
 
 # {{{ HTTP middleware
@@ -700,39 +761,6 @@ class Application(ApplicationBase):
         return request.respond(json.dumps(json),
                 mimetype="text/plain")
 
-    @staticmethod
-    def parse_datetime(data, name, rel_to_name=None, use_utc=False):
-        import parsedatetime as pdt
-        cal = pdt.Calendar()
-        import datetime
-        import time
-
-        if data[name]:
-            if rel_to_name is not None and data[rel_to_name] is not None:
-                rel_to = datetime.datetime.fromtimestamp(
-                        data[rel_to_name]).timetuple()
-            else:
-                rel_to = None
-
-            t_struct, parsed_as = cal.parse(data[name], rel_to)
-            if parsed_as:
-                t_struct = list(t_struct)
-                if parsed_as == 1:
-                    # only parsed as date, eliminate time part
-                    t_struct[3:6] = (0, 0, 0)
-
-                t_struct[8] = -1  # isdst -- we don't know if that is DST
-
-                if use_utc:
-                    from calendar import timegm
-                    data[name] = timegm(t_struct)
-                else:
-                    data[name] = time.mktime(t_struct)
-            else:
-                data[name] = None
-        else:
-            data[name] = None
-
     def http_store_item(self, request):
         data = json.loads(request.POST["json"])
 
@@ -759,12 +787,12 @@ class Application(ApplicationBase):
             voh = None
 
         if not deleting:
-            self.parse_datetime(data, "start_date",
+            set_with_parsed_datetime(data, "start_date",
                     use_utc=data["all_day"])
-            self.parse_datetime(data, "end_date", "start_date",
+            set_with_parsed_datetime(data, "end_date", "start_date",
                     use_utc=data["all_day"])
-            self.parse_datetime(data, "hide_until", "start_date")
-            self.parse_datetime(data, "highlight_at", "start_date")
+            set_with_parsed_datetime(data, "hide_until", "start_date")
+            set_with_parsed_datetime(data, "highlight_at", "start_date")
 
         if not deleting:
             from synoptic.datamodel import is_valid_tag
@@ -792,10 +820,10 @@ class Application(ApplicationBase):
         bump_interval = data["bump_interval"]
         bump_direction = data["bump_direction"]
 
-        self.parse_datetime(data, "start_date")
-        self.parse_datetime(data, "end_date", "start_date")
-        self.parse_datetime(data, "hide_until", "start_date")
-        self.parse_datetime(data, "highlight_at", "start_date")
+        set_with_parsed_datetime(data, "start_date")
+        set_with_parsed_datetime(data, "end_date", "start_date")
+        set_with_parsed_datetime(data, "hide_until", "start_date")
+        set_with_parsed_datetime(data, "highlight_at", "start_date")
 
         tdelta = None
         increment_func = None
