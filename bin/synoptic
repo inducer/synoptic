@@ -99,7 +99,9 @@ def main():
     exists = os.access(dbname, os.F_OK)
 
     from synoptic import DBSessionInjector
-    app = dbinj = DBSessionInjector(app, "sqlite:///%s" % args[0], exists)
+    app = dbinj = DBSessionInjector(
+            app, "sqlite:///%s" % args[0], exists,
+            echo=options.dbecho)
 
     from synoptic import ErrorMiddleware
     app = ErrorMiddleware(app)
