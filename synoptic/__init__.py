@@ -746,7 +746,7 @@ class Application(ApplicationBase):
     def http_get_item_history(self, request):
         item_id = int(request.GET["item_id"])
 
-        json = [
+        json_data = [
                 {
                     "version_id": iv.id,
                     "timestamp": iv.timestamp,
@@ -756,9 +756,9 @@ class Application(ApplicationBase):
                 for iv in request.dbsession.query(ItemVersion)
                 .filter_by(item_id=item_id)
                 .order_by(ItemVersion.timestamp.desc())]
-        json[0]["is_current"] = True
+        json_data[0]["is_current"] = True
 
-        return request.respond(json.dumps(json),
+        return request.respond(json.dumps(json_data),
                 mimetype="text/plain")
 
     def http_store_item(self, request):
