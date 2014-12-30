@@ -6,7 +6,7 @@ def main():
     from setuptools import setup, find_packages
 
     setup(name="synoptic",
-          version="2014.1",
+          version="2014.1.1",
           description="An AJAXy notes manager",
           long_description=open("README.rst", "rt").read(),
           author=u"Andreas Kloeckner",
