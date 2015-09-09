@@ -1006,13 +1006,10 @@ ItemCollectionManager.method("setup_history_handling", function()
 
 ItemCollectionManager.method("get_current_fragment", function()
 {
-  // Need to double-escape because something is preventing unicode characters
-  // in URLs.
-
-  return escape(escape(JSON.stringify({
+  return escape(JSON.stringify({
       query:$("#search").val(),
       timestamp:this.view_time
-    })));
+    }));
 });
 
 
