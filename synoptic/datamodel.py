@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+import six
+from functools import reduce
 MAPPERS_DEFINED = [False]
 
 
@@ -135,7 +138,7 @@ class ItemVersion(object):
 
         if kwargs:
             raise TypeError(
-                    "invalid keyword args: '%s'" % ",".join(kwargs.iterkeys()))
+                    "invalid keyword args: '%s'" % ",".join(six.iterkeys(kwargs)))
 
     def as_json(self):
         return {"id": self.item.id,
@@ -204,7 +207,7 @@ class ViewOrderingEntry(object):
 # {{{ tools
 
 def find_tags(session, tags, create_them):
-    if isinstance(tags, basestring):
+    if isinstance(tags, six.string_types):
         tags = [s.strip() for s in tags.split(",")]
 
     result = []
@@ -228,7 +231,7 @@ def find_tags(session, tags, create_them):
 
 def store_itemversion(dbsession, **kwargs):
     import re
-    from htmlentitydefs import name2codepoint
+    from six.moves.html_entities import name2codepoint
 
     contents = kwargs.get("contents")
     item_id = kwargs.get("id")
@@ -382,7 +385,7 @@ def query_itemversions(session, model, parsed_query, max_timestamp=None):
 
     # find view ordering
     view_orderings = (session.query(ViewOrdering)
-            .filter_by(norm_query=unicode(parsed_query))
+            .filter_by(norm_query=six.text_type(parsed_query))
             .order_by(ViewOrdering.timestamp.desc())
             .limit(1)).all()
 

@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import print_function
+import six
 
 
 # {{{ logic that preserves NotImplemented
@@ -450,7 +453,7 @@ _STATELESS_TERMINALS = {
 
 _TERMINALS = (
         [_tag, _negtag, _fulltext, _id, _before, _after]
-        + list(_STATELESS_TERMINALS.iterkeys()))
+        + list(six.iterkeys(_STATELESS_TERMINALS)))
 
 # }}}
 
@@ -549,20 +552,20 @@ def parse_query(expr_str):
 
 if __name__ == "__main__":
     v = parse_query('not (yuck "yy!" and (not (not them and (yes or me)) and you))')
-    print v
+    print(v)
     v2 = parse_query(str(v))
-    print v2
+    print(v2)
     v3 = parse_query(str(v2))
-    print v3
-    print parse_query('yuck bluck')
-    print parse_query('')
+    print(v3)
+    print(parse_query('yuck bluck'))
+    print(parse_query(''))
 
     v = parse_query('not before(yesterday 5 am)')
-    print v
+    print(v)
     v2 = parse_query(str(v))
-    print v2
+    print(v2)
     v = parse_query('pic ("test" or "validation")')
-    print repr(v)
+    print(repr(v))
 
 # }}}
 

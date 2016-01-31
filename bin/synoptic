@@ -1,4 +1,5 @@
 #! /usr/bin/env python2.5
+from __future__ import absolute_import, print_function
 
 
 def get_data_path():
@@ -33,7 +34,7 @@ class Log:
 
 
 def main():
-    from optparse import OptionParser
+    from argparse import ArgumentParser
 
     import os
     import sys
@@ -45,78 +46,74 @@ def main():
             "synoptic with it. That file will be created and will contain your "
             "set of notes.")
 
-    parser = OptionParser(description=description,
-            usage="%prog [options] dbfile")
-    parser.add_option(
-            "-p", "--port", default=7331, type="int",
+    parser = ArgumentParser(description=description)
+    parser.add_argument(
+            "-p", "--port", default=7331, type=int,
             help="Listen port", metavar="PORT")
-    parser.add_option(
+    parser.add_argument(
             "-d", "--daemon", action="store_true",
             help="Go to background after startup")
-    parser.add_option(
+    parser.add_argument(
             "-e", "--dbecho", action="store_true",
             help="Echo database queries")
-    parser.add_option(
+    parser.add_argument(
             "--start-empty", action="store_true",
             help="Start with an empty database, if creating")
-    parser.add_option(
+    parser.add_argument(
             "--browser", default="default",
             help="Type of web browser to launch (or 'none')")
-    parser.add_option(
+    parser.add_argument(
             "-b", "--bind-address", default=None,
             help="Allow remote connection")
-    parser.add_option(
+    parser.add_argument(
             "-a", "--allow-ip",
             help="Allow a given set of hosts and or networks "
             "(CIDR notation), separated by commas", metavar="NETWORK")
-    parser.add_option(
+    parser.add_argument(
             "--pidfile", dest="pidfile",
             default=os.path.join(mydir, "synoptic.pid"),
             help="PID file for daemonization", metavar="PIDFILE")
-    parser.add_option(
+    parser.add_argument(
             "-l", "--logfile", dest="logfile",
             default=os.path.join(mydir, "synoptic.log"),
             help="Log file for daemonization", metavar="LOGFILE")
+    parser.add_argument(
+            "database",
+            help="database file to use", metavar="DBFILE")
 
-    options, args = parser.parse_args()
+    args = parser.parse_args()
 
     allowed_networks = []
-    if options.allow_ip is not None:
-        from ipaddr import IPNetwork
-        for net_str in options.allow_ip.split(","):
+    if args.allow_ip is not None:
+        from ipaddress import ip_network
+        for net_str in args.allow_ip.split(","):
             if net_str:
-                allowed_networks.append(IPNetwork(net_str))
+                allowed_networks.append(ip_network(net_str))
 
     from synoptic import Application
     real_app = app = Application(allowed_networks=allowed_networks)
 
-    if len(args) != 1:
-        parser.print_help()
-        sys.exit(1)
-
-    dbname = args[0]
-
-    exists = os.access(dbname, os.F_OK)
+    exists = os.access(args.database, os.F_OK)
 
     from synoptic import DBSessionInjector
     app = dbinj = DBSessionInjector(
-            app, "sqlite:///%s" % args[0], exists,
-            echo=options.dbecho)
+            app, "sqlite:///%s" % args.database, exists,
+            echo=args.dbecho)
 
     from synoptic import ErrorMiddleware
     app = ErrorMiddleware(app)
 
-    if not exists and not options.start_empty:
+    if not exists and not args.start_empty:
         from synoptic import import_file, get_static_file
         import_file(dbinj.sessionmaker(),
                 get_static_file("initial-content.txt")[0])
 
     from paste.httpserver import WSGIServer, WSGIHandler
-    host = options.bind_address or "127.0.0.1"
-    server = WSGIServer(app, (host, options.port), WSGIHandler)
+    host = args.bind_address or "127.0.0.1"
+    server = WSGIServer(app, (host, args.port), WSGIHandler)
 
-    url = "http://%s:%d/" % (host, options.port)
-    print "serving at %s..." % url
+    url = "http://%s:%d/" % (host, args.port)
+    print("serving at %s..." % url)
 
     quit_flag = [False]
 
@@ -125,7 +122,7 @@ def main():
 
     real_app.set_quit_func(quit_func)
 
-    if options.daemon:
+    if args.daemon:
         # do the UNIX double-fork magic, see Stevens' "Advanced
         # Programming in the UNIX Environment" for details (ISBN 0201563177)
         try:
@@ -133,8 +130,8 @@ def main():
             if pid > 0:
                 # exit first parent
                 sys.exit(0)
-        except OSError, e:
-            print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror)
+        except OSError as e:
+            print("fork #1 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
             sys.exit(1)
 
         # decouple from parent environment
@@ -147,17 +144,17 @@ def main():
             if pid > 0:
                 # exit from second parent, print eventual PID before
                 #print "Daemon PID %d" % pid
-                open(options.pidfile, 'w').write("%d" % pid)
+                open(args.pidfile, 'w').write("%d" % pid)
                 sys.exit(0)
-        except OSError, e:
-            print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror)
+        except OSError as e:
+            print("fork #2 failed: %d (%s)" % (e.errno, e.strerror), file=sys.stderr)
             sys.exit(1)
 
-        sys.stdout = sys.stderr = Log(open(options.logfile, 'a+'))
+        sys.stdout = sys.stderr = Log(open(args.logfile, 'a+'))
 
         sys.stderr.write("starting synoptic with pid %d\n" % os.getpid())
 
-    browser = options.browser.lower()
+    browser = args.browser.lower()
     if browser != "none":
         def start_browser():
             import webbrowser
@@ -167,12 +164,12 @@ def main():
                 browser_ctlr = webbrowser.get(browser)
             browser_ctlr.open(url)
 
-        from thread import start_new_thread
+        from six.moves._thread import start_new_thread
         start_new_thread(start_browser, ())
 
     while not quit_flag[0]:
         server.handle_request()
-    print>>sys.stderr, "quitting..."
+    print("quitting...", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

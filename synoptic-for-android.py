@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 # -----------------------------------------------------------------------------
 # requrires Python4Android and the Android scripting layer
@@ -49,7 +51,7 @@ from paste.httpserver import WSGIServer, WSGIHandler
 server = WSGIServer(app, (host, port), WSGIHandler)
 
 url = "http://%s:%d/" % (host, port)
-print "serving at %s..." % url
+print("serving at %s..." % url)
 
 quit_flag = [False]
 
@@ -61,4 +63,4 @@ real_app.set_quit_func(quit_func)
 while not quit_flag[0]:
     server.handle_request()
 
-print>>sys.stderr, "quitting..."
+print("quitting...", file=sys.stderr)

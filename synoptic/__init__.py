@@ -1,9 +1,12 @@
+from __future__ import absolute_import, print_function
 from synoptic.datamodel import (
         ItemVersion, Tag, ViewOrdering,
         store_itemversion,
         get_current_itemversions_join,
         query_itemversions)
 import json
+import six
+from paste.wsgiwrappers import WSGIRequest, WSGIResponse
 
 
 # {{{ static file retrieval
@@ -163,15 +166,15 @@ class DBSessionInjector(object):
             try:
                 db_ver = mig_api.db_version(dburl, versioning_repo)
             except DatabaseNotControlledError:
-                print "adding version control to db"
+                print("adding version control to db")
                 mig_api.version_control(dburl, versioning_repo)
                 db_ver = mig_api.db_version(dburl, versioning_repo)
 
-            print "found database version %d, code uses version %d" % (
-                    db_ver, latest_ver)
+            print("found database version %d, code uses version %d" % (
+                    db_ver, latest_ver))
 
             if db_ver < latest_ver:
-                print "upgrading..."
+                print("upgrading...")
                 mig_api.upgrade(dburl, versioning_repo)
         else:
             # we're only just creating the db, thus using the latest available
@@ -225,7 +228,7 @@ class ErrorMiddleware(object):
 
         try:
             return list(self.sub_app(environ, start_response))
-        except HTTPException, e:
+        except HTTPException as e:
             return e(environ, start_response)
         except:
             status = "500 Server Error"
@@ -241,8 +244,6 @@ class ErrorMiddleware(object):
 
             start_response(status, response_headers, exc_info)
             return ["%s: %s" % (ex_type.__name__, str(ex_val))]
-
-from paste.wsgiwrappers import WSGIRequest, WSGIResponse
 
 
 class Response(WSGIResponse):
@@ -291,8 +292,8 @@ class ApplicationBase(object):
                 raise HTTPForbidden("REMOTE_ADDR not found, "
                         "but allowed_networks was specified")
 
-            from ipaddr import IPAddress
-            remote_addr = IPAddress(remote_addr_str)
+            from ipaddress import ip_address
+            remote_addr = ip_address(remote_addr_str)
 
             allowed = False
 
@@ -665,7 +666,7 @@ class Application(ApplicationBase):
                 for tag in it["tags"]:
                     tag_counter[tag] = tag_counter.get(tag, 0) + 1
 
-            tags = [list(it) for it in tag_counter.iteritems()]
+            tags = [list(it) for it in six.iteritems(tag_counter)]
             tags.sort()
 
             from synoptic.query import TagListVisitor
@@ -722,7 +723,7 @@ class Application(ApplicationBase):
     def http_print_items(self, request):
         versions = self.get_itemversions_for_request(request)
 
-        from html import printpage
+        from .html import printpage
         return request.respond(
                 printpage({
                     "title": "Synoptic Printout",
@@ -922,11 +923,11 @@ class Application(ApplicationBase):
     # {{{ calendar
 
     def http_calendar(self, request):
-        from html import calendar_page
+        from .html import calendar_page
         return request.respond(calendar_page({}))
 
     def http_mobile_calendar(self, request):
-        from html import mobile_calendar_page
+        from .html import mobile_calendar_page
         return request.respond(mobile_calendar_page({}))
 
     def http_calendar_event_sources(self, request):
@@ -1068,7 +1069,7 @@ class Application(ApplicationBase):
         color_decls = []
         for entry_dict in self.get_config_info_by_tag(
                 request.datamodel, request.dbsession, u"colorconfig"):
-            for tag, color in entry_dict.iteritems():
+            for tag, color in six.iteritems(entry_dict):
                 color_decls.append(pattern % dict(tag=tag, color=color))
 
         if is_calendar:
@@ -1104,7 +1105,7 @@ class Application(ApplicationBase):
         try:
             data, mimetype = get_static_file(filename)
         except IOError:
-            print "NOT FOUND:", filename
+            print("NOT FOUND:", filename)
             from paste.httpexceptions import HTTPNotFound
             raise HTTPNotFound()
 

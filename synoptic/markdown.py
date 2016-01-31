@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 #!/usr/bin/env python
 
 version = "1.7"
@@ -82,7 +86,7 @@ BOMS = { 'utf-8': (codecs.BOM_UTF8, ),
          }
 
 def removeBOM(text, encoding):
-    convert = isinstance(text, unicode)
+    convert = isinstance(text, six.text_type)
     for bom in BOMS[encoding]:
         bom = convert and bom.decode(encoding) or bom
         if text.startswith(bom):
@@ -141,7 +145,7 @@ def getBidiType(text):
 
     ch = text[0]
 
-    if not isinstance(ch, unicode) or not ch.isalpha():
+    if not isinstance(ch, six.text_type) or not ch.isalpha():
         return None
 
     else:
@@ -325,7 +329,7 @@ class Element:
         if self.nodeName in ['p', 'li', 'ul', 'ol',
                              'h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
 
-            if not self.attribute_values.has_key("dir"):
+            if "dir" not in self.attribute_values:
                 if self.bidi:
                     bidi = self.bidi
                 else:
@@ -832,7 +836,7 @@ class ReferencePattern (Pattern):
             # we'll use "google" as the id
             id = m.group(2).lower()
 
-        if not self.references.has_key(id): # ignore undefined refs
+        if id not in self.references: # ignore undefined refs
             return None
         href, title = self.references[id]
         text = m.group(2)
@@ -1136,7 +1140,7 @@ class CorePatterns:
     def __init__ (self):
 
         self.regExp = {}
-        for key in self.patterns.keys():
+        for key in list(self.patterns.keys()):
             self.regExp[key] = re.compile("^%s$" % self.patterns[key],
                                           re.DOTALL)
 
@@ -1237,7 +1241,7 @@ class Markdown:
                         % (ext, extension_module_name) )
             else:
 
-                if configs.has_key(ext):
+                if ext in configs:
                     configs_for_ext = configs[ext]
                 else:
                     configs_for_ext = []
@@ -1621,7 +1625,7 @@ class Markdown:
                 
                 x = parts[i]
 
-                if isinstance(x, (str, unicode)):
+                if isinstance(x, (str, six.text_type)):
                     result = self._applyPattern(x, \
                                 self.inlinePatterns[patternIndex], \
                                 patternIndex)
@@ -1637,7 +1641,7 @@ class Markdown:
 
         for i in range(len(parts)):
             x = parts[i]
-            if isinstance(x, (str, unicode)):
+            if isinstance(x, (str, six.text_type)):
                 parts[i] = self.doc.createTextNode(x)
 
         return parts
@@ -1693,7 +1697,7 @@ class Markdown:
 
                             for item in result:
 
-                                if isinstance(item, (str, unicode)):
+                                if isinstance(item, (str, six.text_type)):
                                     if len(item) > 0:
                                         node.insertChild(position,
                                              self.doc.createTextNode(item))
@@ -1724,7 +1728,7 @@ class Markdown:
             return u""
 
         try:
-            self.source = unicode(self.source)
+            self.source = six.text_type(self.source)
         except UnicodeDecodeError:
             message(CRITICAL, 'UnicodeDecodeError: Markdown only accepts unicode or ascii  input.')
             return u""
@@ -1828,13 +1832,13 @@ class Extension:
         self.config = configs
 
     def getConfig(self, key):
-        if self.config.has_key(key):
+        if key in self.config:
             return self.config[key][0]
         else:
             return ""
 
     def getConfigInfo(self):
-        return [(key, self.config[key][1]) for key in self.config.keys()]
+        return [(key, self.config[key][1]) for key in list(self.config.keys())]
 
     def setConfig(self, key, value):
         self.config[key][0] = value
@@ -1862,7 +1866,7 @@ def parse_options():
                     'encoding': None }
 
         else:
-            print OPTPARSE_WARNING
+            print(OPTPARSE_WARNING)
             return None
 
     parser = optparse.OptionParser(usage="%prog INPUTFILE [options]")

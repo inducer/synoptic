@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -6,7 +7,7 @@ def main():
     from setuptools import setup, find_packages
 
     setup(name="synoptic",
-          version="2014.1.1",
+          version="2016.1",
           description="An AJAXy notes manager",
           long_description=open("README.rst", "rt").read(),
           author=u"Andreas Kloeckner",
@@ -28,6 +29,9 @@ def main():
               'Programming Language :: Python',
               'Programming Language :: Python :: 2.6',
               'Programming Language :: Python :: 2.7',
+              # paste is not there yet, apparently
+              #'Programming Language :: Python :: 3.4',
+              #'Programming Language :: Python :: 3.5',
               'Programming Language :: Python',
               'Topic :: Communications :: Email',
               'Topic :: Office/Business',
@@ -37,12 +41,12 @@ def main():
           zip_safe=False,
 
           install_requires=[
-              "Paste>=1.7",
+              "Paste>=2",
               "SQLAlchemy>=0.8",
               "sqlalchemy-migrate>=0.7.2.24",
               "parsedatetime>=0.8.6",
               "pytools>=2014.3.5",
-              "ipaddr",
+              "six",
               ],
 
           scripts=["bin/synoptic"],
