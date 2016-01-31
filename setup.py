@@ -4,6 +4,12 @@ from __future__ import absolute_import
 
 
 def main():
+    import sys
+
+    extra_requires = []
+    if sys.version_info < (3,):
+        extra_requires += ["ipaddress"]
+
     from setuptools import setup, find_packages
 
     setup(name="synoptic",
@@ -40,7 +46,7 @@ def main():
               ],
           zip_safe=False,
 
-          install_requires=[
+          install_requires=extra_requires + [
               "Paste>=2",
               "SQLAlchemy>=0.8",
               "sqlalchemy-migrate>=0.7.2.24",

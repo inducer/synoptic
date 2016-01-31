@@ -293,7 +293,7 @@ class ApplicationBase(object):
                         "but allowed_networks was specified")
 
             from ipaddress import ip_address
-            remote_addr = ip_address(remote_addr_str)
+            remote_addr = ip_address(six.text_type(remote_addr_str))
 
             allowed = False
 
